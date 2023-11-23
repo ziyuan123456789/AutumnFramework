@@ -14,8 +14,16 @@ import org.example.FrameworkUtils.ResponseType.Views.View;
 public class AutumnMvcConfigurationImpl implements AutumnMvcConfiguration{
     @Value("baseHtml")
     String baseHtml;
+
+    @Value("404Html")
+    String notFoundPage;
     @Override
     public View getMainPage() {
         return new View(baseHtml);
+    }
+
+    @Override
+    public View get404Page() {
+        return new View(notFoundPage);
     }
 }

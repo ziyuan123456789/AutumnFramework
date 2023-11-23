@@ -9,4 +9,5 @@ import org.example.FrameworkUtils.Webutils.Request;
  */
 public interface AutumnMvcConfiguration {
      View getMainPage();
+     View get404Page();
 }

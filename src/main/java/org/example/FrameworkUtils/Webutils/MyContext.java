@@ -14,6 +14,8 @@ import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -46,7 +48,7 @@ public class MyContext {
         }
         return instance;
     }
-
+    private  AopProxyFactory aopProxyFactory= new AopProxyFactory();
     private Map<String, Object> sharedMap = new HashMap<>();
     private Set<Class<?>> iocContainer;
     //xxx:一级缓存存储成熟bean
@@ -124,14 +126,16 @@ public class MyContext {
     }
 
     //xxx:Aop工厂
-    private Object createAopBeanInstance(Class<?> beanClass) {
+    private Object createAopBeanInstance(Class<?> beanClass) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         System.out.println("cglibbean");
-        AopProxyFactory aopProxyFactory=new AopProxyFactory();
-        try {
-            return aopProxyFactory.create(beanClass);
-        } catch (Exception e) {
-            throw new RuntimeException("创建cglibbean实例失败", e);
+        String[] methods=beanClass.getAnnotation(EnableAop.class).getMethod();
+        Class<?> clazz = beanClass.getAnnotation(EnableAop.class).getClassFactory();
+        try{
+            return aopProxyFactory.create(clazz ,beanClass,methods);
+        }catch (Exception e){
+            throw new RuntimeException("解析注解错误,保证Aop配置类可以被实例化\n创建cglibbean实例失败", e);
         }
+
     }
 
 
@@ -141,7 +145,7 @@ public class MyContext {
         try {
             return beanClass.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
-            throw new RuntimeException("创建普通bean实例失败", e);
+            throw new RuntimeException("创建普通bean实例失败,请检查你是否存在一个有参构造器,有的话创建一个无参构造器", e);
         }
     }
 

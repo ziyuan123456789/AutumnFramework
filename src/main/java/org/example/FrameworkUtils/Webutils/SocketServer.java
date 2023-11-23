@@ -169,13 +169,12 @@ public class SocketServer {
             if (urlmark) {
                 log.warn(baseurl);
                 log.warn("404");
-                htmlResponse.outPutMessageWriter(clientSocket, 404, "404");
+                htmlResponse.redirectLocationWriter(clientSocket, "/404");
             }
 
         }
 
-//    }
-
+    //xxx:解析url
     public String extractPath(String url) {
         int questionMarkIndex = url.indexOf('?');
         if (questionMarkIndex != -1) {
@@ -184,12 +183,13 @@ public class SocketServer {
             return url;
         }
     }
-
+    //xxx:输出异常信息
     public <T extends Exception> void exceptionPrinter(T e, String message) {
         e.printStackTrace();
         log.error(message, e);
     }
 
+    //xxx:依照方法的返回值来确定选择哪种返回器
     public <T> void handleSocketOutputByType(T classType, Socket clientSocket, Object result) throws IOException {
         if (classType == View.class) {
             htmlResponse.outPutHtmlWriter(clientSocket, ((View) result).getHtmlName());

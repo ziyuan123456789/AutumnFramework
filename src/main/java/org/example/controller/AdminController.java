@@ -2,6 +2,7 @@ package org.example.controller;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
+import org.example.Aop.UserAopProxyFactory;
 import org.example.FrameworkUtils.Annotation.EnableAop;
 import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyComponent;
@@ -26,7 +27,7 @@ import java.util.Map;
  */
 @MyController
 @Slf4j
-@EnableAop("")
+@EnableAop(getMethod = {"myhtml"}, getClassFactory = UserAopProxyFactory.class)
 public class AdminController {
 
     private MyContext myContext = MyContext.getInstance();

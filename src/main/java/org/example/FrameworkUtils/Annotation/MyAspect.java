@@ -5,7 +5,6 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Method;
 
 /**
  * @author wangzhiyi
@@ -14,7 +13,5 @@ import java.lang.reflect.Method;
 @Target({ElementType.PARAMETER,ElementType.TYPE})
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
-public @interface EnableAop {
-    String[] getMethod();
-    Class<?> getClassFactory();
+public @interface MyAspect {
 }

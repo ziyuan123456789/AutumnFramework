@@ -14,4 +14,9 @@ public class PageInit implements AutumnMvcConfiguration {
     public View getMainPage() {
         return new View("uploadfile.html");
     }
+
+    @Override
+    public View get404Page() {
+        return new View("404.html");
+    }
 }

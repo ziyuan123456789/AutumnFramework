@@ -3,11 +3,12 @@ package org.example.FrameworkUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
+import org.example.Aop.UserAopProxyFactory;
 import org.example.FrameworkUtils.Annotation.MyComponent;
-import org.example.FrameworkUtils.Annotation.Value;
-import org.example.FrameworkUtils.Webutils.MyContext;
+import org.example.FrameworkUtils.AutumnMVC.AutunmnAopFactory;
 
-import java.lang.reflect.Field;
+import java.util.Arrays;
 
 
 /**
@@ -17,13 +18,22 @@ import java.lang.reflect.Field;
 @Slf4j
 @MyComponent
 public class  AopProxyFactory {
-    public <T>T create(Class clazz){
+//    private Class clazz;
+//    public AopProxyFactory() {
+//
+//    }
+//    public AopProxyFactory(Class<?> clazz) {
+//        this.clazz = clazz;
+//    }
+
+    public <T>T create(Class aopadvice,Class clazz, String[] methods){
+        System.out.println(Arrays.toString(methods));
         Enhancer enhancer = new Enhancer();
         enhancer.setSuperclass(clazz);
         enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
             log.info("Cglib启动!  " + method.getName());
             long startTime = System.currentTimeMillis();
-            Object result = proxy.invokeSuper(obj, args);
+            Object result =  ((AutunmnAopFactory) aopadvice.getDeclaredConstructor().newInstance()).intercept(obj, method, args,proxy);
             long endTime = System.currentTimeMillis();
             log.info("执行时间：" + (endTime-startTime) + " 毫秒");
             return result;

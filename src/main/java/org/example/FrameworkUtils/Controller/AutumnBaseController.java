@@ -31,5 +31,10 @@ public class AutumnBaseController {
         return autumnMvcConfiguration.getMainPage();
     }
 
+    @MyRequestMapping("/404")
+    public View notFoundPage(Request request) {
+        return autumnMvcConfiguration.get404Page();
+    }
+
 
 }
