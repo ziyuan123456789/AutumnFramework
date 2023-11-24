@@ -9,6 +9,7 @@ import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyComponent;
 import org.example.FrameworkUtils.Annotation.MyController;
 import org.example.FrameworkUtils.Annotation.MyRequestMapping;
+import org.example.FrameworkUtils.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.Annotation.MyService;
 import org.example.FrameworkUtils.Annotation.Value;
 import org.example.FrameworkUtils.Controller.AutumnBaseController;
@@ -55,8 +56,8 @@ public class AdminController {
     }
 
     @MyRequestMapping("/upload")
-    public String upload(Request request) {
-        return request.getParameters().toString();
+    public String upload(@MyRequestParam("str") String str) {
+        return str;
     }
 
     @MyRequestMapping("/login")

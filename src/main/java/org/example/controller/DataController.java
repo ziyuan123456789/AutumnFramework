@@ -72,7 +72,7 @@ public class DataController {
         System.out.println(request.getUrl());
         System.out.println(request.getMethod());
         System.out.println(str);
-        return myContext.getBean(DataController.class).toString();
+        return str;
     }
 
     @MyRequestMapping("/test0")
@@ -95,22 +95,6 @@ public class DataController {
 
     @MyRequestMapping("/getall")
     public List<Department> getAll( Request requestrequestrequestrequest) {
-        System.out.println(requestrequestrequestrequest.getMethod());
-        System.out.println(requestrequestrequestrequest.getUrl());
-        System.out.println(requestrequestrequestrequest.getParameters());
-        Enhancer enhancer = new Enhancer();
-        enhancer.setSuperclass(AdminController.class);
-        enhancer.setCallback(new MethodInterceptor() {
-            @Override
-            public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-                System.out.println("");
-                Object result = proxy.invokeSuper(obj, args);
-                System.out.println("");
-                return result;
-            }
-        });
-        AdminController sample = (AdminController) enhancer.create();
-        sample.cglib(requestrequestrequestrequest);
         return departmentMapper.getAllDepartment();
     }
 

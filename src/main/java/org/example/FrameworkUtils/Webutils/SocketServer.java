@@ -2,10 +2,12 @@ package org.example.FrameworkUtils.Webutils;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyComponent;
 import org.example.FrameworkUtils.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.Annotation.Value;
 import org.example.FrameworkUtils.AnnotationScanner;
+import org.example.FrameworkUtils.AutumnMVC.MyMultipartFile;
 import org.example.FrameworkUtils.Exception.NoAvailableUrlMappingException;
 import org.example.FrameworkUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.ResponseType.Views.View;
@@ -14,12 +16,12 @@ import org.example.FrameworkUtils.Webutils.ThreadWatcher.ThreadServer;
 import org.example.FrameworkUtils.Webutils.ThreadWatcher.TreadWatcher;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -45,6 +47,7 @@ public class SocketServer {
     private Socket socket;
     private MyContext myContext = MyContext.getInstance();
     private HtmlResponse htmlResponse = (HtmlResponse) myContext.getBean(HtmlResponse.class);
+    private AnnotationScanner annotationScanner = (AnnotationScanner) myContext.getBean(AnnotationScanner.class);
     @Value("port")
     private Integer port;
     @Value("threadPoolNums")
@@ -109,23 +112,54 @@ public class SocketServer {
         Object instance = myContext.getBean(clazz);
         Method domethod=null;
         List<Object> objectList = new ArrayList<>();
-        for (Method method : clazz.getDeclaredMethods()) {
-            if (method.getName().equals(methodName)) {
-                domethod=method;
-                Parameter[] parameters = method.getParameters();
-                for (Parameter parameter : parameters) {
-                    MyRequestParam myRequestParam = parameter.getAnnotation(MyRequestParam.class);
-                    if (parameter.getType().equals(Request.class)){
-                        objectList.add(request);
+        if (classurl.contains("$$")) {
+            Class parentClass = clazz.getSuperclass();
+            for (Method method : parentClass.getDeclaredMethods()) {
+                if (method.getName().equals(methodName)) {
+                    domethod = method;
+                    Parameter[] parameters = method.getParameters();
+                    for (Parameter parameter : parameters) {
+
+                        MyRequestParam myRequestParam = parameter.getAnnotation(MyRequestParam.class);
+                        if (parameter.getType().equals(Request.class)) {
+                            objectList.add(request);
+                        }
+                        if (parameter.getType().equals(MyMultipartFile.class)) {
+                            objectList.add(request);
+                        }
+
+                        if (myRequestParam != null) {
+                            if (!myRequestParam.value().isEmpty()) {
+                                objectList.add(useUrlGetParam(clazz, classurl, myRequestParam.value(), request));
+                            }
+                        }
                     }
-                    if (myRequestParam != null) {
-                        if(!myRequestParam.value().isEmpty()){
-                            objectList.add(useUrlGetParam(clazz,classurl,myRequestParam.value(),request));
+                }
+            }
+        } else {
+            for (Method method : clazz.getDeclaredMethods()) {
+                if (method.getName().equals(methodName)) {
+                    domethod = method;
+                    Parameter[] parameters = method.getParameters();
+                    for (Parameter parameter : parameters) {
+                        MyRequestParam myRequestParam = parameter.getAnnotation(MyRequestParam.class);
+                        if (parameter.getType().equals(Request.class)) {
+                            objectList.add(request);
+                        }
+                        if (parameter.getType().equals(MyMultipartFile.class)) {
+                            objectList.add(request);
+                        }
+
+                        if (myRequestParam != null) {
+                            if (!myRequestParam.value().isEmpty()) {
+                                objectList.add(useUrlGetParam(clazz, classurl, myRequestParam.value(), request));
+                            }
                         }
                     }
                 }
             }
         }
+
         return domethod.invoke(instance, objectList.toArray());
     }
     public Object useUrlGetParam(Class clazz,String classurl,String paramName,Request request){
@@ -145,7 +179,6 @@ public class SocketServer {
                     str = (String) sharedMap.get(str);
                     int lastIndex = str.lastIndexOf(".");
                     String classurl = str.substring(0, lastIndex);
-                    AnnotationScanner annotationScanner = (AnnotationScanner) myContext.getBean(AnnotationScanner.class);
                     Filter filter = (Filter) myContext.getBean(annotationScanner.initFilterChain());
                     if (filter.doChain(request)) {
                         htmlResponse.redirectLocationWriter(clientSocket, "https://www.baidu.com/");
