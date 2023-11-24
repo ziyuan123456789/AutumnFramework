@@ -1,4 +1,4 @@
-package org.example.FrameworkUtils.Annotation;
+package org.example.Annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -7,11 +7,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * @author wsh
+ * @author wangzhiyi
+ * @since 2023.11
  */
-@Target(ElementType.FIELD)
+@Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-public @interface Value {
-    String value() ;
+public @interface CheckParameter {
 }

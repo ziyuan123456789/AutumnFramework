@@ -9,7 +9,7 @@ import org.example.FrameworkUtils.ResponseType.Views.View;
  * @since 2023.11
  */
 @MyService
-public class PageInit implements AutumnMvcConfiguration {
+public class MvcConfig implements AutumnMvcConfiguration {
     @Override
     public View getMainPage() {
         return new View("uploadfile.html");

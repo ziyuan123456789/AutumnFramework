@@ -127,9 +127,12 @@ public class MyContext {
 
     //xxx:Aop工厂
     private Object createAopBeanInstance(Class<?> beanClass) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        System.out.println("cglibbean");
+        System.out.println("CgLib动态代理Bean");
         String[] methods=beanClass.getAnnotation(EnableAop.class).getMethod();
         Class<?> clazz = beanClass.getAnnotation(EnableAop.class).getClassFactory();
+        if(clazz==null || methods==null || methods.length==0){
+            throw new IllegalArgumentException("检查Aop注解参数是否加全了");
+        }
         try{
             return aopProxyFactory.create(clazz ,beanClass,methods);
         }catch (Exception e){

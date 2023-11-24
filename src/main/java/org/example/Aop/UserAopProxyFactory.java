@@ -17,9 +17,8 @@ import java.lang.reflect.Method;
 public class UserAopProxyFactory implements AutunmnAopFactory {
     @Override
     public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-        System.out.println("用户切面方法" + method.getName());
+        log.warn("用户切面方法开始执行" + method.getName());
         Object result = proxy.invokeSuper(obj, args);
-        System.out.println("用户切面执行结束" + method.getName());
         return result;
     }
 

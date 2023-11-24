@@ -2,6 +2,7 @@ package org.example.controller;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
+import org.example.Annotations.CheckParameter;
 import org.example.Aop.UserAopProxyFactory;
 import org.example.FrameworkUtils.Annotation.EnableAop;
 import org.example.FrameworkUtils.Annotation.MyAutoWired;
@@ -27,7 +28,7 @@ import java.util.Map;
  */
 @MyController
 @Slf4j
-@EnableAop(getMethod = {"myhtml"}, getClassFactory = UserAopProxyFactory.class)
+@EnableAop(getMethod = {"myhtml","login"}, getClassFactory = UserAopProxyFactory.class)
 public class AdminController {
 
     private MyContext myContext = MyContext.getInstance();
@@ -59,7 +60,7 @@ public class AdminController {
     }
 
     @MyRequestMapping("/login")
-    public String login(Request request) {
+    public String login(@CheckParameter Request request) {
 
         Map<String,String> requestMap = request.getParameters();
         String username= requestMap.get("username");
@@ -82,7 +83,6 @@ public class AdminController {
                 .append(user)
                 .append("\t\t\t")
                 .append(password);
-        Thread.sleep(5000);
         return Thread.currentThread().getName();
     }
 
