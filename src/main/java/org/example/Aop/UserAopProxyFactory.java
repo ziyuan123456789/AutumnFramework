@@ -7,6 +7,8 @@ import org.example.FrameworkUtils.AutumnMVC.AutunmnAopFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.LinkedHashMap;
+import java.util.Stack;
 
 /**
  * @author wangzhiyi
@@ -17,9 +19,11 @@ import java.lang.reflect.Method;
 public class UserAopProxyFactory implements AutunmnAopFactory {
     @Override
     public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-        log.warn("用户切面方法开始执行" + method.getName());
-        Object result = proxy.invokeSuper(obj, args);
-        return result;
+        Stack stack = new Stack();
+
+        log.warn("用户切面方法开始预处理,切面处理器是"+this.getClass().getName()+"处理的方法为:"+method.getName() );
+        return proxy.invokeSuper(obj, args);
+
     }
 
 }

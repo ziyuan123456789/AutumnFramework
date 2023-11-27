@@ -4,6 +4,7 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import org.example.Annotations.CheckParameter;
 import org.example.Aop.UserAopProxyFactory;
+import org.example.Bean.Temp;
 import org.example.FrameworkUtils.Annotation.EnableAop;
 import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyComponent;
@@ -46,10 +47,18 @@ public class AdminController {
     TestService testService;
     @MyAutoWired
     JsonFormatter jsonFormatter;
+    @MyAutoWired
+    Temp t;
     @MyRequestMapping("/myhtml")
     public View myhtml(Request request) {
         return new View("AutumnFrameworkMainPage.html");
     }
+
+    @MyRequestMapping("/bean")
+    public String beantest(Request request) {
+        return t.toString();
+    }
+
     @MyRequestMapping("/uploadpage")
     public View fileupload(Request request) {
         return new View("uploadfile.html");
@@ -57,7 +66,7 @@ public class AdminController {
 
     @MyRequestMapping("/upload")
     public String upload(@MyRequestParam("str") String str) {
-        return str;
+        return "123";
     }
 
     @MyRequestMapping("/login")

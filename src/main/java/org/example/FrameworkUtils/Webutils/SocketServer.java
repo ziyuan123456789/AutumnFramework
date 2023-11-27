@@ -2,7 +2,6 @@ package org.example.FrameworkUtils.Webutils;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyComponent;
 import org.example.FrameworkUtils.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.Annotation.Value;
@@ -21,13 +20,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -37,7 +36,6 @@ import java.util.concurrent.Executors;
  * @since 2023.10
  */
 @Slf4j
-@Data
 @MyComponent
 public class SocketServer {
     private TreadWatcher treadWatcher = new TreadWatcher();
@@ -69,6 +67,8 @@ public class SocketServer {
                 BufferedReader reader = new BufferedReader(isr);
                 StringBuilder headerBuilder = new StringBuilder();
                 String line;
+                String contentType="";
+                String boundary="";
                 int contentLength = 2048;
                 while ((line = reader.readLine()) != null && !line.isEmpty()) {
                     headerBuilder.append(line).append("\n");
@@ -78,6 +78,17 @@ public class SocketServer {
                     if (line.startsWith("Content-Length: ")) {
                         contentLength = Integer.parseInt(line.substring("Content-Length: ".length()).trim());
                     }
+                    if(line.startsWith("Content-Type: ")){
+                        String[] parts = line.split(";");
+                        contentType = parts[0].trim();
+                        for (String part : parts) {
+                            if (part.trim().startsWith("boundary=")) {
+                                boundary = part.trim().substring("boundary=".length());
+                                break;
+                            }
+                        }
+
+                    }
                 }
                 if (contentLength == -1) {
                     throw new RuntimeException("POST方法你不带长度?");
@@ -86,9 +97,11 @@ public class SocketServer {
                 int charsRead = reader.read(bodyChars);
                 String requestBody = new String(bodyChars, 0, charsRead);
                 int finalContentLength = contentLength;
+                String finalContentType = contentType;
+                String finalBoundary = boundary;
                 threadPool.execute(() -> {
                     try {
-                        processRequest(clientSocket, sharedMap, String.valueOf(headerBuilder),requestBody, finalContentLength);
+                        processRequest(clientSocket, sharedMap, String.valueOf(headerBuilder),requestBody, finalContentLength, finalContentType, finalBoundary);
                     } catch (IOException e) {
                         exceptionPrinter(e, "IO异常");
                     } catch (NoAvailableUrlMappingException e) {
@@ -113,53 +126,29 @@ public class SocketServer {
         Method domethod=null;
         List<Object> objectList = new ArrayList<>();
         if (classurl.contains("$$")) {
-            Class parentClass = clazz.getSuperclass();
-            for (Method method : parentClass.getDeclaredMethods()) {
-                if (method.getName().equals(methodName)) {
-                    domethod = method;
-                    Parameter[] parameters = method.getParameters();
-                    for (Parameter parameter : parameters) {
-
-                        MyRequestParam myRequestParam = parameter.getAnnotation(MyRequestParam.class);
-                        if (parameter.getType().equals(Request.class)) {
-                            objectList.add(request);
-                        }
-                        if (parameter.getType().equals(MyMultipartFile.class)) {
-                            objectList.add(request);
-                        }
-
-                        if (myRequestParam != null) {
-                            if (!myRequestParam.value().isEmpty()) {
-                                objectList.add(useUrlGetParam(clazz, classurl, myRequestParam.value(), request));
-                            }
-                        }
+            clazz = clazz.getSuperclass();
+        }
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (method.getName().equals(methodName)) {
+                domethod = method;
+                Parameter[] parameters = method.getParameters();
+                for (Parameter parameter : parameters) {
+                    MyRequestParam myRequestParam = parameter.getAnnotation(MyRequestParam.class);
+                    if (parameter.getType().equals(Request.class)) {
+                        objectList.add(request);
                     }
-                }
-            }
-        } else {
-            for (Method method : clazz.getDeclaredMethods()) {
-                if (method.getName().equals(methodName)) {
-                    domethod = method;
-                    Parameter[] parameters = method.getParameters();
-                    for (Parameter parameter : parameters) {
-                        MyRequestParam myRequestParam = parameter.getAnnotation(MyRequestParam.class);
-                        if (parameter.getType().equals(Request.class)) {
-                            objectList.add(request);
-                        }
-                        if (parameter.getType().equals(MyMultipartFile.class)) {
-                            objectList.add(request);
-                        }
+                    if (parameter.getType().equals(MyMultipartFile.class)) {
+                        objectList.add(request.getMyMultipartFile());
+                    }
 
-                        if (myRequestParam != null) {
-                            if (!myRequestParam.value().isEmpty()) {
-                                objectList.add(useUrlGetParam(clazz, classurl, myRequestParam.value(), request));
-                            }
+                    if (myRequestParam != null) {
+                        if (!myRequestParam.value().isEmpty()) {
+                            objectList.add(useUrlGetParam(clazz, classurl, myRequestParam.value(), request));
                         }
                     }
                 }
             }
         }
-
         return domethod.invoke(instance, objectList.toArray());
     }
     public Object useUrlGetParam(Class clazz,String classurl,String paramName,Request request){
@@ -167,9 +156,13 @@ public class SocketServer {
         return param.get(paramName);
     }
 
-    public void processRequest(Socket clientSocket, Map sharedMap,String payload,String body,Integer lenth) throws IOException {
+    public void processRequest(Socket clientSocket, Map sharedMap,String payload,String body,Integer lenth,String contentType,String boundary) throws IOException {
             boolean urlmark = true;
             Request request = new Request(payload,body,lenth);
+            if("multipart/form-data".equals(contentType)){
+                request.setContentType("multipart/form-data");
+                request.setBoundary(boundary);
+            }
             String baseurl = request.getUrl();
             if (sharedMap != null) {
                 String str = extractPath(baseurl);

@@ -1,6 +1,7 @@
 package org.example.FrameworkUtils.Webutils;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.Annotation.AutunmnBean;
 import org.example.FrameworkUtils.Annotation.EnableAop;
 import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyConditional;
@@ -15,7 +16,7 @@ import org.reflections.scanners.SubTypesScanner;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -89,21 +90,34 @@ public class MyContext {
     }
 
     //xxx:初始化第三缓存
-    public void initIocCache(Set<Class<?>> prototypeIocContainer) throws NoSuchFieldException, IllegalAccessException {
+    public void initIocCache(Set<Class<?>> prototypeIocContainer) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
         this.iocContainer = prototypeIocContainer;
         registerBeanDefinition(this.iocContainer);
         log.info(singletonFactories.toString());
         for (Class<?> clazz : this.iocContainer) {
             initBean(clazz);
         }
+
     }
 
-    private void initBean(Class<?> clazz) throws NoSuchFieldException, IllegalAccessException {
+    private void initBean(Class<?> clazz) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
         Object bean = getBean(clazz);
         if (bean != null) {
             autowireBeanProperties(bean);
+            autunmnBeanProperties(bean,clazz);
         }
 
+    }
+
+    private void autunmnBeanProperties(Object bean,Class clazz) throws InvocationTargetException, IllegalAccessException {
+        Method[] methods = clazz.getDeclaredMethods();
+        for (Method method : methods) {
+            if (method.getAnnotation(AutunmnBean.class) != null) {
+                log.info("发现一个@AutumnBean注解,加入到一级缓存");
+                Object o=method.invoke(bean);
+                singletonObjects.put(o.getClass(),o);
+            }
+        }
     }
 
     //xxx:遍历set去填充第三缓存

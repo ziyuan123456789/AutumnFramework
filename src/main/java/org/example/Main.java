@@ -15,6 +15,14 @@ import java.lang.reflect.InvocationTargetException;
 
 public class Main {
     public static void main(String[] args) throws IOException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        System.out.println("                _                         __  ____      _______ \n" +
+                "     /\\        | |                       |  \\/  \\ \\    / / ____|\n" +
+                "    /  \\  _   _| |_ _   _ _ __ ___  _ __ | \\  / |\\ \\  / / |     \n" +
+                "   / /\\ \\| | | | __| | | | '_ ` _ \\| '_ \\| |\\/| | \\ \\/ /| |     \n" +
+                "  / ____ \\ |_| | |_| |_| | | | | | | | | | |  | |  \\  / | |____ \n" +
+                " /_/    \\_\\__,_|\\__|\\__,_|_| |_| |_|_| |_|_|  |_|   \\/   \\_____|\n" +
+                "                                                                \n" +
+                "                                                                ");
         AutumnFrameworkRunner autumnFrameworkRunner=new AutumnFrameworkRunner();
         autumnFrameworkRunner.run(Main.class, args);
     }

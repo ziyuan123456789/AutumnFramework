@@ -2,6 +2,7 @@ package org.example.mapper;
 
 import org.example.Bean.Temp;
 import org.example.FrameworkUtils.Annotation.MyMapper;
+import org.example.FrameworkUtils.Annotation.MyParam;
 import org.example.FrameworkUtils.Annotation.MySelect;
 
 import java.util.List;
@@ -14,5 +15,8 @@ import java.util.List;
 public interface TestMapper {
     @MySelect("select * from Temp limit 5")
     List<Temp> selectById(Integer id);
+
+    @MySelect("select * from Temp limit #{id}")
+    Temp selectById1(@MyParam("id") Integer id);
 
 }

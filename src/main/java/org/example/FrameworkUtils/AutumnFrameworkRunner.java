@@ -2,6 +2,7 @@ package org.example.FrameworkUtils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.Annotation.MyComponent;
+import org.example.FrameworkUtils.Annotation.MyConfig;
 import org.example.FrameworkUtils.Annotation.MyController;
 import org.example.FrameworkUtils.Annotation.MyMapper;
 import org.example.FrameworkUtils.Annotation.MyRequestMapping;
@@ -91,6 +92,7 @@ public class AutumnFrameworkRunner {
         annotations.add(MyService.class);
         annotations.add(MyComponent.class);
         annotations.add(MyMapper.class);
+        annotations.add(MyConfig.class);
         Set<Class<?>> annotatedClasses = scanner.findAnnotatedClassesList(mainClass.getPackageName(), annotations);
         log.info("扫描如下注解:\t" + annotatedClasses);
         myContext.initIocCache(annotatedClasses);

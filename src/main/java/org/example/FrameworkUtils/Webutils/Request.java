@@ -1,6 +1,7 @@
 package org.example.FrameworkUtils.Webutils;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.AutumnMVC.MyMultipartFile;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -9,6 +10,8 @@ import java.util.Map;
  * @author wangzhiyi
  * @since 2023.10
  */
+
+@SuppressWarnings("all")
 @Slf4j
 public class Request {
     private String payload;
@@ -17,14 +20,30 @@ public class Request {
     private String url;
 
     private Integer contentLength;
+    private MyMultipartFile myMultipartFile;
+    private String contentType;
+    private String boundary;
 
 
     public Request(String payload, String body, Integer contentLength) {
         this.payload = payload;
         this.body = body;
-        System.out.println(payload);
+//        System.out.println(body);
+        parseRequest(payload);
+        if (getMethod().equals("GET")) {
+            this.contentLength = null;
+        } else {
+            this.contentLength = contentLength;
+        }
+    }
+    //xxx:文件上传专用
+    public Request(String payload, String body, Integer contentLength, String contentType, String boundary) {
+        this.payload = payload;
+        this.body = body;
         System.out.println(body);
         parseRequest(payload);
+        this.contentType = contentType;
+        this.boundary = boundary;
         if (getMethod().equals("GET")) {
             this.contentLength = null;
         } else {
@@ -110,6 +129,31 @@ public class Request {
     public Integer getContentLength() {
         return contentLength;
     }
+
+    public MyMultipartFile getMyMultipartFile() {
+        return myMultipartFile;
+    }
+
+    public void setMyMultipartFile(MyMultipartFile myMultipartFile) {
+        this.myMultipartFile = myMultipartFile;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public String getBoundary() {
+        return boundary;
+    }
+
+    public void setBoundary(String boundary) {
+        this.boundary = boundary;
+    }
+
 
 
 }

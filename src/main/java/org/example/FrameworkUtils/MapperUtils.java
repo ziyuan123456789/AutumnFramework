@@ -96,7 +96,12 @@ public class MapperUtils {
         for (int i = 0; i < parameters.length; i++) {
             MyParam myParam = parameters[i].getAnnotation(MyParam.class);
             if (myParam != null) {
-                paramMap.put(myParam.value(), "'"+args[i]+"'");
+                if (args[i].getClass()==Integer.class){
+                    paramMap.put(myParam.value(), args[i]);
+                }else{
+                    paramMap.put(myParam.value(), "'"+args[i]+"'");
+                }
+
             }
         }
         Pattern pattern = Pattern.compile("#\\{([^}]+)\\}");
