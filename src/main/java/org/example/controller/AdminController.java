@@ -1,19 +1,15 @@
 package org.example.controller;
 import lombok.extern.slf4j.Slf4j;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
 import org.example.Annotations.CheckParameter;
 import org.example.Aop.UserAopProxyFactory;
 import org.example.Bean.Temp;
 import org.example.FrameworkUtils.Annotation.EnableAop;
 import org.example.FrameworkUtils.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.Annotation.MyComponent;
 import org.example.FrameworkUtils.Annotation.MyController;
 import org.example.FrameworkUtils.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.Annotation.MyRequestParam;
-import org.example.FrameworkUtils.Annotation.MyService;
 import org.example.FrameworkUtils.Annotation.Value;
-import org.example.FrameworkUtils.Controller.AutumnBaseController;
+import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
 import org.example.FrameworkUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.Webutils.Json.JsonFormatter;
 import org.example.FrameworkUtils.Webutils.MyContext;
@@ -49,6 +45,16 @@ public class AdminController {
     JsonFormatter jsonFormatter;
     @MyAutoWired
     Temp t;
+
+    @MyAutoWired
+    MyReidsTemplate myReidsTemplate;
+    @MyRequestMapping("/redis")
+    public String redis(Request request) {
+        myReidsTemplate.init();
+        myReidsTemplate.set("test","test");
+        return myReidsTemplate.toString()+myReidsTemplate.get("test");
+    }
+
     @MyRequestMapping("/myhtml")
     public View myhtml(Request request) {
         return new View("AutumnFrameworkMainPage.html");

@@ -1,4 +1,4 @@
-package org.example.FrameworkUtils;
+package org.example.FrameworkUtils.Orm.MineBatis;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

@@ -14,23 +14,16 @@ import org.example.FrameworkUtils.Webutils.Request;
 @MyComponent
 @MyOrder(1)
 public class UrlFilter implements Filter {
-    private Filter nextFilter;
     @MyAutoWired
     IndexFilter indexFilter;
 
     @Override
-    public void setNextHandler(Filter filter) {
-        this.nextFilter = indexFilter;
-    }
-
-    @Override
     public boolean doChain(Request request) {
-        if (request.getMethod().equals("GET")) {
-            log.error("一级过滤链拦截,开始第一步鉴权");
-            setNextHandler(indexFilter);
-            return nextFilter.doChain(request);
+        if ("GET".equals(request.getMethod())) {
+            log.info("一级过滤链拦截,开始第一步鉴权");
+            return indexFilter.doChain(request);
         } else {
-            log.error("一级过滤链放行");
+            log.info("一级过滤链放行");
             return false;
         }
     }

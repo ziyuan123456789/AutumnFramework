@@ -9,8 +9,8 @@ import org.example.FrameworkUtils.Annotation.MyMapper;
 import org.example.FrameworkUtils.Annotation.MyService;
 import org.example.FrameworkUtils.Annotation.Value;
 import org.example.FrameworkUtils.AopProxyFactory;
-import org.example.FrameworkUtils.Jdbcinit;
-import org.example.FrameworkUtils.MapperUtils;
+import org.example.FrameworkUtils.Orm.MineBatis.Jdbcinit;
+import org.example.FrameworkUtils.Orm.MineBatis.MapperUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
@@ -97,6 +97,9 @@ public class MyContext {
         for (Class<?> clazz : this.iocContainer) {
             initBean(clazz);
         }
+        for (Class<?> clazz : this.iocContainer) {
+            initBean(clazz);
+        }
 
     }
 
@@ -115,7 +118,7 @@ public class MyContext {
             if (method.getAnnotation(AutunmnBean.class) != null) {
                 log.info("发现一个@AutumnBean注解,加入到一级缓存");
                 Object o=method.invoke(bean);
-                singletonObjects.put(o.getClass(),o);
+                earlySingletonObjects.put(o.getClass(),o);
             }
         }
     }
@@ -249,7 +252,8 @@ public class MyContext {
                 Class<?> dependencyType = field.getType();
                 Object dependency = getBean(dependencyType);
                 if (dependency == null) {
-                    throw new RuntimeException("无法解析的依赖：" + dependencyType.getName());
+                    log.error("无法解析的依赖：" + dependencyType.getName());
+//                    throw new RuntimeException("无法解析的依赖：" + dependencyType.getName());
                 }
                 field.setAccessible(true);
                 try {
@@ -298,7 +302,8 @@ public class MyContext {
         Class<?> dependencyType = field.getType();
         Object dependency = getBean(dependencyType);
         if (dependency == null) {
-            throw new RuntimeException("无法解析的依赖：" + dependencyType.getName());
+            log.warn("无法解析的依赖"+ dependencyType.getName());
+//            throw new RuntimeException("无法解析的依赖：" + dependencyType.getName());
         }
         field.setAccessible(true);
         try {

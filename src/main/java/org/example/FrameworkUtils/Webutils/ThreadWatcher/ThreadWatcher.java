@@ -9,7 +9,7 @@ import org.example.FrameworkUtils.AutumnFrameworkRunner;
  * @since 2023.10
  */
 @Slf4j
-public class TreadWatcher implements  Watcher{
+public class ThreadWatcher implements  Watcher{
     @Override
     public void getmessage(String message) {
         System.out.println("进程死亡");

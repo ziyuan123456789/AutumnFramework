@@ -13,7 +13,7 @@ import org.example.FrameworkUtils.ResponseType.Views.View;
 public class MvcConfig implements AutumnMvcConfiguration {
     @Override
     public View getMainPage() {
-        return new View("uploadfile.html");
+        return new View("index.html");
     }
 
     @Override

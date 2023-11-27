@@ -1,6 +1,5 @@
 package org.example.FrameworkUtils.Webutils;
 
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.Annotation.MyComponent;
 import org.example.FrameworkUtils.Annotation.MyRequestParam;
@@ -12,7 +11,7 @@ import org.example.FrameworkUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.ResponseWriter.HtmlResponse;
 import org.example.FrameworkUtils.Webutils.ThreadWatcher.ThreadServer;
-import org.example.FrameworkUtils.Webutils.ThreadWatcher.TreadWatcher;
+import org.example.FrameworkUtils.Webutils.ThreadWatcher.ThreadWatcher;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,7 +25,6 @@ import java.lang.reflect.Parameter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -38,7 +36,7 @@ import java.util.concurrent.Executors;
 @Slf4j
 @MyComponent
 public class SocketServer {
-    private TreadWatcher treadWatcher = new TreadWatcher();
+    private ThreadWatcher threadWatcher = new ThreadWatcher();
     private ThreadServer threadServer = new ThreadServer();
     private ExecutorService threadPool;
     private ServerSocket serverSocket;
@@ -53,7 +51,7 @@ public class SocketServer {
 
 
     public void init() throws Exception {
-        threadServer.registerObserver(treadWatcher);
+        threadServer.registerObserver(threadWatcher);
         threadPool = Executors.newFixedThreadPool(threadNums);
         Map<String, String> sharedMap = (Map<String, String>) myContext.get("urlmapping");
         try {

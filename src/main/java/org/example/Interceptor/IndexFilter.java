@@ -12,22 +12,9 @@ import org.example.FrameworkUtils.Webutils.Request;
 @MyComponent
 @Slf4j
 public class IndexFilter implements Filter {
-    private Filter filter;
-
-    @Override
-    public void setNextHandler(Filter filter) {
-        this.filter = filter;
-    }
 
     @Override
     public boolean doChain(Request request) {
         return false;
-//        if (request.getParameters().get("admin") == null) {
-//            log.error("第二过滤链拦截");
-//            return true;
-//        } else {
-//            log.error("二级过滤链放行");
-//            return false;
-//        }
     }
 }

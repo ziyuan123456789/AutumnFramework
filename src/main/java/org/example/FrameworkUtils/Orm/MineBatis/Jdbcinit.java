@@ -1,4 +1,4 @@
-package org.example.FrameworkUtils;
+package org.example.FrameworkUtils.Orm.MineBatis;
 
 
 

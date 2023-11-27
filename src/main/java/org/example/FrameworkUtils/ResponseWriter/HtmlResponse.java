@@ -19,6 +19,10 @@ import java.nio.file.Path;
 public class HtmlResponse {
     @MyAutoWired
     ResourceFinder resourceFinder;
+    @MyAutoWired
+    CrossOriginBean crossOriginBean;
+    String [] CrossOrigin;
+
 
 
     //xxx:http返回报文(直接返回拼接的html文本,Content-Type: text/html)
@@ -94,6 +98,26 @@ public class HtmlResponse {
             out.write(responseBytes);
         }
     }
+    // xxx: http返回报文(返回JavaScript文件，Content-Type: application/javascript)
+    public void outPutJavaScriptWriter(Socket socket, String jsUrl) throws IOException {
+        String filePath = resourceFinder.getJsLocation(jsUrl).replaceFirst("^/", "");
+        Path path = Path.of(filePath);
+        byte[] responseBytes = Files.readAllBytes(path);
+        StringBuilder responseHeader = new StringBuilder();
+        responseHeader.append("HTTP/1.1 ").append(200).append(" OK\r\n");
+        responseHeader.append("Server: YourServerName\r\n");
+        responseHeader.append("Content-Type: application/javascript\r\n");
+        responseHeader.append("Content-Length: ").append(responseBytes.length).append("\r\n");
+        responseHeader.append("Connection: close\r\n");
+        responseHeader.append("Access-Control-Allow-Origin: *\r\n");
+        responseHeader.append("\r\n");
+
+        try (OutputStream out = socket.getOutputStream()) {
+            out.write(responseHeader.toString().getBytes(StandardCharsets.UTF_8));
+            out.write(responseBytes);
+        }
+    }
+
 
 
 }

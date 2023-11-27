@@ -40,4 +40,7 @@ public class ResourceFinder {
         return path;
     }
 
+    public String getJsLocation(String jsUrl) {
+        return null;
+    }
 }

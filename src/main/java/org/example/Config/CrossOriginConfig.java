@@ -20,4 +20,5 @@ public class CrossOriginConfig {
     public Temp beanTest(){
         return  testMapper.selectById1(1);
     }
+
 }
