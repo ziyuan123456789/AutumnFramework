@@ -1,4 +1,4 @@
-package org.example.FrameworkUtils.Annotation;
+package org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -8,11 +8,11 @@ import java.lang.annotation.Target;
 
 /**
  * @author wangzhiyi
- * @since 2023.10
+ * @since 2023.11
  */
-@Target({ElementType.PARAMETER,ElementType.TYPE})
+@Target({ElementType.PARAMETER,ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-public @interface MyMapper {
-    String value() default "";
+public @interface MyDelete {
+    String value();
 }

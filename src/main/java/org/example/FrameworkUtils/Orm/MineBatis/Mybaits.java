@@ -1,5 +1,7 @@
 package org.example.FrameworkUtils.Orm.MineBatis;
 
+import org.example.FrameworkUtils.Annotation.MyComponent;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
@@ -10,11 +12,12 @@ import java.util.List;
 /**
  * @author wsh
  */
+@MyComponent
 public class Mybaits {
     public static <T> List<T> reflexByClass(Class<T> clazz, ResultSet resultSet, String[] fieldList) throws SQLException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InvocationTargetException, InstantiationException {
         List<T> collectList = new ArrayList<>();
         while (resultSet.next()) {
-            T targetObject = clazz.newInstance();
+            T targetObject = clazz.getDeclaredConstructor().newInstance();
             for (String fieldName : fieldList) {
                 Object fieldValue=null;
                 Field field = clazz.getDeclaredField(fieldName);

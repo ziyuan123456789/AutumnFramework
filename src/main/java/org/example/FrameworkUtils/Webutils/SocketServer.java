@@ -1,6 +1,7 @@
 package org.example.FrameworkUtils.Webutils;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyComponent;
 import org.example.FrameworkUtils.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.Annotation.Value;
@@ -10,6 +11,7 @@ import org.example.FrameworkUtils.Exception.NoAvailableUrlMappingException;
 import org.example.FrameworkUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.ResponseWriter.HtmlResponse;
+import org.example.FrameworkUtils.Webutils.Json.JsonFormatter;
 import org.example.FrameworkUtils.Webutils.ThreadWatcher.ThreadServer;
 import org.example.FrameworkUtils.Webutils.ThreadWatcher.ThreadWatcher;
 
@@ -42,8 +44,12 @@ public class SocketServer {
     private ServerSocket serverSocket;
     private Socket socket;
     private MyContext myContext = MyContext.getInstance();
-    private HtmlResponse htmlResponse = (HtmlResponse) myContext.getBean(HtmlResponse.class);
-    private AnnotationScanner annotationScanner = (AnnotationScanner) myContext.getBean(AnnotationScanner.class);
+    @MyAutoWired
+    HtmlResponse htmlResponse;
+    @MyAutoWired
+    AnnotationScanner annotationScanner;
+    @MyAutoWired
+    JsonFormatter jsonFormatter;
     @Value("port")
     private Integer port;
     @Value("threadPoolNums")
@@ -214,13 +220,15 @@ public class SocketServer {
     }
 
     //xxx:依照方法的返回值来确定选择哪种返回器
-    public <T> void handleSocketOutputByType(T classType, Socket clientSocket, Object result) throws IOException {
+    public  void handleSocketOutputByType(Class classType, Socket clientSocket, Object result) throws IOException, IllegalAccessException {
         if (classType == View.class) {
             htmlResponse.outPutHtmlWriter(clientSocket, ((View) result).getHtmlName());
         } else if (classType == String.class) {
             htmlResponse.outPutMessageWriter(clientSocket, 200, result.toString());
         } else if (classType == Icon.class) {
             htmlResponse.outPutIconWriter(clientSocket, ((Icon) result).getIconName());
+        } else if (Map.class.isAssignableFrom(classType)) {
+            htmlResponse.outPutMessageWriter(clientSocket, 200, jsonFormatter.toJson(result));
         }
     }
 

@@ -44,8 +44,7 @@ public class AdminController {
     LoginService loginService;
     @MyAutoWired
     TestService testService;
-    @MyAutoWired
-    JsonFormatter jsonFormatter;
+
     @MyAutoWired
     Temp t;
 
@@ -53,14 +52,11 @@ public class AdminController {
     MyReidsTemplate myReidsTemplate;
 
     @MyRequestMapping("/map")
-    public String maptest(Request request) throws IllegalAccessException {
+    public Map<String, Integer> maptest(Request request) throws IllegalAccessException {
         Map<String,Integer>myMap =new HashMap<>();
         myMap.put("user",123);
         myMap.put("password",456);
-        User u=new User();
-        u.setUsername("123");
-        u.setPassword("123");
-        return jsonFormatter.toJson(myMap);
+        return myMap;
     }
 
     @MyRequestMapping("/redis")

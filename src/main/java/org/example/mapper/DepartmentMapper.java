@@ -2,8 +2,8 @@ package org.example.mapper;
 
 import org.example.Bean.Department;
 import org.example.Bean.User;
-import org.example.FrameworkUtils.Annotation.MyMapper;
-import org.example.FrameworkUtils.Annotation.MySelect;
+import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
+import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MySelect;
 
 import java.util.List;
 

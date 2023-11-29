@@ -3,7 +3,7 @@ package org.example.FrameworkUtils.Orm.MineBatis;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.Annotation.MyComponent;
 import org.example.FrameworkUtils.Annotation.MyParam;
-import org.example.FrameworkUtils.Annotation.MySelect;
+import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MySelect;
 import org.example.FrameworkUtils.Webutils.MyContext;
 
 import java.lang.reflect.Field;
@@ -47,9 +47,10 @@ public class MapperUtils {
             if (select != null) {
                 sql = select.value();
                 sql=parseSql(sql, method, args);
-                System.out.println(sql);
+                log.info(sql);
             } else {
                 log.warn("sql为空");
+                throw new IllegalStateException("sql为空");
             }
             Class<?> clazz = method.getReturnType();
             Jdbcinit jdbcinit = (Jdbcinit) MyContext.getInstance().getBean(Jdbcinit.class);
@@ -68,8 +69,7 @@ public class MapperUtils {
                     fieldNames[i] = fields[i].getName();
                 }
                 log.error(Arrays.toString(fieldNames));
-                List<?> result = Mybaits.reflexByClass(clazz123, r, fieldNames);
-                return result;
+                return Mybaits.reflexByClass(clazz123, r, fieldNames);
             } else {
                 Field[] fields = clazz.getDeclaredFields();
                 String[] fieldNames = new String[fields.length];
@@ -77,17 +77,12 @@ public class MapperUtils {
                     fieldNames[i] = fields[i].getName();
                 }
                 List<?> result = Mybaits.reflexByClass(clazz, r, fieldNames);
-                if(result.size()==0){
+                if(result.isEmpty()){
                     return null;
                 }
                 return result.get(0);
             }
         }
-    }
-
-    private String sqlMatcher(String sql) {
-
-        return sql;
     }
 
     private static String parseSql(String sql, Method method, Object[] args) {

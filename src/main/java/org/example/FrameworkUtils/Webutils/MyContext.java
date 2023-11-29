@@ -6,7 +6,7 @@ import org.example.FrameworkUtils.Annotation.EnableAop;
 import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyConditional;
 import org.example.FrameworkUtils.Annotation.MyConfig;
-import org.example.FrameworkUtils.Annotation.MyMapper;
+import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
 import org.example.FrameworkUtils.Annotation.MyService;
 import org.example.FrameworkUtils.Annotation.Value;
 import org.example.FrameworkUtils.AopProxyFactory;

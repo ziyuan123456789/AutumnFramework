@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.Annotation.MyComponent;
 import org.example.FrameworkUtils.Annotation.MyConfig;
 import org.example.FrameworkUtils.Annotation.MyController;
-import org.example.FrameworkUtils.Annotation.MyMapper;
+import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
 import org.example.FrameworkUtils.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.Annotation.MyService;
 import org.example.FrameworkUtils.Webutils.MyContext;
