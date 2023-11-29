@@ -20,8 +20,6 @@ public class MyReidsTemplate {
     public void init() {
         this.jedis = new Jedis(host, port);
     }
-
-    // 添加关闭连接的方法
     public void close() {
         if (jedis != null) {
             jedis.close();

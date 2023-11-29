@@ -5,6 +5,7 @@ import org.example.FrameworkUtils.Annotation.AutunmnBean;
 import org.example.FrameworkUtils.Annotation.EnableAop;
 import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyConditional;
+import org.example.FrameworkUtils.Annotation.MyConfig;
 import org.example.FrameworkUtils.Annotation.MyMapper;
 import org.example.FrameworkUtils.Annotation.MyService;
 import org.example.FrameworkUtils.Annotation.Value;
@@ -97,37 +98,43 @@ public class MyContext {
         for (Class<?> clazz : this.iocContainer) {
             initBean(clazz);
         }
-        for (Class<?> clazz : this.iocContainer) {
-            initBean(clazz);
-        }
-
     }
 
     private void initBean(Class<?> clazz) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
         Object bean = getBean(clazz);
         if (bean != null) {
             autowireBeanProperties(bean);
-            autunmnBeanProperties(bean,clazz);
         }
 
     }
 
-    private void autunmnBeanProperties(Object bean,Class clazz) throws InvocationTargetException, IllegalAccessException {
-        Method[] methods = clazz.getDeclaredMethods();
-        for (Method method : methods) {
-            if (method.getAnnotation(AutunmnBean.class) != null) {
-                log.info("发现一个@AutumnBean注解,加入到一级缓存");
-                Object o=method.invoke(bean);
-                earlySingletonObjects.put(o.getClass(),o);
+    //xxx:遍历set去填充第三缓存
+    public void registerBeanDefinition(Set<Class<?>> beanDefinitionMap) throws InvocationTargetException, IllegalAccessException {
+        for (Class<?> beanClass : beanDefinitionMap) {
+            ObjectFactory<?> beanFactory = createBeanFactory(beanClass);
+            singletonFactories.put(beanClass.getName(), beanFactory);
+            if (beanClass.getAnnotation(MyConfig.class) != null) {
+                Method[] methods = beanClass.getDeclaredMethods();
+                for (Method method : methods) {
+                    if (method.getAnnotation(AutunmnBean.class) != null) {
+                        singletonFactories.put(method.getReturnType().getName(), createBeanFactory(beanClass,method));
+                    }
+                }
             }
         }
     }
 
-    //xxx:遍历set去填充第三缓存
-    public void registerBeanDefinition(Set<Class<?>> beanDefinitionMap) {
-        for (Class<?> beanClass : beanDefinitionMap) {
-            ObjectFactory<?> beanFactory = createBeanFactory(beanClass);
-            singletonFactories.put(beanClass.getName(), beanFactory);
+    private Object createAutumnBeanInstance(Class<?> beanClass, Method method) {
+        System.out.println("用户手动注入Bean");
+        try {
+            //xxx:第三级缓存拿到自己的原始对象
+            Object magicBean=getBean(beanClass);
+            //xxx:对自己进行依赖注入
+            autowireBeanProperties(magicBean);
+            //xxx:用成熟的自己来反射执行方法
+            return method.invoke(magicBean);
+        } catch (Exception e) {
+            throw new RuntimeException("创建普通bean实例失败,请检查你是否存在一个有参构造器,有的话创建一个无参构造器", e);
         }
     }
     //xxx:判断使用哪种工厂
@@ -136,11 +143,17 @@ public class MyContext {
             return () -> createMapperBeanInstance(beanClass);
         } else if (beanClass.getAnnotation(EnableAop.class) != null) {
             return () -> createAopBeanInstance(beanClass);
-        } else {
+        }  else {
             return () -> createBeanInstance(beanClass);
         }
 
     }
+
+    private ObjectFactory<?> createBeanFactory(Class<?> beanClass, Method method) {
+        return () -> createAutumnBeanInstance(beanClass,method);
+    }
+
+
 
     //xxx:Aop工厂
     private Object createAopBeanInstance(Class<?> beanClass) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
@@ -153,7 +166,7 @@ public class MyContext {
         try{
             return aopProxyFactory.create(clazz ,beanClass,methods);
         }catch (Exception e){
-            throw new RuntimeException("解析注解错误,保证Aop配置类可以被实例化\n创建cglibbean实例失败", e);
+            throw new RuntimeException("解析注解错误,保证Aop配置类可以被实例化\n创建CgLibBean实例失败", e);
         }
 
     }
