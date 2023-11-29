@@ -1,10 +1,11 @@
 package org.example.FrameworkUtils;
 
 import lombok.extern.slf4j.Slf4j;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
+
 import org.example.FrameworkUtils.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnMVC.AutunmnAopFactory;
+import org.springframework.cglib.proxy.Enhancer;
+import org.springframework.cglib.proxy.MethodInterceptor;
 
 import java.util.Arrays;
 

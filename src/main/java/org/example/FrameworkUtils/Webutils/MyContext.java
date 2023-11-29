@@ -35,6 +35,7 @@ public class MyContext {
         T getObject() throws Exception;
     }
 
+
     private static volatile MyContext instance;
 
     private MyContext() {
@@ -94,7 +95,6 @@ public class MyContext {
     public void initIocCache(Set<Class<?>> prototypeIocContainer) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
         this.iocContainer = prototypeIocContainer;
         registerBeanDefinition(this.iocContainer);
-        log.info(singletonFactories.toString());
         for (Class<?> clazz : this.iocContainer) {
             initBean(clazz);
         }
@@ -125,7 +125,6 @@ public class MyContext {
     }
 
     private Object createAutumnBeanInstance(Class<?> beanClass, Method method) {
-        System.out.println("用户手动注入Bean");
         try {
             //xxx:第三级缓存拿到自己的原始对象
             Object magicBean=getBean(beanClass);
@@ -157,7 +156,6 @@ public class MyContext {
 
     //xxx:Aop工厂
     private Object createAopBeanInstance(Class<?> beanClass) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        System.out.println("CgLib动态代理Bean");
         String[] methods=beanClass.getAnnotation(EnableAop.class).getMethod();
         Class<?> clazz = beanClass.getAnnotation(EnableAop.class).getClassFactory();
         if(clazz==null || methods==null || methods.length==0){
@@ -174,7 +172,6 @@ public class MyContext {
 
     //xxx:普通bean工厂
     private Object createBeanInstance(Class<?> beanClass) {
-        System.out.println("普通bean");
         try {
             return beanClass.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
@@ -184,7 +181,6 @@ public class MyContext {
 
     //xxx:MapperBean工厂
     private Object createMapperBeanInstance(Class<?> beanClass) {
-        System.out.println("MapperBean动态代理Bean");
         try {
             return MapperUtils.init(beanClass);
         } catch (Exception e) {
@@ -343,7 +339,6 @@ public class MyContext {
             field.setAccessible(true);
             Object convertedValue = convertStringToType(propertyValue, field.getType());
             field.set(instance, convertedValue);
-            log.warn("注入配置文件  @value, key: " + value.value() + "  value: " + propertyValue);
         } catch (Exception e) {
             log.error("依赖注入失败：" + e.getMessage());
         }

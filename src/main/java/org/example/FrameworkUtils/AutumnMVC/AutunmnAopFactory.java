@@ -1,8 +1,8 @@
 package org.example.FrameworkUtils.AutumnMVC;
 
-import net.sf.cglib.proxy.MethodProxy;
 
-import java.lang.reflect.InvocationTargetException;
+import org.springframework.cglib.proxy.MethodProxy;
+
 import java.lang.reflect.Method;
 
 /**

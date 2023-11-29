@@ -223,11 +223,22 @@ public class SocketServer {
     public  void handleSocketOutputByType(Class classType, Socket clientSocket, Object result) throws IOException, IllegalAccessException {
         if (classType == View.class) {
             htmlResponse.outPutHtmlWriter(clientSocket, ((View) result).getHtmlName());
-        } else if (classType == String.class) {
-            htmlResponse.outPutMessageWriter(clientSocket, 200, result.toString());
         } else if (classType == Icon.class) {
             htmlResponse.outPutIconWriter(clientSocket, ((Icon) result).getIconName());
         } else if (Map.class.isAssignableFrom(classType)) {
+            htmlResponse.outPutMessageWriter(clientSocket, 200, jsonFormatter.toJson(result));
+        } else if (classType.isPrimitive() ||
+                classType.equals(String.class) ||
+                classType.equals(Boolean.class) ||
+                classType.equals(Integer.class) ||
+                classType.equals(Character.class) ||
+                classType.equals(Byte.class) ||
+                classType.equals(Short.class) ||
+                classType.equals(Double.class) ||
+                classType.equals(Long.class) ||
+                classType.equals(Float.class)) {
+            htmlResponse.outPutMessageWriter(clientSocket, 200, result.toString());
+        } else {
             htmlResponse.outPutMessageWriter(clientSocket, 200, jsonFormatter.toJson(result));
         }
     }

@@ -1,9 +1,7 @@
 package org.example.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
+
 import org.example.Bean.Department;
 import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyController;

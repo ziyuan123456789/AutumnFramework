@@ -1,9 +1,9 @@
 package org.example.Aop;
 
 import lombok.extern.slf4j.Slf4j;
-import net.sf.cglib.proxy.MethodProxy;
 import org.example.FrameworkUtils.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnMVC.AutunmnAopFactory;
+import org.springframework.cglib.proxy.MethodProxy;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

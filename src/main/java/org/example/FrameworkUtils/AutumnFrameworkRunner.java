@@ -35,6 +35,10 @@ public class AutumnFrameworkRunner {
                 componentScan(mainClass, myContext);
             } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | NoSuchFieldException e) {
                 throw new RuntimeException(e);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            } catch (InstantiationException e) {
+                throw new RuntimeException(e);
             }
             ConcurrentHashMap<String, String> urlMap = new ConcurrentHashMap<>();
             Map<Class<?>, Object> iocContainer = myContext.getIocContainer();
@@ -85,7 +89,7 @@ public class AutumnFrameworkRunner {
         t.start();
     }
 
-    private void componentScan(Class<?> mainClass, MyContext myContext) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+    private void componentScan(Class<?> mainClass, MyContext myContext) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException, ClassNotFoundException, InstantiationException {
         AnnotationScanner scanner = new AnnotationScanner();
         List<Class<? extends Annotation>> annotations = new ArrayList<>();
         annotations.add(MyController.class);
@@ -94,7 +98,6 @@ public class AutumnFrameworkRunner {
         annotations.add(MyMapper.class);
         annotations.add(MyConfig.class);
         Set<Class<?>> annotatedClasses = scanner.findAnnotatedClassesList(mainClass.getPackageName(), annotations);
-        log.info("扫描如下注解:\t" + annotatedClasses);
         myContext.initIocCache(annotatedClasses);
     }
 

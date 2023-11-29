@@ -40,11 +40,10 @@
 
 <!--动态代理库-->
         <dependency>
-            <groupId>cglib</groupId>
-            <artifactId>cglib</artifactId>
-            <version>3.3.0</version>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>5.3.15</version>
         </dependency>
-
 <!--        lombok-->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -70,17 +69,33 @@
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.33</version>
         </dependency>
-<!--        log-->
+            <!-- SLF4J API -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.0.5</version>
+            <version>1.7.32</version> <!-- 使用与 Lombok 兼容的版本 -->
+        </dependency>
+
+        <!-- Log4j SLF4J Binding -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>2.14.1</version> <!-- 使用与 SLF4J 1.7.x 兼容的版本 -->
+        </dependency>
+
+        <!-- Log4j API and Core -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>2.14.1</version>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>2.0.5</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.14.1</version>
         </dependency>
+        </dependencies>
+
 <!--        单元测试-->
         <dependency>
             <groupId>junit</groupId>
@@ -89,8 +104,6 @@
             <scope>test</scope>
         </dependency>
 
-
-    </dependencies>
     <properties>
         <maven.compiler.source>13</maven.compiler.source>
         <maven.compiler.target>13</maven.compiler.target>
