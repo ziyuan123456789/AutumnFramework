@@ -1,8 +1,10 @@
 package org.example.controller;
+import javassist.expr.NewArray;
 import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
 import org.example.Aop.UserAopProxyFactory;
 import org.example.Bean.Temp;
+import org.example.Bean.User;
 import org.example.FrameworkUtils.Annotation.EnableAop;
 import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyController;
@@ -17,6 +19,7 @@ import org.example.FrameworkUtils.Webutils.Request;
 import org.example.service.LoginService;
 import org.example.service.TestService;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,6 +51,18 @@ public class AdminController {
 
     @MyAutoWired
     MyReidsTemplate myReidsTemplate;
+
+    @MyRequestMapping("/map")
+    public String maptest(Request request) throws IllegalAccessException {
+        Map<String,Integer>myMap =new HashMap<>();
+        myMap.put("user",123);
+        myMap.put("password",456);
+        User u=new User();
+        u.setUsername("123");
+        u.setPassword("123");
+        return jsonFormatter.toJson(myMap);
+    }
+
     @MyRequestMapping("/redis")
     public String redis(Request request) {
         myReidsTemplate.init();
@@ -102,15 +117,7 @@ public class AdminController {
         return Thread.currentThread().getName();
     }
 
-    @MyRequestMapping("/cglib")
-    public String cglib(Request request) {
-        Map<String,String> map = new HashMap<>();
-        map.put("name","cglib");
-        map.put("password","42");
-        map.put("qdsa","714");
 
-        return jsonFormatter.mapTojson(map);
-    }
     @MyRequestMapping("/testt")
     public String sayHello(){
         return sqlUrl;

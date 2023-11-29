@@ -10,5 +10,5 @@ import lombok.Getter;
 
 @Data
 public class CrossOriginBean {
-    private String[] origins;
+    private String origins;
 }

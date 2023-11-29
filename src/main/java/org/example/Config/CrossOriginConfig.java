@@ -14,11 +14,6 @@ import org.example.mapper.TestMapper;
  */
 @MyConfig
 public class CrossOriginConfig {
-    @MyAutoWired
-    TestMapper testMapper;
-    @AutunmnBean
-    public Temp beanTest(){
-        return  testMapper.selectById1(1);
-    }
+
 
 }

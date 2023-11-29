@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 /**
  * @author wangzhiyi
@@ -21,12 +22,13 @@ public class HtmlResponse {
     ResourceFinder resourceFinder;
     @MyAutoWired
     CrossOriginBean crossOriginBean;
-    String [] CrossOrigin;
+
 
 
 
     //xxx:http返回报文(直接返回拼接的html文本,Content-Type: text/html)
     public void outPutMessageWriter(Socket socket, int statusCode, String responseText) throws IOException {
+        String  CrossOrigin=crossOriginBean.getOrigins();
         String responseTextWithHtml = "<html><body>" + "<h1 style='color:red'>" + responseText + "</h1>" + "</body></html>";
         byte[] responseBytes = responseTextWithHtml.getBytes(StandardCharsets.UTF_8);
 
@@ -36,7 +38,7 @@ public class HtmlResponse {
         responseHeader.append("Content-Type: text/html;charset=UTF-8\r\n");
         responseHeader.append("Content-Length: ").append(responseBytes.length).append("\r\n");
         responseHeader.append("Connection: close\r\n");
-        responseHeader.append("Access-Control-Allow-Origin: *\r\n");
+        responseHeader.append("Access-Control-Allow-Origin: ").append(CrossOrigin).append("\r\n");
         responseHeader.append("\r\n");
         try (OutputStream out = socket.getOutputStream()) {
             out.write(responseHeader.toString().getBytes(StandardCharsets.UTF_8));
