@@ -1,4 +1,4 @@
-package org.example.FrameworkUtils.AutumnMVC;
+package org.example.FrameworkUtils.AutumnMVC.AutoConfiguration;
 
 import org.example.FrameworkUtils.ResponseWriter.CrossOriginBean;
 

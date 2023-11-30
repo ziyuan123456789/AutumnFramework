@@ -70,7 +70,7 @@ public class DataController {
         System.out.println(request.getUrl());
         System.out.println(request.getMethod());
         System.out.println(str);
-        return str;
+        return "test";
     }
 
     @MyRequestMapping("/test0")

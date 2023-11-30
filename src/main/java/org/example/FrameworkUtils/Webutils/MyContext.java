@@ -6,12 +6,13 @@ import org.example.FrameworkUtils.Annotation.EnableAop;
 import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyConditional;
 import org.example.FrameworkUtils.Annotation.MyConfig;
-import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
 import org.example.FrameworkUtils.Annotation.MyService;
 import org.example.FrameworkUtils.Annotation.Value;
 import org.example.FrameworkUtils.AopProxyFactory;
+import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Orm.MineBatis.Jdbcinit;
 import org.example.FrameworkUtils.Orm.MineBatis.MapperUtils;
+import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
@@ -60,7 +61,7 @@ public class MyContext {
     //xxx: 二级缓存提前暴露的还未完全成熟的bean,用于解决循环依赖
     private final Map<Class<?>, Object> earlySingletonObjects = new ConcurrentHashMap<>();
 
-    //xxx: 三级缓存：对象工厂,创建代理/普通bean
+    //xxx: 三级缓存：对象工厂,创建Jdk代理/CgLib代理/配置类Bean/普通bean
     private final Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();
     private Jdbcinit jdbcinit = new Jdbcinit();
     private Properties properties = jdbcinit.initProperties();
@@ -79,6 +80,7 @@ public class MyContext {
                 if (singletonFactory != null) {
                     try {
                         singletonObject = singletonFactory.getObject();
+                        //xxx:生产对象后从第三级移除,进入第二级缓存
                         earlySingletonObjects.put(beanClass, singletonObject);
                         singletonFactories.remove(beanClass.getName());
                     } catch (Exception e) {
@@ -94,7 +96,9 @@ public class MyContext {
     //xxx:初始化第三缓存
     public void initIocCache(Set<Class<?>> prototypeIocContainer) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
         this.iocContainer = prototypeIocContainer;
+        //xxx:填充第三级缓存
         registerBeanDefinition(this.iocContainer);
+        //xxx:缓存添加好后,遍历外界传递的Set,对Bean进行初始化
         for (Class<?> clazz : this.iocContainer) {
             initBean(clazz);
         }
@@ -103,16 +107,18 @@ public class MyContext {
     private void initBean(Class<?> clazz) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
         Object bean = getBean(clazz);
         if (bean != null) {
+            //xxx:依赖注入开始
             autowireBeanProperties(bean);
         }
 
     }
 
     //xxx:遍历set去填充第三缓存
-    public void registerBeanDefinition(Set<Class<?>> beanDefinitionMap) throws InvocationTargetException, IllegalAccessException {
+    public void registerBeanDefinition(Set<Class<?>> beanDefinitionMap) {
         for (Class<?> beanClass : beanDefinitionMap) {
             ObjectFactory<?> beanFactory = createBeanFactory(beanClass);
             singletonFactories.put(beanClass.getName(), beanFactory);
+            //xxx:查找带@AutunmnBean的字段,生成工厂放入第三缓存
             if (beanClass.getAnnotation(MyConfig.class) != null) {
                 Method[] methods = beanClass.getDeclaredMethods();
                 for (Method method : methods) {
@@ -148,10 +154,10 @@ public class MyContext {
 
     }
 
+    //xxx:判断器重载
     private ObjectFactory<?> createBeanFactory(Class<?> beanClass, Method method) {
         return () -> createAutumnBeanInstance(beanClass,method);
     }
-
 
 
     //xxx:Aop工厂
@@ -188,62 +194,58 @@ public class MyContext {
         }
     }
 
-    //xxx:注入器,递归深层注入/循环引用
-    public void autowireBeanProperties(Object bean) throws NoSuchFieldException, IllegalAccessException {
-        Class<?> beanClass = bean.getClass();
-        if(beanClass.getName().contains("$$")){
-            Class parentClass = bean.getClass().getSuperclass();
-            for (Field field : parentClass.getDeclaredFields()) {
-                if (field.isAnnotationPresent(MyAutoWired.class)){
-                    injectValueAnnotationByAutowired(field,bean,beanClass);
-                }else if (field.isAnnotationPresent(Value.class)){
-                    injectValueAnnotation(bean, field);
-                }
+    //xxx:di部分:
+
+    public void autowireBeanProperties(Object bean) throws IllegalAccessException, NoSuchFieldException {
+        //xxx:是否为CgLib代理类?,是的话因为子类不能继承父类字段等注解,需要去父类身上查找
+        Class<?> clazz = bean.getClass().getName().contains("$$")
+                ? bean.getClass().getSuperclass() : bean.getClass();
+
+        for (Field field : clazz.getDeclaredFields()) {
+            //xxx:标记@auto wired进行对象/接口依赖注入
+            if (field.isAnnotationPresent(MyAutoWired.class)) {
+                injectDependencies(bean, field);
+            }
+            //xxx:进行配置文件注入
+            else if (field.isAnnotationPresent(Value.class)) {
+                injectValueAnnotation(bean, field);
             }
         }
-        for (Field field : beanClass.getDeclaredFields()) {
+        //xxx:依赖注入后更新缓存,这个bean从第二缓存移除,进入一级缓存,提前暴露期转为成熟的AutumnBean
+        singletonObjects.put(bean.getClass(), bean);
+        earlySingletonObjects.remove(bean.getClass());
+    }
 
-            if (field.isAnnotationPresent(MyAutoWired.class)) {
-                if (field.getType().isInterface()) {
-                    if (field.getType().getAnnotation(MyMapper.class) == null) {
-                        String packageName = (String) get("packageUrl");
-                        Reflections reflections = new Reflections(packageName, new SubTypesScanner(false));
-                        Set<Class<?>> subTypesOf = (Set<Class<?>>) reflections.getSubTypesOf(field.getType());
-                        if (subTypesOf.size() > 1) {
-                            if(subTypesOf.size()==2){
-                                Iterator<Class<?>> it = subTypesOf.iterator();
-                                while (it.hasNext()){
-                                    Class nextclass = it.next();
-                                    if(nextclass.getAnnotation(MyService.class)!=null && nextclass.getAnnotation(MyConditional.class)==null) {
-                                        Object dependency = getBean(nextclass);
-                                        if (dependency == null) {
-                                            throw new RuntimeException("无法解析的依赖：" + nextclass);
-                                        }
-                                        field.setAccessible(true);
-                                        try {
-                                            field.set(bean, dependency);
-                                        } catch (IllegalAccessException e) {
-                                            throw new RuntimeException("无法注入依赖：" + field.getName(), e);
-                                        }
-                                        singletonObjects.put(beanClass, bean);
-                                        earlySingletonObjects.remove(beanClass);
-                                        return;
-                                    }
-                                }
-                            }
-                            else {
-                                throw new RuntimeException("多个实现类" + subTypesOf);
-                            }
+    private void injectDependencies(Object bean, Field field) throws IllegalAccessException {
+        Class<?> fieldType = field.getType();
+        //xxx:接口,还是不是mapper
+        if (fieldType.isInterface() && fieldType.getAnnotation(MyMapper.class) == null) {
+            //xxx:进入查找实现类环节
+            injectInterfaceTypeDependency(bean, field);
+        } else {
+            //xxx:正常的Bean
+            injectNormalDependency(bean, field);
+        }
+    }
 
-                        }
-                        Class<?> firstImplementation = null;
-                        if (!subTypesOf.isEmpty()) {
-                            firstImplementation = subTypesOf.iterator().next();
-                        }
-                        Class<?> dependencyType = firstImplementation;
-                        Object dependency = getBean(dependencyType);
+
+    private void injectInterfaceTypeDependency(Object bean, Field field) throws IllegalAccessException {
+        //xxx:从容器取出扫描到启动类的package
+        String packageName = (String) get("packageUrl");
+        Reflections reflections = new Reflections(packageName, new SubTypesScanner(false));
+        //xxx:得到这个接口的所有实现类
+        Set<Class<?>> subTypesOf = (Set<Class<?>>) reflections.getSubTypesOf(field.getType());
+        if (subTypesOf.size() > 1) {
+            //xxx:当有多个实现类,框架会检测他是否是一个自动配置的service,负责一些框架的默认操作,进行条件注解的检测
+            //xxx:当条件判断过后进行选择性实例化,最终还是只有一个实现类
+            if (subTypesOf.size() == 2) {
+                Iterator<Class<?>> it = subTypesOf.iterator();
+                while (it.hasNext()) {
+                    Class nextclass = it.next();
+                    if (nextclass.getAnnotation(MyService.class) != null && nextclass.getAnnotation(MyConditional.class) == null) {
+                        Object dependency = getBean(nextclass);
                         if (dependency == null) {
-                            throw new RuntimeException("无法解析的依赖：" + dependencyType.getName());
+                            throw new BeanCreationException("不存在这个Bean,没有被扫描到" + nextclass);
                         }
                         field.setAccessible(true);
                         try {
@@ -251,77 +253,37 @@ public class MyContext {
                         } catch (IllegalAccessException e) {
                             throw new RuntimeException("无法注入依赖：" + field.getName(), e);
                         }
-                        singletonObjects.put(beanClass, bean);
-                        earlySingletonObjects.remove(beanClass);
-                        return;
-                        }
+
 
                     }
-
-                Class<?> dependencyType = field.getType();
-                Object dependency = getBean(dependencyType);
-                if (dependency == null) {
-                    log.error("无法解析的依赖：" + dependencyType.getName());
-//                    throw new RuntimeException("无法解析的依赖：" + dependencyType.getName());
                 }
-                field.setAccessible(true);
-                try {
-                    field.set(bean, dependency);
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException("无法注入依赖：" + field.getName(), e);
-                }
-
-            } else if (field.isAnnotationPresent(Value.class)) {
-                injectValueAnnotation(bean, field);
+            } else {
+                throw new BeanCreationException("多个实现类" + subTypesOf);
             }
+
         }
-        singletonObjects.put(beanClass, bean);
-        earlySingletonObjects.remove(beanClass);
+        Class<?> dependencyType = subTypesOf.isEmpty() ? null : subTypesOf.iterator().next();
+        Object dependency = getBean(dependencyType);
+        if (dependency == null) {
+            throw new RuntimeException("无法解析的依赖：" + dependencyType.getName());
+        }
+        field.setAccessible(true);
+        field.set(bean, dependency);
     }
 
-    private void injectValueAnnotationByAutowired(Field field,Object bean,Class<?> beanClass){
-        if (field.getType().isInterface()) {
-            if (field.getType().getAnnotation(MyMapper.class) == null) {
-                String packageName = (String) get("packageUrl");
-                Reflections reflections = new Reflections(packageName, new SubTypesScanner(false));
-                Set<Class<?>> subTypesOf = (Set<Class<?>>) reflections.getSubTypesOf(field.getType());
-                if(subTypesOf.size()>1){
-                    throw new RuntimeException("多个实现类" + subTypesOf);
-                }
-                Class<?> firstImplementation = null;
-                if (!subTypesOf.isEmpty()) {
-                    firstImplementation = subTypesOf.iterator().next();
-                }
-                Class<?> dependencyType = firstImplementation;
-                Object dependency = getBean(dependencyType);
-                if (dependency == null) {
-                    throw new RuntimeException("无法解析的依赖：" + dependencyType.getName());
-                }
-                field.setAccessible(true);
-                try {
-                    field.set(bean, dependency);
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException("无法注入依赖：" + field.getName(), e);
-                }
-                singletonObjects.put(beanClass, bean);
-                earlySingletonObjects.remove(beanClass);
-                return ;
-            }
-        }
+    //xxx:注入一般Bean,依照字段查找类,从容器取出为字段赋值
+    private void injectNormalDependency(Object bean, Field field) throws IllegalAccessException {
         Class<?> dependencyType = field.getType();
         Object dependency = getBean(dependencyType);
         if (dependency == null) {
-            log.warn("无法解析的依赖"+ dependencyType.getName());
-//            throw new RuntimeException("无法解析的依赖：" + dependencyType.getName());
+            log.warn("无法解析的依赖：" + dependencyType.getName());
+            return;
         }
         field.setAccessible(true);
-        try {
-            field.set(bean, dependency);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("无法注入依赖：" + field.getName(), e);
-        }
+        field.set(bean, dependency);
     }
 
+    //xxx:注入配置文件
     private void injectValueAnnotation(Object instance, Field field) throws NoSuchFieldException {
         Value value = field.getAnnotation(Value.class);
         if (value == null || "".equals(value.value())) {
@@ -345,7 +307,7 @@ public class MyContext {
         }
 
 
-
+    //xxx:配置文件编码器
     private Object convertStringToType(String value, Class<?> type) {
         if (Integer.TYPE.equals(type) || Integer.class.equals(type)) {
             return Integer.parseInt(value);

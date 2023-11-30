@@ -1,8 +1,7 @@
 package org.example.Config;
 
 import org.example.FrameworkUtils.Annotation.MyConfig;
-import org.example.FrameworkUtils.Annotation.MyService;
-import org.example.FrameworkUtils.AutumnMVC.AutumnMvcConfiguration;
+import org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutumnMvcConfiguration;
 import org.example.FrameworkUtils.ResponseType.Views.View;
 
 /**

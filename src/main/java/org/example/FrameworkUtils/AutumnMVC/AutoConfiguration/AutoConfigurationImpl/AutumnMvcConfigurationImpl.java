@@ -1,9 +1,9 @@
-package org.example.FrameworkUtils.AutumnMVC.MvcImpl;
+package org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutoConfigurationImpl;
 
 import org.example.FrameworkUtils.Annotation.MyConditional;
 import org.example.FrameworkUtils.Annotation.MyService;
 import org.example.FrameworkUtils.Annotation.Value;
-import org.example.FrameworkUtils.AutumnMVC.AutumnMvcConfiguration;
+import org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutumnMvcConfiguration;
 import org.example.FrameworkUtils.ResponseType.Views.View;
 
 /**
@@ -11,7 +11,7 @@ import org.example.FrameworkUtils.ResponseType.Views.View;
  * @since 2023.11
  */
 @MyService
-@MyConditional(AutumnMvcConfiguration.class)
+@MyConditional(MatchClassByInterface.class)
 public class AutumnMvcConfigurationImpl implements AutumnMvcConfiguration{
     @Value("baseHtml")
     String baseHtml;

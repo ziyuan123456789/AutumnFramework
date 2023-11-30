@@ -1,11 +1,10 @@
-package org.example.FrameworkUtils.AutumnMVC.MvcImpl;
+package org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutoConfigurationImpl;
 
 import org.example.FrameworkUtils.Annotation.AutunmnBean;
-import org.example.FrameworkUtils.Annotation.MyComponent;
 import org.example.FrameworkUtils.Annotation.MyConditional;
 import org.example.FrameworkUtils.Annotation.MyConfig;
 import org.example.FrameworkUtils.Annotation.Value;
-import org.example.FrameworkUtils.AutumnMVC.AutumnMvcCrossOriginConfig;
+import org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutumnMvcCrossOriginConfig;
 import org.example.FrameworkUtils.ResponseWriter.CrossOriginBean;
 
 /**
@@ -13,7 +12,7 @@ import org.example.FrameworkUtils.ResponseWriter.CrossOriginBean;
  * @since 2023.11
  */
 @MyConfig
-@MyConditional(AutumnMvcCrossOriginConfig.class)
+@MyConditional(MatchClassByInterface.class)
 public class AutumnMvcCrossOriginConfigImpl implements AutumnMvcCrossOriginConfig {
     CrossOriginBean crossOrigin=new CrossOriginBean();
 

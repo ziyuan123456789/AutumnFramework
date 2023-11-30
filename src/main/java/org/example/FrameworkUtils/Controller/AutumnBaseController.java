@@ -4,7 +4,7 @@ import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyController;
 import org.example.FrameworkUtils.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.Annotation.Value;
-import org.example.FrameworkUtils.AutumnMVC.AutumnMvcConfiguration;
+import org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutumnMvcConfiguration;
 import org.example.FrameworkUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.Webutils.Request;

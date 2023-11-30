@@ -17,6 +17,7 @@ import org.example.FrameworkUtils.Webutils.Json.JsonFormatter;
 import org.example.FrameworkUtils.Webutils.MyContext;
 import org.example.FrameworkUtils.Webutils.Request;
 import org.example.service.LoginService;
+import org.example.service.Test2Service;
 import org.example.service.TestService;
 
 import java.util.ArrayList;
@@ -33,6 +34,12 @@ import java.util.Map;
 public class AdminController {
 
     private MyContext myContext = MyContext.getInstance();
+    @MyAutoWired
+    LoginService loginService;
+    @MyAutoWired
+    TestService testService;
+    @MyAutoWired
+    Test2Service test2Service;
     @Value("url")
     String sqlUrl;
     @Value("user")
@@ -40,10 +47,7 @@ public class AdminController {
     @Value("password")
     String password;
 
-    @MyAutoWired
-    LoginService loginService;
-    @MyAutoWired
-    TestService testService;
+
 
     @MyAutoWired
     Temp t;
@@ -104,13 +108,7 @@ public class AdminController {
 
     @MyRequestMapping("/admin")
     public String adminMainPage(Request request) throws InterruptedException {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(sqlUrl)
-                .append("\t\t\t\t")
-                .append(user)
-                .append("\t\t\t")
-                .append(password);
-        return Thread.currentThread().getName();
+         return testService.print("dasda");
     }
 
 
