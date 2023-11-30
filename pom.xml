@@ -10,6 +10,7 @@
 
 
     <dependencies>
+        <!--redis驱动-->
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
@@ -47,40 +48,23 @@
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.33</version>
         </dependency>
-            <!-- SLF4J API -->
+
+
+        <!-- SLF4J门面-->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.32</version> <!-- 使用与 Lombok 兼容的版本 -->
+            <version>1.7.30</version>
         </dependency>
 
-        <!-- Log4j SLF4J Binding -->
+        <!-- Logback  -->
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <version>2.14.1</version> <!-- 使用与 SLF4J 1.7.x 兼容的版本 -->
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.3</version>
         </dependency>
+    </dependencies>
 
-        <!-- Log4j API and Core -->
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>2.14.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>2.14.1</version>
-        </dependency>
-        </dependencies>
-
-<!--        单元测试-->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
-            <scope>test</scope>
-        </dependency>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

@@ -42,9 +42,7 @@ public class AnnotationScanner {
         for (Class<? extends Annotation> annotationClass : annotationClasses) {
             Set<Class<?>> annotatedTypes = reflections.getTypesAnnotatedWith(annotationClass);
 
-            for (Class<?> clazz : annotatedTypes) {
-                annotatedClasses.add(clazz);
-            }
+            annotatedClasses.addAll(annotatedTypes);
         }
         return annotatedClasses;
     }

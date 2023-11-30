@@ -9,6 +9,7 @@ import org.example.FrameworkUtils.Annotation.MyConfig;
 import org.example.FrameworkUtils.Annotation.MyService;
 import org.example.FrameworkUtils.Annotation.Value;
 import org.example.FrameworkUtils.AopProxyFactory;
+import org.example.FrameworkUtils.AutumnMVC.Condition;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Orm.MineBatis.Jdbcinit;
 import org.example.FrameworkUtils.Orm.MineBatis.MapperUtils;
@@ -230,46 +231,39 @@ public class MyContext {
 
 
     private void injectInterfaceTypeDependency(Object bean, Field field) throws IllegalAccessException {
-        //xxx:从容器取出扫描到启动类的package
         String packageName = (String) get("packageUrl");
         Reflections reflections = new Reflections(packageName, new SubTypesScanner(false));
-        //xxx:得到这个接口的所有实现类
         Set<Class<?>> subTypesOf = (Set<Class<?>>) reflections.getSubTypesOf(field.getType());
-        if (subTypesOf.size() > 1) {
-            //xxx:当有多个实现类,框架会检测他是否是一个自动配置的service,负责一些框架的默认操作,进行条件注解的检测
-            //xxx:当条件判断过后进行选择性实例化,最终还是只有一个实现类
-            if (subTypesOf.size() == 2) {
-                Iterator<Class<?>> it = subTypesOf.iterator();
-                while (it.hasNext()) {
-                    Class nextclass = it.next();
-                    if (nextclass.getAnnotation(MyService.class) != null && nextclass.getAnnotation(MyConditional.class) == null) {
-                        Object dependency = getBean(nextclass);
-                        if (dependency == null) {
-                            throw new BeanCreationException("不存在这个Bean,没有被扫描到" + nextclass);
-                        }
-                        field.setAccessible(true);
-                        try {
-                            field.set(bean, dependency);
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException("无法注入依赖：" + field.getName(), e);
-                        }
+        Class<?> selectedImpl = null;
+        for (Class<?> implClass : subTypesOf) {
+            MyConditional myConditionalAnnotation = implClass.getAnnotation(MyConditional.class);
+            if (myConditionalAnnotation != null) {
+                Class<? extends Condition> conditionClass = myConditionalAnnotation.value();
+                Condition condition = (Condition) getBean(conditionClass);
 
-
+                if (condition.matches(getInstance(), field.getType())) {
+                    if (selectedImpl != null) {
+                        throw new BeanCreationException("找到多个符合条件的实现：" + field.getType());
                     }
+                    selectedImpl = implClass;
                 }
             } else {
-                throw new BeanCreationException("多个实现类" + subTypesOf);
+                if (selectedImpl == null) {
+                    selectedImpl = implClass;
+                }
             }
+        }
 
+        if (selectedImpl != null) {
+            Object dependency = getBean(selectedImpl);
+            field.setAccessible(true);
+            field.set(bean, dependency);
+        } else {
+            throw new BeanCreationException("无法解析的依赖：" + field.getType());
         }
-        Class<?> dependencyType = subTypesOf.isEmpty() ? null : subTypesOf.iterator().next();
-        Object dependency = getBean(dependencyType);
-        if (dependency == null) {
-            throw new RuntimeException("无法解析的依赖：" + dependencyType.getName());
-        }
-        field.setAccessible(true);
-        field.set(bean, dependency);
     }
+
+
 
     //xxx:注入一般Bean,依照字段查找类,从容器取出为字段赋值
     private void injectNormalDependency(Object bean, Field field) throws IllegalAccessException {

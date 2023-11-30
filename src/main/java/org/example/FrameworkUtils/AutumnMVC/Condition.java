@@ -11,5 +11,5 @@ public interface Condition {
     default void init() {
     }
 
-    boolean matches(MyContext context,Class<?> clazz);
+    boolean matches(MyContext myContext, Class<?> clazz);
 }
