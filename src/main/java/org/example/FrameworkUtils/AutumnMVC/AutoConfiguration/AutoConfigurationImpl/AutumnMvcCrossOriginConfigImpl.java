@@ -8,7 +8,7 @@ import org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutumnMvcCrossOrig
 import org.example.FrameworkUtils.ResponseWriter.CrossOriginBean;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.11
  */
 @MyConfig

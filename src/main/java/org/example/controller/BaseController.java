@@ -1,7 +1,7 @@
 package org.example.controller;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.11
  */
 public class BaseController {

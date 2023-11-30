@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.10
  */
 public class ThreadServer implements Server{

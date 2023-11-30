@@ -6,7 +6,7 @@ import org.example.FrameworkUtils.Annotation.MyParam;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MySelect;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.11
  */
 @MyMapper

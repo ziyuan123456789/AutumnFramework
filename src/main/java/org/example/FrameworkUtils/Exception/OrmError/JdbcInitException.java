@@ -1,7 +1,7 @@
 package org.example.FrameworkUtils.Exception.OrmError;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.11
  */
 public class JdbcInitException extends RuntimeException {

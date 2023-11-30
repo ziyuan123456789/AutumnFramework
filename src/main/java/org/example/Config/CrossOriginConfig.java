@@ -9,7 +9,7 @@ import org.example.FrameworkUtils.Annotation.MyService;
 import org.example.mapper.TestMapper;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.10
  */
 @MyConfig

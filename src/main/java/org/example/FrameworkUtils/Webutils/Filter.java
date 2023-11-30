@@ -1,7 +1,7 @@
 package org.example.FrameworkUtils.Webutils;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.10
  */
 public interface Filter {

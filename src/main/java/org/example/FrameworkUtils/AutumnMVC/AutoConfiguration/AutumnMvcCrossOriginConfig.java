@@ -3,7 +3,7 @@ package org.example.FrameworkUtils.AutumnMVC.AutoConfiguration;
 import org.example.FrameworkUtils.ResponseWriter.CrossOriginBean;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.11
  */
 public interface AutumnMvcCrossOriginConfig {

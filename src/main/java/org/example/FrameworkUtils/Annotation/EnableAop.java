@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.11
  */
 @Target({ElementType.PARAMETER,ElementType.TYPE})

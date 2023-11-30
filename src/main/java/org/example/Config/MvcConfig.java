@@ -5,7 +5,7 @@ import org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutumnMvcConfigura
 import org.example.FrameworkUtils.ResponseType.Views.View;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.11
  */
 @MyConfig

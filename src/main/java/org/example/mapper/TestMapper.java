@@ -8,7 +8,7 @@ import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MySelect;
 import java.util.List;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.10
  */
 @MyMapper

@@ -1,7 +1,7 @@
 package org.example.FrameworkUtils.Exception;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.11
  */
 public class NoAvailableUrlMappingException extends RuntimeException{

@@ -3,7 +3,7 @@ package org.example.Bean;
 import lombok.Data;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.10
  */
 @Data

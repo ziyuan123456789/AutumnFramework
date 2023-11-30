@@ -3,7 +3,7 @@ package org.example.FrameworkUtils.ResponseType;
 import lombok.Data;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.11
  */
 @Data

@@ -9,7 +9,7 @@ import org.example.mapper.TestMapper;
 import org.example.mapper.UserMapper;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.11
  */
 @MyConfig

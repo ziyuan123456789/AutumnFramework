@@ -8,10 +8,6 @@ import org.example.FrameworkUtils.Webutils.MyContext;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
-/**
- * @author wangzhiyi
- * @since 2023.11
- */
 @MyConfig
 @Slf4j
 public class AutoConfigurationBeans {

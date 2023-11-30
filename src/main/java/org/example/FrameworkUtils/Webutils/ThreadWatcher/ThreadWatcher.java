@@ -5,7 +5,7 @@ import org.example.Main;
 import org.example.FrameworkUtils.AutumnFrameworkRunner;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.10
  */
 @Slf4j

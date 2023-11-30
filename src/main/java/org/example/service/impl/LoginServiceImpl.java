@@ -7,7 +7,7 @@ import org.example.mapper.UserMapper;
 import org.example.service.LoginService;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.11
  */
 @MyService

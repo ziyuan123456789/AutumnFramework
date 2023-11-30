@@ -3,7 +3,7 @@ package org.example.FrameworkUtils.Exception;
 import java.net.Socket;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.11
  */
 public interface ExceptionHandler {

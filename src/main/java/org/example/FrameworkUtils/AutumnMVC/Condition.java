@@ -3,7 +3,7 @@ package org.example.FrameworkUtils.AutumnMVC;
 import org.example.FrameworkUtils.Webutils.MyContext;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.11
  */
 @FunctionalInterface

@@ -5,7 +5,7 @@ import org.example.FrameworkUtils.Annotation.Value;
 import redis.clients.jedis.Jedis;
 
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.11
  */
 @MyComponent

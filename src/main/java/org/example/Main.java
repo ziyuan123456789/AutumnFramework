@@ -3,7 +3,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnFrameworkRunner;
 @Slf4j
 /**
- * @author wangzhiyi
+ * @author ziyuan
  * @since 2023.10
  */
 public class Main {
