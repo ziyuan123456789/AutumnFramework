@@ -36,6 +36,7 @@ public class MatchClassByInterface implements Condition {
 
                 if (condition.matches(myContext, implClass)) {
                     return false;
+
                 }
             }
         }
