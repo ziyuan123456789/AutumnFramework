@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.Annotation.MyComponent;
 import org.example.FrameworkUtils.Annotation.MyConfig;
 import org.example.FrameworkUtils.Annotation.MyController;
+import org.example.FrameworkUtils.AutumnMVC.AutunmnAopFactory;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
 import org.example.FrameworkUtils.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.Annotation.MyService;
@@ -24,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2023.10
  */
 @Slf4j
-
 public class AutumnFrameworkRunner {
 
     public void run(Class<?> mainClass, String[] args) {
@@ -98,7 +98,11 @@ public class AutumnFrameworkRunner {
         annotations.add(MyMapper.class);
         annotations.add(MyConfig.class);
         Set<Class<?>> annotatedClasses = scanner.findAnnotatedClassesList(mainClass.getPackageName(), annotations);
+        long startTime = System.currentTimeMillis();
+        log.info("ioc容器开始初始化");
         myContext.initIocCache(annotatedClasses);
+        long endTime = System.currentTimeMillis();
+        log.info("容器花费了：" + (endTime - startTime) + " 毫秒实例化");
     }
 
 }

@@ -1,6 +1,5 @@
 package org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutoConfigurationImpl;
 
-import javassist.tools.reflect.Reflection;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.Annotation.AutunmnBean;
 import org.example.FrameworkUtils.Annotation.MyConfig;
@@ -12,12 +11,13 @@ import org.reflections.scanners.SubTypesScanner;
 @Slf4j
 public class AutoConfigurationBeans {
     private MyContext myContext=MyContext.getInstance();
-     String packageName = (String) myContext.get("packageUrl");
+    String packageName = (String) myContext.get("packageUrl");
 
     @AutunmnBean
     @SuppressWarnings("deprecation")
     public Reflections getReflection() {
         log.warn("AutunmnBean初始化");
+        System.out.println(packageName);
         return new Reflections(packageName,new SubTypesScanner(false));
     }
 

@@ -140,7 +140,7 @@ public class MyContext {
             //xxx:用成熟的自己来反射执行方法
             return method.invoke(magicBean);
         } catch (Exception e) {
-            throw new RuntimeException("创建普通bean实例失败,请检查你是否存在一个有参构造器,有的话创建一个无参构造器", e);
+            throw new RuntimeException("创建@bean标注的bean实例失败,请检查你是否存在一个有参构造器,有的话创建一个无参构造器", e);
         }
     }
     //xxx:判断使用哪种工厂
@@ -217,7 +217,7 @@ public class MyContext {
         earlySingletonObjects.remove(bean.getClass());
     }
 
-    private void injectDependencies(Object bean, Field field) throws IllegalAccessException {
+    private void injectDependencies(Object bean, Field field) throws IllegalAccessException, NoSuchFieldException {
         Class<?> fieldType = field.getType();
         //xxx:接口,还是不是mapper
         if (fieldType.isInterface() && fieldType.getAnnotation(MyMapper.class) == null) {
@@ -230,7 +230,7 @@ public class MyContext {
     }
 
 
-    private void injectInterfaceTypeDependency(Object bean, Field field) throws IllegalAccessException {
+    private void injectInterfaceTypeDependency(Object bean, Field field) throws IllegalAccessException, NoSuchFieldException {
         String packageName = (String) get("packageUrl");
         Reflections reflections = new Reflections(packageName, new SubTypesScanner(false));
         Set<Class<?>> subTypesOf = (Set<Class<?>>) reflections.getSubTypesOf(field.getType());
@@ -239,9 +239,10 @@ public class MyContext {
             MyConditional myConditionalAnnotation = implClass.getAnnotation(MyConditional.class);
             if (myConditionalAnnotation != null) {
                 Class<? extends Condition> conditionClass = myConditionalAnnotation.value();
-                Condition condition = (Condition) getBean(conditionClass);
-
-                if (condition.matches(getInstance(), field.getType())) {
+                Object condition =  getBean(conditionClass);
+                autowireBeanProperties(condition);
+                Condition conditionAutoWired=(Condition) condition;
+                if (conditionAutoWired.matches(getInstance(), field.getType())) {
                     if (selectedImpl != null) {
                         throw new BeanCreationException("找到多个符合条件的实现：" + field.getType());
                     }
@@ -266,7 +267,7 @@ public class MyContext {
 
 
     //xxx:注入一般Bean,依照字段查找类,从容器取出为字段赋值
-    private void injectNormalDependency(Object bean, Field field) throws IllegalAccessException {
+    private void injectNormalDependency(Object bean, Field field) throws IllegalAccessException, NoSuchFieldException {
         Class<?> dependencyType = field.getType();
         Object dependency = getBean(dependencyType);
         if (dependency == null) {
