@@ -7,17 +7,18 @@ import org.example.FrameworkUtils.Webutils.MyContext;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
+/**
+ * @author wsh
+ */
 @MyConfig
 @Slf4j
 public class AutoConfigurationBeans {
-    private MyContext myContext=MyContext.getInstance();
+    private final MyContext myContext=MyContext.getInstance();
     String packageName = (String) myContext.get("packageUrl");
 
     @AutunmnBean
     @SuppressWarnings("deprecation")
     public Reflections getReflection() {
-        log.warn("AutunmnBean初始化");
-        System.out.println(packageName);
         return new Reflections(packageName,new SubTypesScanner(false));
     }
 

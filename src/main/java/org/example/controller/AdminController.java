@@ -77,7 +77,8 @@ public class AdminController {
 
     @MyRequestMapping("/bean")
     public String beantest(Request request) {
-        return t.toString();
+        System.out.println(1/0);
+        return null;
     }
 
     @MyRequestMapping("/uploadpage")

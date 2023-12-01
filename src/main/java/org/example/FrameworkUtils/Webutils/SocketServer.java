@@ -183,13 +183,18 @@ public class SocketServer {
                         String methodName = str.substring(lastIndex + 1);
                         try {
                             Object result = invokeMethod(classurl, methodName, request);
-                            handleSocketOutputByType(result.getClass(), clientSocket, result);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            StringWriter sw = new StringWriter();
-                            e.printStackTrace(new PrintWriter(new StringWriter()));
-                            htmlResponse.outPutMessageWriter(clientSocket, 500, sw.toString());
-                            threadServer.tellObservers("服务进程崩溃准备重启");
+                            if (result != null) {
+                                handleSocketOutputByType(result.getClass(), clientSocket, result);
+                            } else {
+                                htmlResponse.outPutMessageWriter(clientSocket, 200, "");
+                            }
+
+                        } catch (InvocationTargetException | ClassNotFoundException | NoSuchMethodException |
+                                 IllegalAccessException e) {
+                            Throwable cause = e.getCause();
+                            log.warn("异常来自" + methodName);
+                            cause.printStackTrace(System.err);
+                            htmlResponse.outPutMessageWriter(clientSocket, 500, e.getCause().toString());
                         }
                     }
                 }

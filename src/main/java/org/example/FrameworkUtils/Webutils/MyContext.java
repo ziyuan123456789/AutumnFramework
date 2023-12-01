@@ -242,6 +242,7 @@ public class MyContext {
                 Object condition =  getBean(conditionClass);
                 autowireBeanProperties(condition);
                 Condition conditionAutoWired=(Condition) condition;
+                conditionAutoWired.init();
                 if (conditionAutoWired.matches(getInstance(), field.getType())) {
                     if (selectedImpl != null) {
                         throw new BeanCreationException("找到多个符合条件的实现：" + field.getType());

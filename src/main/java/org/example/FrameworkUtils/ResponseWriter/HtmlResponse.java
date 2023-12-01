@@ -29,7 +29,7 @@ public class HtmlResponse {
     //xxx:http返回报文(直接返回拼接的html文本,Content-Type: text/html)
     public void outPutMessageWriter(Socket socket, int statusCode, String responseText) throws IOException {
         String  CrossOrigin=crossOriginBean.getOrigins();
-        String responseTextWithHtml = "<html><body>" + "<h1 style='color:red'>" + responseText + "</h1>" + "</body></html>";
+        String responseTextWithHtml = "<html><body>" + "<h3 style='color:red'>" + responseText + "</h3>" + "</body></html>";
         byte[] responseBytes = responseTextWithHtml.getBytes(StandardCharsets.UTF_8);
 
         StringBuilder responseHeader = new StringBuilder();
@@ -65,6 +65,7 @@ public class HtmlResponse {
 
     //xxx:http返回报文(返回找到的html文件,Content-Type: text/html)
     public void outPutHtmlWriter(Socket socket, String htmlUrl) throws IOException {
+        String  CrossOrigin=crossOriginBean.getOrigins();
         String filePath = resourceFinder.getHtmlLocation(htmlUrl).replaceFirst("^/", "");
         Path path = Path.of(filePath);
         byte[] responseBytes = Files.readAllBytes(path);
@@ -74,7 +75,7 @@ public class HtmlResponse {
         responseHeader.append("Content-Type: text/html;charset=UTF-8\r\n");
         responseHeader.append("Content-Length: ").append(responseBytes.length).append("\r\n");
         responseHeader.append("Connection: close\r\n");
-        responseHeader.append("Access-Control-Allow-Origin: *\r\n");
+        responseHeader.append("Access-Control-Allow-Origin: ").append(CrossOrigin).append("\r\n");
         responseHeader.append("\r\n");
         OutputStream out = socket.getOutputStream();
         out.write(responseHeader.toString().getBytes(StandardCharsets.UTF_8));
