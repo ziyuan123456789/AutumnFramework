@@ -39,6 +39,7 @@ public class HtmlResponse {
         responseHeader.append("Content-Length: ").append(responseBytes.length).append("\r\n");
         responseHeader.append("Connection: close\r\n");
         responseHeader.append("Access-Control-Allow-Origin: ").append(CrossOrigin).append("\r\n");
+        responseHeader.append("Set-Cookie: userSession=123456; Path=/; HttpOnly; Max-Age=3600\r\n");
         responseHeader.append("\r\n");
         try (OutputStream out = socket.getOutputStream()) {
             out.write(responseHeader.toString().getBytes(StandardCharsets.UTF_8));

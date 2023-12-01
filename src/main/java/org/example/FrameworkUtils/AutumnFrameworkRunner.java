@@ -33,11 +33,8 @@ public class AutumnFrameworkRunner {
             myContext.put("packageUrl", mainClass.getPackageName());
             try {
                 componentScan(mainClass, myContext);
-            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | NoSuchFieldException e) {
-                throw new RuntimeException(e);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (InstantiationException e) {
+            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | NoSuchFieldException |
+                     ClassNotFoundException | InstantiationException e) {
                 throw new RuntimeException(e);
             }
             ConcurrentHashMap<String, String> urlMap = new ConcurrentHashMap<>();

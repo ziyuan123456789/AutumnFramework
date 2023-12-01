@@ -28,6 +28,7 @@ public class Request {
     public Request(String payload, String body, Integer contentLength) {
         this.payload = payload;
         this.body = body;
+
 //        System.out.println(body);
         parseRequest(payload);
         if (getMethod().equals("GET")) {

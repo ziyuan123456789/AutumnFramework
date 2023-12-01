@@ -13,6 +13,7 @@ public interface TestService {
     List<Department> getAllDepartmentService();
     String printService(String s);
     String print(String s);
+    void cycle();
 
 
 }

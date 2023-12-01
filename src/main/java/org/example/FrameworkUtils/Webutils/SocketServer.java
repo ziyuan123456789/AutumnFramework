@@ -9,6 +9,7 @@ import org.example.FrameworkUtils.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnMVC.MyMultipartFile;
 import org.example.FrameworkUtils.Exception.NoAvailableUrlMappingException;
 import org.example.FrameworkUtils.ResponseType.Icon;
+import org.example.FrameworkUtils.ResponseType.Response;
 import org.example.FrameworkUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.ResponseWriter.HtmlResponse;
 import org.example.FrameworkUtils.Webutils.Json.JsonFormatter;
@@ -19,8 +20,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -124,7 +123,7 @@ public class SocketServer {
         }
     }
 
-    public Object invokeMethod(String classurl, String methodName,Request request) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public Object invokeMethod(String classurl, String methodName,Request request,Response response) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<?> clazz = Class.forName(classurl);
         Object instance = myContext.getBean(clazz);
         Method domethod=null;
@@ -144,6 +143,10 @@ public class SocketServer {
                     if (parameter.getType().equals(MyMultipartFile.class)) {
                         objectList.add(request.getMyMultipartFile());
                     }
+                    if(parameter.getType().equals(Response.class)){
+                        objectList.add(response);
+                    }
+
 
                     if (myRequestParam != null) {
                         if (!myRequestParam.value().isEmpty()) {
@@ -182,11 +185,11 @@ public class SocketServer {
                     } else {
                         String methodName = str.substring(lastIndex + 1);
                         try {
-                            Object result = invokeMethod(classurl, methodName, request);
+                            Object result = invokeMethod(classurl, methodName, request,new Response(htmlResponse,clientSocket));
                             if (result != null) {
                                 handleSocketOutputByType(result.getClass(), clientSocket, result);
                             } else {
-                                htmlResponse.outPutMessageWriter(clientSocket, 200, "");
+//                                htmlResponse.outPutMessageWriter(clientSocket, 200, "返回值为空");
                             }
 
                         } catch (InvocationTargetException | ClassNotFoundException | NoSuchMethodException |

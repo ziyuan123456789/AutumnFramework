@@ -7,6 +7,7 @@ import org.example.FrameworkUtils.Annotation.MyService;
 import org.example.Bean.Department;
 import org.example.mapper.DepartmentMapper;
 import org.example.mapper.UserMapper;
+import org.example.service.CycleService;
 import org.example.service.Test2Service;
 import org.example.service.TestService;
 
@@ -25,6 +26,8 @@ public class TestServiceimpl implements TestService {
 
     @MyAutoWired
     Test2Service test2Service;
+    @MyAutoWired
+    CycleService cycleService;
 
 
     @Override
@@ -51,6 +54,11 @@ public class TestServiceimpl implements TestService {
     public String print(String s) {
         System.out.println(s);
         return  s;
+    }
+
+    @Override
+    public void cycle() {
+        System.out.println("循环依赖");
     }
 
 

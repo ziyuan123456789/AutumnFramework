@@ -8,19 +8,6 @@
         </encoder>
     </appender>
 
-
-    <logger name="com.example.Logger1" level="DEBUG" additivity="true">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <logger name="com.example.Logger2" level="DEBUG" additivity="false">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <logger name="com.example.Logger3" level="DEBUG" additivity="false">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
     <root level="DEBUG">
         <appender-ref ref="STDOUT" />
     </root>

@@ -8,7 +8,7 @@ import org.example.FrameworkUtils.AutumnFrameworkRunner;
  */
 public class Main {
     public static void main(String[] args) {
-        System.out.println("                _                         __  ____      _______ \n" +
+        System.out.println("\n                _                         __  ____      _______ \n" +
                 "     /\\        | |                       |  \\/  \\ \\    / / ____|\n" +
                 "    /  \\  _   _| |_ _   _ _ __ ___  _ __ | \\  / |\\ \\  / / |     \n" +
                 "   / /\\ \\| | | | __| | | | '_ ` _ \\| '_ \\| |\\/| | \\ \\/ /| |     \n" +

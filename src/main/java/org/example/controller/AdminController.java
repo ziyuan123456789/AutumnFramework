@@ -1,10 +1,9 @@
 package org.example.controller;
-import javassist.expr.NewArray;
+
 import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
 import org.example.Aop.UserAopProxyFactory;
 import org.example.Bean.Temp;
-import org.example.Bean.User;
 import org.example.FrameworkUtils.Annotation.EnableAop;
 import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyController;
@@ -12,15 +11,15 @@ import org.example.FrameworkUtils.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.Annotation.Value;
 import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
+import org.example.FrameworkUtils.ResponseType.Response;
 import org.example.FrameworkUtils.ResponseType.Views.View;
-import org.example.FrameworkUtils.Webutils.Json.JsonFormatter;
 import org.example.FrameworkUtils.Webutils.MyContext;
 import org.example.FrameworkUtils.Webutils.Request;
 import org.example.service.LoginService;
 import org.example.service.Test2Service;
 import org.example.service.TestService;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -76,9 +75,8 @@ public class AdminController {
     }
 
     @MyRequestMapping("/bean")
-    public String beantest(Request request) {
-        System.out.println(1/0);
-        return null;
+    public void beantest(Request request) {
+        System.out.println("bean");
     }
 
     @MyRequestMapping("/uploadpage")
@@ -108,8 +106,9 @@ public class AdminController {
 
 
     @MyRequestMapping("/admin")
-    public String adminMainPage(Request request) throws InterruptedException {
-         return testService.print("dasda");
+    public void adminMainPage(Request request, Response response) throws IOException {
+        testService.cycle();
+        response.setResponseText("niubi").setCode(200).output();
     }
 
 
