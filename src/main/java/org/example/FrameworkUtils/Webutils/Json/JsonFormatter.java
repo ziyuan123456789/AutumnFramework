@@ -24,8 +24,7 @@ public class JsonFormatter {
             return "\"" + obj + "\"";
         }
 
-        if (obj instanceof Map) {
-            Map<?, ?> map = (Map<?, ?>) obj;
+        if (obj instanceof Map<?, ?> map) {
             String jsonMap = map.entrySet().stream()
                     .map(entry -> {
                         try {

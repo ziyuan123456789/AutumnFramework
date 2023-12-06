@@ -46,8 +46,6 @@ public class AdminController {
     @Value("password")
     String password;
 
-
-
     @MyAutoWired
     Temp t;
 
@@ -75,8 +73,8 @@ public class AdminController {
     }
 
     @MyRequestMapping("/bean")
-    public void beantest(Request request) {
-        System.out.println("bean");
+    public void beantest(Request request,Response response) {
+        response.setCode(404).setResponseText("Not Found").output();
     }
 
     @MyRequestMapping("/uploadpage")
@@ -90,16 +88,13 @@ public class AdminController {
     }
 
     @MyRequestMapping("/login")
-    public String login(@CheckParameter Request request) {
-
-        Map<String,String> requestMap = request.getParameters();
-        String username= requestMap.get("username");
-        String password= requestMap.get("password");
+    public String login(@MyRequestParam("username") @CheckParameter String username,
+                        @MyRequestParam("password") String password,Request request) {
         if(loginService.login(username,password)){
-            return request.getMethod()+request.getUrl()+request.getParameters()+"\n登陆成功";
+            return request.getMethod()+request.getUrl()+username+"\n登陆成功";
 
         }else{
-            return "登陆失败";
+            return "登录失败";
         }
 
     }

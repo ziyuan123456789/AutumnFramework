@@ -7,6 +7,7 @@ import org.example.FrameworkUtils.AutumnMVC.AutunmnAopFactory;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.MethodInterceptor;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
 
@@ -22,13 +23,16 @@ public class  AopProxyFactory {
         Enhancer enhancer = new Enhancer();
         enhancer.setSuperclass(clazz);
         enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
+            Class<?> father=obj.getClass().getSuperclass();
+            for(Method m:father.getDeclaredMethods()){
+                if(m.getName().equals(method.getName())){
+                    method=m;
+                    break;
+                }
+            }
             for (String methodName : methods) {
                 if (methodName.equals(method.getName())) {
-                    long startTime = System.currentTimeMillis();
-                    Object result = ((AutunmnAopFactory) aopadvice.getDeclaredConstructor().newInstance()).intercept(obj, method, args, proxy);
-                    long endTime = System.currentTimeMillis();
-                    log.info("执行时间：" + (endTime - startTime) + " 毫秒");
-                    return result;
+                    return ((AutunmnAopFactory) aopadvice.getDeclaredConstructor().newInstance()).intercept(obj, method, args, proxy);
                 }
             }
             return proxy.invokeSuper(obj, args);
