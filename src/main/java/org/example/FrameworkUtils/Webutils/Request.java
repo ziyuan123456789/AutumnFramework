@@ -2,6 +2,9 @@ package org.example.FrameworkUtils.Webutils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnMVC.MyMultipartFile;
+import org.example.FrameworkUtils.Cookie.Cookie;
+import org.example.FrameworkUtils.Session.MySession;
+import org.example.FrameworkUtils.Session.SessionManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,7 +14,7 @@ import java.util.Map;
  * @since 2023.10
  */
 
-@SuppressWarnings("all")
+//@SuppressWarnings("all")
 @Slf4j
 public class Request {
     private String payload;
@@ -23,14 +26,14 @@ public class Request {
     private MyMultipartFile myMultipartFile;
     private String contentType;
     private String boundary;
-
+    private Cookie[] cookie;
+    private MySession session;
 
     public Request(String payload, String body, Integer contentLength) {
         this.payload = payload;
         this.body = body;
-
-//        System.out.println(body);
         parseRequest(payload);
+        cookie = extractCookie(body);
         if (getMethod().equals("GET")) {
             this.contentLength = null;
         } else {
@@ -41,8 +44,8 @@ public class Request {
     public Request(String payload, String body, Integer contentLength, String contentType, String boundary) {
         this.payload = payload;
         this.body = body;
-        System.out.println(body);
         parseRequest(payload);
+        cookie = extractCookie(body);
         this.contentType = contentType;
         this.boundary = boundary;
         if (getMethod().equals("GET")) {
@@ -61,6 +64,43 @@ public class Request {
         } catch (Exception e) {
             log.error("Error parsing request: " + e.getMessage());
         }
+    }
+
+    public MySession getSession() {
+        if (cookie != null) {
+            for (Cookie c : cookie) {
+                if ("userSession".equals(c.getCookieName())) {
+                    MyContext myContext=MyContext.getInstance();
+                    SessionManager sessionManager= (SessionManager) myContext.getBean(SessionManager.class);
+                    return sessionManager.getSession(c.getCookieValue());
+                }
+            }
+        }
+        return null;
+    }
+
+    private Cookie[] extractCookie(String httpRequest) {
+        String cookieHeader = "Cookie: ";
+        int start = httpRequest.indexOf(cookieHeader);
+        if (start == -1) {
+            return new Cookie[0];
+        }
+        int end = httpRequest.indexOf('\n', start);
+        if (end == -1) {
+            end = httpRequest.length();
+        }
+        String cookiesString = httpRequest.substring(start + cookieHeader.length(), end).trim();
+        String[] cookiePairs = cookiesString.split(";\\s*");
+        Cookie[] cookies = new Cookie[cookiePairs.length];
+
+        for (int i = 0; i < cookiePairs.length; i++) {
+            String[] nameValuePair = cookiePairs[i].split("=", 2);
+            String name = nameValuePair[0].trim();
+            String value = nameValuePair.length > 1 ? nameValuePair[1].trim() : "";
+            cookies[i] = new Cookie(name, value);
+        }
+
+        return cookies;
     }
 
 

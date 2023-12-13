@@ -2,7 +2,9 @@ package org.example.FrameworkUtils.ResponseWriter;
 
 import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyComponent;
+import org.example.FrameworkUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.Webutils.ResourceFinder;
+
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -65,8 +67,8 @@ public class HtmlResponse {
     }
 
     //xxx:http返回报文(返回找到的html文件,Content-Type: text/html)
-    public void outPutHtmlWriter(Socket socket, String htmlUrl) throws IOException {
-        String  CrossOrigin=crossOriginBean.getOrigins();
+    public void outPutHtmlWriter(Socket socket, String htmlUrl, Cookie cookie) throws IOException {
+        String CrossOrigin = crossOriginBean.getOrigins();
         String filePath = resourceFinder.getHtmlLocation(htmlUrl).replaceFirst("^/", "");
         Path path = Path.of(filePath);
         byte[] responseBytes = Files.readAllBytes(path);
@@ -77,12 +79,26 @@ public class HtmlResponse {
         responseHeader.append("Content-Length: ").append(responseBytes.length).append("\r\n");
         responseHeader.append("Connection: close\r\n");
         responseHeader.append("Access-Control-Allow-Origin: ").append(CrossOrigin).append("\r\n");
+        if (cookie != null) {
+            responseHeader.append("Set-Cookie: ")
+                    .append(cookie.getCookieName()).append("=")
+                    .append(cookie.getCookieValue()).append(";");
+            if (cookie.getPath() != null) {
+                responseHeader.append(" Path=").append(cookie.getPath()).append(";");
+            }
+
+            if (cookie.getMaxAge() > 0) {
+                responseHeader.append(" Max-Age=").append(cookie.getMaxAge()).append(";");
+            }
+            responseHeader.append("\r\n");
+        }
+
         responseHeader.append("\r\n");
         OutputStream out = socket.getOutputStream();
         out.write(responseHeader.toString().getBytes(StandardCharsets.UTF_8));
         out.write(responseBytes);
-
     }
+
 
     //xxx:http返回报文(返回找到的iocn,Content-Type: image/x-icon)
     public void outPutIconWriter(Socket socket, String htmlUrl) throws IOException {

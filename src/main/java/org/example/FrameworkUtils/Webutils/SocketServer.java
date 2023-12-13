@@ -23,9 +23,11 @@ import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -116,10 +118,12 @@ public class SocketServer {
             }
 
 
-        } catch (Exception e) {
-            socket.close();
+        } catch (BindException e) {
+            log.error("端口"+port+"被占用");
+            log.error(e.toString());
+        }catch (Exception e){
             serverSocket.close();
-            e.printStackTrace();
+            log.error(e.toString());
         }
     }
 
@@ -230,7 +234,7 @@ public class SocketServer {
     //xxx:依照方法的返回值来确定选择哪种返回器
     public  void handleSocketOutputByType(Class classType, Socket clientSocket, Object result) throws IOException, IllegalAccessException {
         if (classType == View.class) {
-            htmlResponse.outPutHtmlWriter(clientSocket, ((View) result).getHtmlName());
+            htmlResponse.outPutHtmlWriter(clientSocket, ((View) result).getHtmlName(),null);
         } else if (classType == Icon.class) {
             htmlResponse.outPutIconWriter(clientSocket, ((Icon) result).getIconName());
         } else if (Map.class.isAssignableFrom(classType)) {

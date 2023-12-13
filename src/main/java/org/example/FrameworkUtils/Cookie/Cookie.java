@@ -10,8 +10,8 @@ import lombok.Data;
 public class Cookie {
     private String cookieName;
     private String cookieValue;
-    private String maxAge;
-
+    private Integer maxAge=3600;
+    private String path="/";
 
     public Cookie(String cookieName, String cookieValue) {
         this.cookieName = cookieName;

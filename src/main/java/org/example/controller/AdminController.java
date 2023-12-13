@@ -10,14 +10,14 @@ import org.example.FrameworkUtils.Annotation.MyController;
 import org.example.FrameworkUtils.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.Annotation.Value;
+import org.example.FrameworkUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
 import org.example.FrameworkUtils.ResponseType.Response;
 import org.example.FrameworkUtils.ResponseType.Views.View;
-import org.example.FrameworkUtils.Webutils.MyContext;
 import org.example.FrameworkUtils.Webutils.Request;
 import org.example.service.LoginService;
-import org.example.service.Test2Service;
 import org.example.service.TestService;
+
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -32,19 +32,12 @@ import java.util.Map;
 @EnableAop(getMethod = {"myhtml","login"}, getClassFactory = UserAopProxyFactory.class)
 public class AdminController {
 
-    private MyContext myContext = MyContext.getInstance();
     @MyAutoWired
     LoginService loginService;
     @MyAutoWired
     TestService testService;
-    @MyAutoWired
-    Test2Service test2Service;
     @Value("url")
     String sqlUrl;
-    @Value("user")
-    String user;
-    @Value("password")
-    String password;
 
     @MyAutoWired
     Temp t;
@@ -53,7 +46,7 @@ public class AdminController {
     MyReidsTemplate myReidsTemplate;
 
     @MyRequestMapping("/map")
-    public Map<String, Integer> maptest(Request request) throws IllegalAccessException {
+    public Map<String, Integer> maptest(Request request)  {
         Map<String,Integer>myMap =new HashMap<>();
         myMap.put("user",123);
         myMap.put("password",456);
@@ -74,8 +67,21 @@ public class AdminController {
 
     @MyRequestMapping("/bean")
     public void beantest(Request request,Response response) {
-        response.setCode(404).setResponseText("Not Found").output();
+        Cookie cookie=new Cookie("newcookie","session1");
+        response.setCode(200)
+                .setCookie(cookie)
+                .setView(new View("AutumnFrameworkMainPage.html"))
+                .outputHtml();
     }
+
+    @MyRequestMapping("/session")
+    public String session(Request request) {
+        request.getSession().setAttribute("name","wzy");
+        return request.getSession().toString();
+
+    }
+
+
 
     @MyRequestMapping("/uploadpage")
     public View fileupload(Request request) {
@@ -103,7 +109,7 @@ public class AdminController {
     @MyRequestMapping("/admin")
     public void adminMainPage(Request request, Response response) throws IOException {
         testService.cycle();
-        response.setResponseText("niubi").setCode(200).output();
+
     }
 
 

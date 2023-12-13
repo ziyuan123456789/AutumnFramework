@@ -19,6 +19,7 @@ public class UserAopProxyFactory implements AutunmnAopFactory {
         for (int i = 0; i < paramAnnotations.length; i++) {
             for (Annotation annotation : paramAnnotations[i]) {
                 if (annotation.annotationType().equals(CheckParameter.class)) {
+                    log.error("参数"+args[i].getClass().getSimpleName()+"被拦截");
                     args[i] = "AopCheck";
                 }
             }

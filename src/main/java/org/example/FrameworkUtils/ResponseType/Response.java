@@ -2,6 +2,7 @@ package org.example.FrameworkUtils.ResponseType;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.Cookie.Cookie;
+import org.example.FrameworkUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.ResponseWriter.HtmlResponse;
 
 import java.io.IOException;
@@ -18,11 +19,16 @@ public class Response {
     private HtmlResponse htmlResponse;
     private int httpCode=200;
     private String responseText="";
+    private View view;
 
     public Response(HtmlResponse htmlResponse, Socket socket) {
         this.htmlResponse = htmlResponse;
         this.socket = socket;
 
+    }
+    public Response setView(View view) {
+        this.view = view;
+        return this;
     }
 
     public Response setCookie(Cookie cookie) {
@@ -35,18 +41,25 @@ public class Response {
         return this;
     }
 
+
     public Response setResponseText(String responseText) {
         this.responseText = responseText;
         return this;
     }
 
-    public void output()  {
+    public void outputMessage()  {
         try{
             htmlResponse.outPutMessageWriter(socket, httpCode, responseText);
         }catch (IOException e){
             log.error("htmlResponse输出失败");
         }
-
+    }
+    public void outputHtml()  {
+        try{
+            htmlResponse.outPutHtmlWriter(socket,view.getHtmlName(),cookie);
+        }catch (IOException e){
+            log.error("htmlResponse输出失败");
+        }
     }
 
 }
