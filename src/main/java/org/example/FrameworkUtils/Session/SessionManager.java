@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Annotation.MyComponent;
 import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
+
+import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author wsh
@@ -12,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Data
 @Slf4j
 @MyComponent
-public class SessionManager {
+public class SessionManager implements Serializable {
     private ConcurrentHashMap<String, MySession> sessions = new ConcurrentHashMap<>();
     @MyAutoWired
     MyReidsTemplate myReidsTemplate;

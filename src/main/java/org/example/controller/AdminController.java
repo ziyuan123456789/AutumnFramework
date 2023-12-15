@@ -44,8 +44,6 @@ public class AdminController {
 
     @MyAutoWired
     MyReidsTemplate myReidsTemplate;
-    Integer id=1;
-
 
     @MyRequestMapping("/map")
     public Map<String, Integer> maptest(Request request)  {
@@ -67,8 +65,8 @@ public class AdminController {
         return new View("AutumnFrameworkMainPage.html");
     }
 
-    @MyRequestMapping("/bean")
-    public void beantest(Request request,Response response) {
+    @MyRequestMapping("/responseTest")
+    public void responseTest(Request request,Response response) {
         Cookie cookie=new Cookie("newcookie","session1");
         response.setCode(200)
                 .setCookie(cookie)
@@ -99,7 +97,7 @@ public class AdminController {
     public String login(@MyRequestParam("username") @CheckParameter String username,
                         @MyRequestParam("password") String password,Request request) {
         if(loginService.login(username,password)){
-            return request.getMethod()+request.getUrl()+username+"\n登陆成功";
+            return request.getMethod()+request.getUrl()+username+"\n登录成功";
 
         }else{
             return "登录失败";

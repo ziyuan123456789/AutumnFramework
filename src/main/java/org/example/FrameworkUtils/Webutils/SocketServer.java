@@ -155,7 +155,7 @@ public class SocketServer {
                     }
                     if (myRequestParam != null) {
                         if (!myRequestParam.value().isEmpty()) {
-                            objectList.add(useUrlGetParam(clazz, classurl, myRequestParam.value(), request));
+                            objectList.add(useUrlGetParam(myRequestParam.value(), request));
                         }
                     }
                 }
@@ -163,7 +163,7 @@ public class SocketServer {
         }
         return domethod.invoke(instance, objectList.toArray());
     }
-    public Object useUrlGetParam(Class clazz,String classurl,String paramName,Request request){
+    public Object useUrlGetParam(String paramName, Request request){
         Map<String,String> param=request.getParameters();
         return param.get(paramName);
     }

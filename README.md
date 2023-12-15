@@ -27,8 +27,236 @@
 - cookie,session加入,自动为新用户setCookie,设置JSESSIONID
 - 依照JSESSIONID的value查找对应的session
 
+## 代码示范
+### Controller
+```java
+@MyAutoWired
+LoginService loginService;
+@MyAutoWired
+TestService testService;
+@Value("url")
+String sqlUrl;
 
- 
+@MyRequestMapping("/login")
+public String login(@MyRequestParam("username") @CheckParameter String username,
+                    @MyRequestParam("password") String password,Request request) {
+    if(loginService.login(username,password)){
+        return request.getMethod()+request.getUrl()+username+"\n登录成功";
+    }else{
+        return "登录失败";
+    }
+}
+@MyRequestMapping("/myhtml")
+public View myhtml(Request request) {
+    return new View("AutumnFrameworkMainPage.html");
+}
+
+@MyRequestMapping("/responseTest")
+public void responseTest(Request request,Response response) {
+    Cookie cookie=new Cookie("newcookie","session1");
+    response.setCode(200)
+            .setCookie(cookie)
+            .setView(new View("AutumnFrameworkMainPage.html"))
+            .outputHtml();
+}
+
+@MyRequestMapping("/session")
+public String session(Request request) {
+    String sessionId=request.getSession().getSessionId();
+    request.getSession().setAttribute("name",sessionId);
+    return (String) request.getSession().getAttribute("name");
+}
+```
+### Service
+```java
+public interface LoginService {
+    boolean login(String username, String password);
+}
+@MyService
+public class LoginServiceImpl implements LoginService {
+    @MyAutoWired
+    UserMapper userMapper;
+    @Override
+    public boolean login(String username, String password) {
+        return userMapper.login(username, password) != null;
+    }
+}
+```
+### AOP
+```java
+@MyController
+@Slf4j
+@EnableAop(getMethod = {"myhtml","login"}, getClassFactory = UserAopProxyFactory.class)
+public class AdminController {
+
+    @MyAutoWired
+    LoginService loginService;
+}
+```
+```java
+@Slf4j
+@MyAspect
+public class UserAopProxyFactory implements AutunmnAopFactory {
+    @Override
+    public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+        log.warn("用户切面方法开始预处理,切面处理器是"+this.getClass().getName()+"处理的方法为:"+method.getName() );
+        Annotation[][] paramAnnotations = method.getParameterAnnotations();
+        for (int i = 0; i < paramAnnotations.length; i++) {
+            for (Annotation annotation : paramAnnotations[i]) {
+                if (annotation.annotationType().equals(CheckParameter.class)) {
+                    log.error("参数"+args[i].getClass().getSimpleName()+"被拦截");
+                    args[i] = "AopCheck";
+                }
+            }
+        }
+        Object aop= proxy.invokeSuper(obj, args);
+        log.info("用户自定义逻辑执行结束");
+        return aop;
+    }
+}
+```
+### 拦截器
+```java
+@Slf4j
+@MyComponent
+@MyOrder(1)
+public class UrlFilter implements Filter {
+    @MyAutoWired
+    IndexFilter indexFilter;
+
+    @Override
+    public boolean doChain(Request request) {
+        if ("GET".equals(request.getMethod())) {
+            log.info("一级过滤链拦截,开始第一步鉴权");
+            return indexFilter.doChain(request);
+        } else {
+            log.info("一级过滤链放行");
+            return false;
+        }
+    }
+}
+```
+### Mapper
+```java
+@MyMapper
+public interface UserMapper {
+    @MySelect("select username,password from user where username=#{username} and password=#{password}")
+    User login(@MyParam("username") String username,@MyParam("password") String password);
+}
+```
+### 配置类,@Bean
+```java
+@MyConfig
+public class beanConfig {
+    @MyAutoWired
+    UserMapper userMapper;
+
+    @MyAutoWired
+    TestMapper testMapper;
+    @AutunmnBean
+    public User beanTest(){
+        return  userMapper.login("wzy","123");
+    }
+
+    @AutunmnBean
+    public Temp beanTest1() {
+        return testMapper.selectById1(1);
+    }
+}
+```
+```java
+@MyConfig
+public class CrossOriginConfig implements AutumnMvcCrossOriginConfig {
+
+    CrossOriginBean crossOrigin=new CrossOriginBean();
+
+    @Override
+    @AutunmnBean
+    public CrossOriginBean setAllowCrossOrigin() {
+        crossOrigin.setOrigins("*");
+        return crossOrigin;
+    }
+}
+
+```
+### 条件注解
+```java
+@MyService
+@MyConditional(MatchClassByInterface.class)
+public class AutumnMvcConfigurationBaseImpl implements AutumnMvcConfiguration{
+    @Value("baseHtml")
+    String baseHtml;
+
+    @Value("404Html")
+    String notFoundPage;
+    @Override
+    public View getMainPage() {
+        return new View(baseHtml);
+    }
+
+    @Override
+    public View get404Page() {
+        return new View(notFoundPage);
+    }
+}
+```
+```java
+@MyComponent
+@Slf4j
+public class MatchClassByInterface implements Condition {
+
+    @MyAutoWired
+    private Reflections reflections;
+
+    @Override
+    public void init(){
+        log.info(this.getClass().getSimpleName() + "条件处理器中的初始化方法被执行");
+    }
+
+
+    @Override
+    public boolean matches(MyContext myContext, Class<?> clazz) {
+        Set<Class<?>> subTypesOf = (Set<Class<?>>) reflections.getSubTypesOf(clazz);
+
+        for (Class<?> implClass : subTypesOf) {
+            if (clazz.equals(implClass)) {
+                continue;
+            }
+            MyConditional myConditionalAnnotation = implClass.getAnnotation(MyConditional.class);
+            if (myConditionalAnnotation == null) {
+                return false;
+            } else {
+                Class<? extends Condition> conditionClass = myConditionalAnnotation.value();
+                Condition condition = (Condition) myContext.getBean(conditionClass);
+
+                if (condition.matches(myContext, implClass)) {
+                    return false;
+
+                }
+            }
+        }
+
+        return true;
+    }
+}
+```
+### 配置文件
+```html
+url=jdbc:mysql://localhost:3306/threeproject?serverTimezone=UTC&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
+user = root
+password=root
+port=8080
+cookieKeepTime=180000
+threadPoolNums=10
+htmlHome=HTML
+iconHome=Icon
+baseHtml=AutumnFrameworkMainPage.html
+404Html=404.html
+iconName=myicon.ico
+crossOrigin=*
+redisHost=127.0.0.1
+redisPort=6379
+```
 ## 未来打算实现:
 
 - 解决代码耦合严重的问题,再下去就要臭不可闻了(修改了大量ioc容器代码,解除大量耦合和莫名其妙的代码,逻辑更加清晰了)

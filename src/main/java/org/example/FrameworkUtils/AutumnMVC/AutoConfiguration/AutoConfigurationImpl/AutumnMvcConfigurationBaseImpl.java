@@ -12,7 +12,7 @@ import org.example.FrameworkUtils.ResponseType.Views.View;
  */
 @MyService
 @MyConditional(MatchClassByInterface.class)
-public class AutumnMvcConfigurationImpl implements AutumnMvcConfiguration{
+public class AutumnMvcConfigurationBaseImpl implements AutumnMvcConfiguration{
     @Value("baseHtml")
     String baseHtml;
 
