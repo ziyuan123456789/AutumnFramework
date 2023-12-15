@@ -46,6 +46,7 @@ public class AdminController {
     MyReidsTemplate myReidsTemplate;
     Integer id=1;
 
+
     @MyRequestMapping("/map")
     public Map<String, Integer> maptest(Request request)  {
         Map<String,Integer>myMap =new HashMap<>();
