@@ -49,7 +49,7 @@ public class Response {
 
     public void outputMessage()  {
         try{
-            htmlResponse.outPutMessageWriter(socket, httpCode, responseText);
+            htmlResponse.outPutMessageWriter(socket, httpCode, responseText,cookie);
         }catch (IOException e){
             log.error("htmlResponse输出失败");
         }

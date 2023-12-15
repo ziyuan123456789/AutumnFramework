@@ -1,6 +1,9 @@
 package org.example;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnFrameworkRunner;
+import org.example.FrameworkUtils.Session.SessionManager;
+import org.example.FrameworkUtils.Webutils.MyContext;
+
 @Slf4j
 /**
  * @author ziyuan
@@ -18,6 +21,12 @@ public class Main {
                 "                                                                ");
         AutumnFrameworkRunner autumnFrameworkRunner=new AutumnFrameworkRunner();
         autumnFrameworkRunner.run(Main.class, args);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            MyContext myContext = MyContext.getInstance();
+            SessionManager sessionManager = (SessionManager) myContext.getBean(SessionManager.class);
+            sessionManager.exitSave();
+        }));
+
     }
 
 }

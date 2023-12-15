@@ -7,11 +7,14 @@ import org.example.FrameworkUtils.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.Annotation.Value;
 import org.example.FrameworkUtils.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnMVC.MyMultipartFile;
+import org.example.FrameworkUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.Exception.NoAvailableUrlMappingException;
 import org.example.FrameworkUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.ResponseType.Response;
 import org.example.FrameworkUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.ResponseWriter.HtmlResponse;
+import org.example.FrameworkUtils.Session.MySession;
+import org.example.FrameworkUtils.Session.SessionManager;
 import org.example.FrameworkUtils.Webutils.Json.JsonFormatter;
 import org.example.FrameworkUtils.Webutils.ThreadWatcher.ThreadServer;
 import org.example.FrameworkUtils.Webutils.ThreadWatcher.ThreadWatcher;
@@ -27,9 +30,9 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 /**
@@ -39,12 +42,12 @@ import java.util.concurrent.Executors;
 @Slf4j
 @MyComponent
 public class SocketServer {
-    private ThreadWatcher threadWatcher = new ThreadWatcher();
-    private ThreadServer threadServer = new ThreadServer();
+    private final ThreadWatcher threadWatcher = new ThreadWatcher();
+    private final ThreadServer threadServer = new ThreadServer();
     private ExecutorService threadPool;
     private ServerSocket serverSocket;
-    private Socket socket;
-    private MyContext myContext = MyContext.getInstance();
+    private final MyContext myContext = MyContext.getInstance();
+    private final SessionManager sessionmanager= (SessionManager) myContext.getBean(SessionManager.class);
     @MyAutoWired
     HtmlResponse htmlResponse;
     @MyAutoWired
@@ -150,8 +153,6 @@ public class SocketServer {
                     if(parameter.getType().equals(Response.class)){
                         objectList.add(response);
                     }
-
-
                     if (myRequestParam != null) {
                         if (!myRequestParam.value().isEmpty()) {
                             objectList.add(useUrlGetParam(clazz, classurl, myRequestParam.value(), request));
@@ -191,7 +192,7 @@ public class SocketServer {
                         try {
                             Object result = invokeMethod(classurl, methodName, request,new Response(htmlResponse,clientSocket));
                             if (result != null) {
-                                handleSocketOutputByType(result.getClass(), clientSocket, result);
+                                handleSocketOutputByType(result.getClass(), clientSocket, result,request);
                             } else {
 //                                htmlResponse.outPutMessageWriter(clientSocket, 200, "返回值为空");
                             }
@@ -201,7 +202,7 @@ public class SocketServer {
                             Throwable cause = e.getCause();
                             log.warn("异常来自" + methodName);
                             cause.printStackTrace(System.err);
-                            htmlResponse.outPutMessageWriter(clientSocket, 500, e.getCause().toString());
+                            htmlResponse.outPutMessageWriter(clientSocket, 500, e.getCause().toString(), null);
                         }
                     }
                 }
@@ -232,13 +233,23 @@ public class SocketServer {
     }
 
     //xxx:依照方法的返回值来确定选择哪种返回器
-    public  void handleSocketOutputByType(Class classType, Socket clientSocket, Object result) throws IOException, IllegalAccessException {
+    public void handleSocketOutputByType(Class<?> classType, Socket clientSocket, Object result, Request request) throws IOException, IllegalAccessException {
+        Cookie cookie = request.getCookieByName("userSession");
+        if(cookie!=null){
+            cookie=null;
+        }else{
+            String uuid=String.valueOf(UUID.randomUUID());
+            cookie=new Cookie("userSession",uuid);
+            MySession newSession = new MySession(uuid);
+            sessionmanager.getSessions().put(uuid, newSession);
+
+        }
         if (classType == View.class) {
-            htmlResponse.outPutHtmlWriter(clientSocket, ((View) result).getHtmlName(),null);
+            htmlResponse.outPutHtmlWriter(clientSocket, ((View) result).getHtmlName(), cookie);
         } else if (classType == Icon.class) {
-            htmlResponse.outPutIconWriter(clientSocket, ((Icon) result).getIconName());
+            htmlResponse.outPutIconWriter(clientSocket, ((Icon) result).getIconName(), cookie);
         } else if (Map.class.isAssignableFrom(classType)) {
-            htmlResponse.outPutMessageWriter(clientSocket, 200, jsonFormatter.toJson(result));
+            htmlResponse.outPutMessageWriter(clientSocket, 200, jsonFormatter.toJson(result), cookie);
         } else if (classType.isPrimitive() ||
                 classType.equals(String.class) ||
                 classType.equals(Boolean.class) ||
@@ -249,9 +260,9 @@ public class SocketServer {
                 classType.equals(Double.class) ||
                 classType.equals(Long.class) ||
                 classType.equals(Float.class)) {
-            htmlResponse.outPutMessageWriter(clientSocket, 200, result.toString());
+            htmlResponse.outPutMessageWriter(clientSocket, 200, result.toString(), cookie);
         } else {
-            htmlResponse.outPutMessageWriter(clientSocket, 200, jsonFormatter.toJson(result));
+            htmlResponse.outPutMessageWriter(clientSocket, 200, jsonFormatter.toJson(result), cookie);
         }
     }
 

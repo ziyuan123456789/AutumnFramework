@@ -44,6 +44,7 @@ public class AdminController {
 
     @MyAutoWired
     MyReidsTemplate myReidsTemplate;
+    Integer id=1;
 
     @MyRequestMapping("/map")
     public Map<String, Integer> maptest(Request request)  {
@@ -76,9 +77,9 @@ public class AdminController {
 
     @MyRequestMapping("/session")
     public String session(Request request) {
-        request.getSession().setAttribute("name","wzy");
-        return request.getSession().toString();
-
+        String sessionId=request.getSession().getSessionId();
+        request.getSession().setAttribute("name",sessionId);
+        return (String) request.getSession().getAttribute("name");
     }
 
 

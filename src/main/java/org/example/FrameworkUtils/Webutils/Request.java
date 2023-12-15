@@ -8,6 +8,7 @@ import org.example.FrameworkUtils.Session.SessionManager;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * @author ziyuan
@@ -17,24 +18,25 @@ import java.util.Map;
 //@SuppressWarnings("all")
 @Slf4j
 public class Request {
-    private String payload;
-    private String body;
+    private final String payload;
+    private final String body;
     private String method;
     private String url;
 
-    private Integer contentLength;
+    private final Integer contentLength;
     private MyMultipartFile myMultipartFile;
     private String contentType;
     private String boundary;
-    private Cookie[] cookie;
-    private MySession session;
+    private final Cookie[] cookie;
+    private final MyContext myContext = MyContext.getInstance();
+    private final SessionManager sessionManager = (SessionManager) myContext.getBean(SessionManager.class);
 
     public Request(String payload, String body, Integer contentLength) {
         this.payload = payload;
         this.body = body;
         parseRequest(payload);
         cookie = extractCookie(body);
-        if (getMethod().equals("GET")) {
+        if ("GET".equals(getMethod())) {
             this.contentLength = null;
         } else {
             this.contentLength = contentLength;
@@ -42,19 +44,12 @@ public class Request {
     }
     //xxx:文件上传专用
     public Request(String payload, String body, Integer contentLength, String contentType, String boundary) {
-        this.payload = payload;
-        this.body = body;
-        parseRequest(payload);
-        cookie = extractCookie(body);
+        this(payload, body, contentLength);
         this.contentType = contentType;
         this.boundary = boundary;
-        if (getMethod().equals("GET")) {
-            this.contentLength = null;
-        } else {
-            this.contentLength = contentLength;
-        }
     }
 
+    //xxx:解析HTTP方法与Url
     private void parseRequest(String payload) {
         try {
             String firstLine = payload.split("\n")[0];
@@ -62,23 +57,21 @@ public class Request {
             this.method = parts[0];
             this.url = parts.length > 1 ? parts[1] : "";
         } catch (Exception e) {
-            log.error("Error parsing request: " + e.getMessage());
+            log.error("解析HTTP方法与Url失败" + e.getMessage());
         }
     }
 
+    //xxx:解析cookie依照userSession取得对应的session,没有就新建一个
     public MySession getSession() {
-        if (cookie != null) {
-            for (Cookie c : cookie) {
-                if ("userSession".equals(c.getCookieName())) {
-                    MyContext myContext=MyContext.getInstance();
-                    SessionManager sessionManager= (SessionManager) myContext.getBean(SessionManager.class);
-                    return sessionManager.getSession(c.getCookieValue());
-                }
-            }
+        Cookie userSessionCookie = getCookieByName("userSession");
+        if (userSessionCookie != null) {
+            return sessionManager.getSession(userSessionCookie.getCookieValue());
         }
-        return null;
+        return sessionManager.getSession(String.valueOf(UUID.randomUUID()));
     }
 
+
+    //xxx:解析Cookie
     private Cookie[] extractCookie(String httpRequest) {
         String cookieHeader = "Cookie: ";
         int start = httpRequest.indexOf(cookieHeader);
@@ -103,24 +96,20 @@ public class Request {
         return cookies;
     }
 
-
-    public String getUrl() {
-        return url;
+    public Cookie getCookieByName(String name){
+        if (cookie != null) {
+            for (Cookie c : cookie) {
+                if (name.equals(c.getCookieName())) {
+                    return c;
+                }
+            }
+        }
+        return null;
     }
-
-    public String getMethod() {
-        return method;
-    }
-
-
-    public void setParameters(String url) {
-        this.url = url;
-    }
-
 
     public  Map<String, String> getParameters() {
         Map<String, String> queryParams = new HashMap<>();
-        if (method.equals("GET")) {
+        if ("GET".equals(method)) {
             int questionMarkIndex = url.indexOf('?');
             if (questionMarkIndex != -1) {
                 String queryString = url.substring(questionMarkIndex + 1);
@@ -136,7 +125,6 @@ public class Request {
             }
             return queryParams;
         } else {
-            int contentLength = getContentLength(payload);
             String[] paramPairs = body.split("&");
             for (String paramPair : paramPairs) {
                 String[] keyValue = paramPair.split("=");
@@ -152,14 +140,16 @@ public class Request {
 
     }
 
-    private int getContentLength(String request) {
-        String[] lines = request.split("\n");
-        for (String line : lines) {
-            if (line.startsWith("Content-Length:")) {
-                return Integer.parseInt(line.substring("Content-Length:".length()).trim());
-            }
-        }
-        return 0;
+    public void setParameters(String url) {
+        this.url = url;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public String getMethod() {
+        return method;
     }
 
     public String getBody() {
