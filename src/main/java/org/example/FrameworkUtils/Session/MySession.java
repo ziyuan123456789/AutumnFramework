@@ -2,8 +2,6 @@ package org.example.FrameworkUtils.Session;
 
 import lombok.Data;
 
-import java.util.Map;
-import java.util.PrimitiveIterator;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -13,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Data
 public class MySession {
     private String  sessionId;
-    private ConcurrentHashMap<String,Object> indexMap=new ConcurrentHashMap<String,Object>();
+    private ConcurrentHashMap<String,Object> indexMap=new ConcurrentHashMap<>();
 
     public MySession(String sessionId) {
         this.sessionId = sessionId;
@@ -24,5 +22,4 @@ public class MySession {
     public Object getAttribute(String key){
         return indexMap.get(key);
     }
-
 }

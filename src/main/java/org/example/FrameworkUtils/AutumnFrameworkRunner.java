@@ -74,7 +74,7 @@ public class AutumnFrameworkRunner {
 
             }
             myContext.put("urlmapping", urlMap);
-            SocketServer server = (SocketServer) myContext.getBean(SocketServer.class);
+            SocketServer server = myContext.getBean(SocketServer.class);
             try {
                 server.init();
             } catch (Exception e) {

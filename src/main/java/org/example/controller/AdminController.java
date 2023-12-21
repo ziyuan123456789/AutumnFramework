@@ -46,12 +46,19 @@ public class AdminController {
     MyReidsTemplate myReidsTemplate;
 
     @MyRequestMapping("/map")
-    public Map<String, Integer> maptest(Request request)  {
+    public Map<String, Integer> mapTest(Request request)  {
         Map<String,Integer>myMap =new HashMap<>();
         myMap.put("user",123);
         myMap.put("password",456);
         return myMap;
     }
+    @MyRequestMapping("/insert")
+    public Integer insert(@MyRequestParam("username") String username,@MyRequestParam("password") String password){
+        System.out.println(username);
+        System.out.println(password);
+        return loginService.insertUser(username,password);
+    }
+
 
     @MyRequestMapping("/redis")
     public String redis(Request request) {

@@ -3,7 +3,10 @@ package org.example.FrameworkUtils.Orm.MineBatis;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.Annotation.MyComponent;
 import org.example.FrameworkUtils.Annotation.MyParam;
+import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyDelete;
+import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyInsert;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MySelect;
+import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyUpdate;
 import org.example.FrameworkUtils.Webutils.MyContext;
 
 import java.lang.reflect.Field;
@@ -28,6 +31,8 @@ import java.util.regex.Pattern;
 @Slf4j
 @MyComponent
 public class MapperUtils {
+    static Jdbcinit jdbcinit = MyContext.getInstance().getBean(Jdbcinit.class);
+
     //xxx jdk动态代理,代理接口
     public static <T> T init(Class<T> targetClass) {
         return (T) Proxy.newProxyInstance(targetClass.getClassLoader(), new Class<?>[]{targetClass},
@@ -42,34 +47,35 @@ public class MapperUtils {
             if (Object.class.equals(method.getDeclaringClass())) {
                 return method.invoke(this, args);
             }
-            MySelect select = method.getAnnotation(MySelect.class);
-            String sql = null;
-            if (select != null) {
-                sql = select.value();
-                sql=parseSql(sql, method, args);
-                log.info(sql);
-            } else {
+            String sql = getSqlFromAnnotation(method);
+            if (sql == null || sql.isEmpty()) {
                 log.warn("sql为空");
                 throw new IllegalStateException("sql为空");
             }
+            sql = parseSql(sql, method, args);
+            log.info(sql);
             Class<?> clazz = method.getReturnType();
-            Jdbcinit jdbcinit = (Jdbcinit) MyContext.getInstance().getBean(Jdbcinit.class);
-
-            ResultSet r = jdbcinit.querySql(sql);
+            ResultSet r;
+            MySelect select = method.getAnnotation(MySelect.class);
+            if (select != null) {
+                r = jdbcinit.querySql(sql);
+            } else {
+                return jdbcinit.executeUpdate(sql, clazz);
+            }
             if (Collection.class.isAssignableFrom(clazz)) {
                 Type returnType = method.getGenericReturnType();
-                Class<?> clazz123 = null;
+                Class<?> clazzListType = null;
                 if (returnType instanceof ParameterizedType) {
                     Type actualType = ((ParameterizedType) returnType).getActualTypeArguments()[0];
-                    clazz123 = Class.forName(actualType.getTypeName());
+                    clazzListType = Class.forName(actualType.getTypeName());
                 }
-                Field[] fields = clazz123.getDeclaredFields();
+                Field[] fields = clazzListType.getDeclaredFields();
                 String[] fieldNames = new String[fields.length];
                 for (int i = 0; i < fields.length; i++) {
                     fieldNames[i] = fields[i].getName();
                 }
-                log.error(Arrays.toString(fieldNames));
-                return Mybaits.reflexByClass(clazz123, r, fieldNames);
+                log.info(Arrays.toString(fieldNames));
+                return Mybaits.reflexByClass(clazzListType, r, fieldNames);
             } else {
                 Field[] fields = clazz.getDeclaredFields();
                 String[] fieldNames = new String[fields.length];
@@ -101,7 +107,7 @@ public class MapperUtils {
         }
         Pattern pattern = Pattern.compile("#\\{([^}]+)\\}");
         Matcher matcher = pattern.matcher(sql);
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         while (matcher.find()) {
             String paramName = matcher.group(1);
             String paramValue = String.valueOf(paramMap.getOrDefault(paramName, ""));
@@ -111,6 +117,31 @@ public class MapperUtils {
 
         return buffer.toString();
     }
+
+    private static String getSqlFromAnnotation(Method method) {
+        MySelect select = method.getAnnotation(MySelect.class);
+        if (select != null) {
+            return select.value();
+        }
+
+        MyInsert insert = method.getAnnotation(MyInsert.class);
+        if (insert != null) {
+            return insert.value();
+        }
+
+        MyUpdate update = method.getAnnotation(MyUpdate.class);
+        if (update != null) {
+            return update.value();
+        }
+
+        MyDelete delete = method.getAnnotation(MyDelete.class);
+        if (delete != null) {
+            return delete.value();
+        }
+
+        return null;
+    }
+
 
 }
 

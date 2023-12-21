@@ -67,7 +67,7 @@ public class MyContext {
     private Jdbcinit jdbcinit = new Jdbcinit();
     private Properties properties = jdbcinit.initProperties();
 
-    public Object getBean(Class<?> beanClass) {
+    public <T>  T getBean(Class<T> beanClass) {
         //xxx:寻找一级缓存
         Object singletonObject = singletonObjects.get(beanClass);
         //xxx:一级缓存找不到
@@ -91,7 +91,7 @@ public class MyContext {
             }
         }
 
-        return singletonObject;
+        return (T)singletonObject;
     }
 
     //xxx:初始化第三缓存

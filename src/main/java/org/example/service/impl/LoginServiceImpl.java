@@ -18,4 +18,9 @@ public class LoginServiceImpl implements LoginService {
     public boolean login(String username, String password) {
         return userMapper.login(username, password) != null;
     }
+
+    @Override
+    public Integer insertUser(String username, String password) {
+        return userMapper.insertUser(username,password);
+    }
 }

@@ -40,7 +40,7 @@ public class MatchClassByInterface implements Condition {
                 return false;
             } else {
                 Class<? extends Condition> conditionClass = myConditionalAnnotation.value();
-                Condition condition = (Condition) myContext.getBean(conditionClass);
+                Condition condition = myContext.getBean(conditionClass);
 
                 if (condition.matches(myContext, implClass)) {
                     return false;

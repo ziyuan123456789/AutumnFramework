@@ -7,4 +7,5 @@ package org.example.service;
 
 public interface LoginService {
     boolean login(String username, String password);
+    Integer insertUser(String username, String password);
 }
