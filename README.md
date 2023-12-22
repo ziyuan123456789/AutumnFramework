@@ -9,6 +9,8 @@
 ## 打个广告:
 大四没事干,找了个java实习一个月2000,大连的hr有没有想联系我的 邮箱:3139196862@qq.com
 
+## 项目描述:
+不依赖TomCat,Servlet等技术实现的网络服务框架,参照了Mybatis,SpringMvc等设计思想从0手写了一个基于注解的仿SpringBoot框架
 
 ## 已经实现:
 - socket实现的网络服务,简单的支持网页输出,GET,POST方法传参,controller声明形参直接注入

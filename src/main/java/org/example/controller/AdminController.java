@@ -66,8 +66,6 @@ public class AdminController {
     }
     @MyRequestMapping("/testvoid")
     public void testvoid(Response response) {
-        response.setView(new View("AutumnFrameworkMainPage.html"))
-                .outputHtml();
     }
 
 
