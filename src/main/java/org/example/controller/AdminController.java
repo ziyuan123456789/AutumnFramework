@@ -54,8 +54,6 @@ public class AdminController {
     }
     @MyRequestMapping("/insert")
     public Integer insert(@MyRequestParam("username") String username,@MyRequestParam("password") String password){
-        System.out.println(username);
-        System.out.println(password);
         return loginService.insertUser(username,password);
     }
 
@@ -66,6 +64,13 @@ public class AdminController {
         myReidsTemplate.set("test","test");
         return myReidsTemplate.toString()+myReidsTemplate.get("test");
     }
+    @MyRequestMapping("/testvoid")
+    public void testvoid(Response response) {
+        response.setView(new View("AutumnFrameworkMainPage.html"))
+                .outputHtml();
+    }
+
+
 
     @MyRequestMapping("/myhtml")
     public View myhtml(Request request) {

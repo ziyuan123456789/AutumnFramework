@@ -23,7 +23,7 @@ public class Main {
                                                                                 \
                 """);
         AutumnFrameworkRunner autumnFrameworkRunner=new AutumnFrameworkRunner();
-        autumnFrameworkRunner.run(Main.class, args);
+        autumnFrameworkRunner.run(Main.class);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             MyContext myContext = MyContext.getInstance();
             SessionManager sessionManager = myContext.getBean(SessionManager.class);

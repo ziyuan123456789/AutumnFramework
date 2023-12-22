@@ -12,9 +12,7 @@ import org.example.FrameworkUtils.AutumnFrameworkRunner;
 public class ThreadWatcher implements  Watcher{
     @Override
     public void getmessage(String message) {
-        System.out.println("进程死亡");
-        System.out.println(message);
         AutumnFrameworkRunner autumnFrameworkRunner=new AutumnFrameworkRunner();
-        autumnFrameworkRunner.run(Main.class, null);
+        autumnFrameworkRunner.run(Main.class);
     }
 }

@@ -21,7 +21,6 @@ import java.util.Properties;
 @MyComponent
 public class Jdbcinit {
 
-
     public  ResultSet querySql(String sql) throws SQLException {
         Properties properties=initProperties();
         Connection connection = DriverManager.getConnection(properties.getProperty("url"), properties.getProperty("user"), properties.getProperty("password"));

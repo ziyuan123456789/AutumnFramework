@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.Annotation.MyComponent;
 import org.example.FrameworkUtils.Annotation.MyConfig;
 import org.example.FrameworkUtils.Annotation.MyController;
-import org.example.FrameworkUtils.AutumnMVC.AutunmnAopFactory;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
 import org.example.FrameworkUtils.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.Annotation.MyService;
@@ -27,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class AutumnFrameworkRunner {
 
-    public void run(Class<?> mainClass, String[] args) {
+    public void run(Class<?> mainClass) {
         Thread t = new Thread(() -> {
             MyContext myContext = MyContext.getInstance();
             myContext.put("packageUrl", mainClass.getPackageName());
@@ -39,46 +38,19 @@ public class AutumnFrameworkRunner {
             }
             ConcurrentHashMap<String, String> urlMap = new ConcurrentHashMap<>();
             Map<Class<?>, Object> iocContainer = myContext.getIocContainer();
-            for (Class clazz : iocContainer.keySet()) {
+            for (Class<?> clazz : iocContainer.keySet()) {
                 if (clazz.getName().contains("$$EnhancerByCGLIB")) {
-                    Class clazzParent= clazz.getSuperclass();
-                    if (clazzParent.getDeclaredAnnotation(MyController.class) != null) {
-                        Method[] methods = clazzParent.getDeclaredMethods();
-                        for (Method method : methods) {
-                            if (method.isAnnotationPresent(MyRequestMapping.class)) {
-                                MyRequestMapping annotation = method.getAnnotation(MyRequestMapping.class);
-                                String value = annotation.value();
-                                if (!"".equals(value)) {
-                                    String fullMethodName = clazz.getName() + "." + method.getName();
-                                    urlMap.put(value, fullMethodName);
-                                }
-                            }
-                        }
-                    }
-
+                    processClassForMapping(clazz.getSuperclass(),urlMap);
                 } else {
-                    if (clazz.getDeclaredAnnotation(MyController.class) != null) {
-                        Method[] methods = clazz.getDeclaredMethods();
-                        for (Method method : methods) {
-                            if (method.isAnnotationPresent(MyRequestMapping.class)) {
-                                MyRequestMapping annotation = method.getAnnotation(MyRequestMapping.class);
-                                String value = annotation.value();
-                                if (!"".equals(value)) {
-                                    String fullMethodName = clazz.getName() + "." + method.getName();
-                                    urlMap.put(value, fullMethodName);
-                                }
-                            }
-                        }
-                    }
+                    processClassForMapping(clazz,urlMap);
                 }
-
             }
             myContext.put("urlmapping", urlMap);
             SocketServer server = myContext.getBean(SocketServer.class);
             try {
                 server.init();
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage(), e);
                 System.exit(1);
 
             }
@@ -100,6 +72,20 @@ public class AutumnFrameworkRunner {
         myContext.initIocCache(annotatedClasses);
         long endTime = System.currentTimeMillis();
         log.info("容器花费了：" + (endTime - startTime) + " 毫秒实例化");
+    }
+    private void processClassForMapping(Class<?> clazz,ConcurrentHashMap<String, String> urlMap) {
+        if (clazz.isAnnotationPresent(MyController.class)) {
+            for (Method method : clazz.getDeclaredMethods()) {
+                if (method.isAnnotationPresent(MyRequestMapping.class)) {
+                    MyRequestMapping annotation = method.getAnnotation(MyRequestMapping.class);
+                    String value = annotation.value();
+                    if (!value.isEmpty()) {
+                        String fullMethodName = clazz.getName() + "." + method.getName();
+                        urlMap.put(value, fullMethodName);
+                    }
+                }
+            }
+        }
     }
 
 }

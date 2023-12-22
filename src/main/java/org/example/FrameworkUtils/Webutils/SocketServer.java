@@ -8,6 +8,7 @@ import org.example.FrameworkUtils.Annotation.Value;
 import org.example.FrameworkUtils.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnMVC.MyMultipartFile;
 import org.example.FrameworkUtils.Cookie.Cookie;
+import org.example.FrameworkUtils.DataStructure.Tuple;
 import org.example.FrameworkUtils.Exception.NoAvailableUrlMappingException;
 import org.example.FrameworkUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.ResponseType.Response;
@@ -16,8 +17,6 @@ import org.example.FrameworkUtils.ResponseWriter.HtmlResponse;
 import org.example.FrameworkUtils.Session.MySession;
 import org.example.FrameworkUtils.Session.SessionManager;
 import org.example.FrameworkUtils.Webutils.Json.JsonFormatter;
-import org.example.FrameworkUtils.Webutils.ThreadWatcher.ThreadServer;
-import org.example.FrameworkUtils.Webutils.ThreadWatcher.ThreadWatcher;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -42,12 +41,10 @@ import java.util.concurrent.Executors;
 @Slf4j
 @MyComponent
 public class SocketServer {
-    private final ThreadWatcher threadWatcher = new ThreadWatcher();
-    private final ThreadServer threadServer = new ThreadServer();
     private ExecutorService threadPool;
     private ServerSocket serverSocket;
     private final MyContext myContext = MyContext.getInstance();
-    private final SessionManager sessionmanager= (SessionManager) myContext.getBean(SessionManager.class);
+    private final SessionManager sessionmanager = myContext.getBean(SessionManager.class);
     @MyAutoWired
     HtmlResponse htmlResponse;
     @MyAutoWired
@@ -61,7 +58,6 @@ public class SocketServer {
 
 
     public void init() throws Exception {
-        threadServer.registerObserver(threadWatcher);
         threadPool = Executors.newFixedThreadPool(threadNums);
         Map<String, String> sharedMap = (Map<String, String>) myContext.get("urlmapping");
         try {
@@ -99,7 +95,7 @@ public class SocketServer {
                     }
                 }
                 if (contentLength == -1) {
-                    throw new RuntimeException("POST方法你不带长度?");
+                    htmlResponse.outPutMessageWriter(clientSocket, 500, "POST方法你不带长度?", null);
                 }
                 char[] bodyChars = new char[contentLength];
                 int charsRead = reader.read(bodyChars);
@@ -122,15 +118,28 @@ public class SocketServer {
 
 
         } catch (BindException e) {
-            log.error("端口"+port+"被占用");
             log.error(e.toString());
+            log.error("""
+                    \n\n
+                    ***************************
+                    APPLICATION FAILED TO START
+                    ***************************
+                                        
+                    Description:
+                                        
+                    网络服务启动失败,端口被占用.
+                                        
+                    Action:
+                                        
+                    换个端口.
+                                        """);
         }catch (Exception e){
             serverSocket.close();
             log.error(e.toString());
         }
     }
 
-    public Object invokeMethod(String classurl, String methodName,Request request,Response response) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public Tuple<Object, Class<?>> invokeMethod(String classurl, String methodName, Request request, Response response) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<?> clazz = Class.forName(classurl);
         Object instance = myContext.getBean(clazz);
         Method domethod=null;
@@ -161,7 +170,7 @@ public class SocketServer {
                 }
             }
         }
-        return domethod.invoke(instance, objectList.toArray());
+        return new Tuple<>(domethod.invoke(instance, objectList.toArray()), domethod.getReturnType());
     }
     public Object useUrlGetParam(String paramName, Request request){
         Map<String,String> param=request.getParameters();
@@ -185,16 +194,21 @@ public class SocketServer {
                     int lastIndex = str.lastIndexOf(".");
                     String classurl = str.substring(0, lastIndex);
                     Filter filter = (Filter) myContext.getBean(annotationScanner.initFilterChain());
+
                     if (filter.doChain(request)) {
                         htmlResponse.redirectLocationWriter(clientSocket, "https://www.baidu.com/");
                     } else {
                         String methodName = str.substring(lastIndex + 1);
                         try {
-                            Object result = invokeMethod(classurl, methodName, request,new Response(htmlResponse,clientSocket));
-                            if (result != null) {
-                                handleSocketOutputByType(result.getClass(), clientSocket, result,request);
+                            Tuple<Object, Class<?>> result = invokeMethod(classurl, methodName, request, new Response(htmlResponse, clientSocket));
+                            if (result.second.equals(void.class)) {
+                                htmlResponse.outPutMessageWriter(clientSocket, 200, "", null);
+                                return;
+                            }
+                            if (result.first != null) {
+                                handleSocketOutputByType(result.first.getClass(), clientSocket, result.first, request);
                             } else {
-//                                htmlResponse.outPutMessageWriter(clientSocket, 200, "返回值为空");
+                                htmlResponse.outPutMessageWriter(clientSocket, 200, "", null);
                             }
 
                         } catch (InvocationTargetException | ClassNotFoundException | NoSuchMethodException |
