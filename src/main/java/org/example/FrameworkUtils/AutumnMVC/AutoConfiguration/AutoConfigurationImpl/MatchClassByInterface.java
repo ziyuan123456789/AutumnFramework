@@ -1,11 +1,11 @@
 package org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutoConfigurationImpl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.Annotation.MyComponent;
-import org.example.FrameworkUtils.Annotation.MyConditional;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConditional;
 import org.example.FrameworkUtils.AutumnMVC.Condition;
-import org.example.FrameworkUtils.Webutils.MyContext;
+import org.example.FrameworkUtils.AutumnMVC.MyContext;
 import org.reflections.Reflections;
 
 import java.util.Set;

@@ -1,13 +1,10 @@
 package org.example.mapper;
 
-import org.example.Bean.Temp;
 import org.example.Bean.User;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyInsert;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
-import org.example.FrameworkUtils.Annotation.MyParam;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyParam;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MySelect;
-
-import java.util.List;
 
 /**
  * @author ziyuan

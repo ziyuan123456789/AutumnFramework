@@ -2,9 +2,9 @@ package org.example.Config;
 
 import org.example.Bean.Temp;
 import org.example.Bean.User;
-import org.example.FrameworkUtils.Annotation.AutunmnBean;
-import org.example.FrameworkUtils.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.Annotation.MyConfig;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.AutunmnBean;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
 import org.example.mapper.TestMapper;
 import org.example.mapper.UserMapper;
 

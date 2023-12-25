@@ -1,11 +1,11 @@
 package org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutoConfigurationImpl;
 
-import org.example.FrameworkUtils.Annotation.AutunmnBean;
-import org.example.FrameworkUtils.Annotation.MyConditional;
-import org.example.FrameworkUtils.Annotation.MyConfig;
-import org.example.FrameworkUtils.Annotation.Value;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.AutunmnBean;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConditional;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.Value;
 import org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutumnMvcCrossOriginConfig;
-import org.example.FrameworkUtils.ResponseWriter.CrossOriginBean;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.CrossOriginBean;
 
 /**
  * @author ziyuan

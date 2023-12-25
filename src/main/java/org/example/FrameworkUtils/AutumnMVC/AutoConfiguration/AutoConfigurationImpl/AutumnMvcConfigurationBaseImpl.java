@@ -1,10 +1,10 @@
 package org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutoConfigurationImpl;
 
-import org.example.FrameworkUtils.Annotation.MyConditional;
-import org.example.FrameworkUtils.Annotation.MyService;
-import org.example.FrameworkUtils.Annotation.Value;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConditional;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyService;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.Value;
 import org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutumnMvcConfiguration;
-import org.example.FrameworkUtils.ResponseType.Views.View;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 
 /**
  * @author ziyuan

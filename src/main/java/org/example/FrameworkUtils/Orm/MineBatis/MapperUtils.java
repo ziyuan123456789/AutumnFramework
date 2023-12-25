@@ -1,13 +1,13 @@
 package org.example.FrameworkUtils.Orm.MineBatis;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.Annotation.MyComponent;
-import org.example.FrameworkUtils.Annotation.MyParam;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyParam;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyDelete;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyInsert;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MySelect;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyUpdate;
-import org.example.FrameworkUtils.Webutils.MyContext;
+import org.example.FrameworkUtils.AutumnMVC.MyContext;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;

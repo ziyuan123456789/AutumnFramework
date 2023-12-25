@@ -1,8 +1,8 @@
 package org.example;
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnFrameworkRunner;
-import org.example.FrameworkUtils.Session.SessionManager;
-import org.example.FrameworkUtils.Webutils.MyContext;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.SocketServer.AutumnFrameworkRunner;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
+import org.example.FrameworkUtils.AutumnMVC.MyContext;
 
 @Slf4j
 /*

@@ -1,8 +1,7 @@
 package org.example.service.impl;
 
-import org.example.Bean.User;
-import org.example.FrameworkUtils.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.Annotation.MyService;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyService;
 import org.example.mapper.UserMapper;
 import org.example.service.LoginService;
 

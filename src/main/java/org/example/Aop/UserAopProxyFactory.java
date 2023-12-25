@@ -2,7 +2,7 @@ package org.example.Aop;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
-import org.example.FrameworkUtils.Annotation.MyAspect;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnMVC.AutunmnAopFactory;
 import org.springframework.cglib.proxy.MethodProxy;
 

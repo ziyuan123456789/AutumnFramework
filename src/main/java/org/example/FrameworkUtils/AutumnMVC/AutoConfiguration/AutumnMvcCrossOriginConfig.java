@@ -1,6 +1,6 @@
 package org.example.FrameworkUtils.AutumnMVC.AutoConfiguration;
 
-import org.example.FrameworkUtils.ResponseWriter.CrossOriginBean;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.CrossOriginBean;
 
 /**
  * @author ziyuan

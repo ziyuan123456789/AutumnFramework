@@ -1,7 +1,7 @@
 package org.example.service.impl;
 
-import org.example.FrameworkUtils.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.Annotation.MyService;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyService;
 import org.example.service.CycleService;
 import org.example.service.TestService;
 

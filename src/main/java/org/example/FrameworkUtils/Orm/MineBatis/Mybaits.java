@@ -1,6 +1,6 @@
 package org.example.FrameworkUtils.Orm.MineBatis;
 
-import org.example.FrameworkUtils.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

@@ -1,9 +1,9 @@
 package org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutoConfigurationImpl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.Annotation.AutunmnBean;
-import org.example.FrameworkUtils.Annotation.MyConfig;
-import org.example.FrameworkUtils.Webutils.MyContext;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.AutunmnBean;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
+import org.example.FrameworkUtils.AutumnMVC.MyContext;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 

@@ -2,7 +2,7 @@ package org.example.FrameworkUtils.Orm.MineBatis;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
 
 import java.io.FileInputStream;
 import java.io.IOException;

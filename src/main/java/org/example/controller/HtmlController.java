@@ -2,13 +2,12 @@ package org.example.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.Bean.User;
-import org.example.FrameworkUtils.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.Annotation.MyController;
-import org.example.FrameworkUtils.Annotation.MyRequestMapping;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyController;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyRequestMapping;
 import org.example.Bean.Temp;
 import org.example.mapper.TestMapper;
-import org.example.FrameworkUtils.Webutils.Request;
-import org.example.mapper.UserMapper;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.Request;
 
 import java.util.List;
 
