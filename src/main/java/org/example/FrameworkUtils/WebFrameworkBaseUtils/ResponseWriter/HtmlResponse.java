@@ -30,8 +30,8 @@ public class HtmlResponse {
     //xxx:http返回报文(直接返回拼接的html文本,Content-Type: text/html)
     public void outPutMessageWriter(Socket socket, int statusCode, String responseText,Cookie cookie) throws IOException {
         String  CrossOrigin=crossOriginBean.getOrigins();
-        String responseTextWithHtml = "<html><body>" + "<h3 style='color:red'>" + responseText + "</h3>" + "</body></html>";
-        byte[] responseBytes = responseTextWithHtml.getBytes(StandardCharsets.UTF_8);
+//        String responseTextWithHtml = "<html><body>" + "<h3 style='color:red'>" + responseText + "</h3>" + "</body></html>";
+        byte[] responseBytes = responseText.getBytes(StandardCharsets.UTF_8);
 
         StringBuilder responseHeader = new StringBuilder();
         responseHeader.append("HTTP/1.1 ").append(statusCode).append(" OK\r\n");

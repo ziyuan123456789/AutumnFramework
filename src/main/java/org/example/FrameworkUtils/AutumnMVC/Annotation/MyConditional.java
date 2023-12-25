@@ -1,6 +1,6 @@
 package org.example.FrameworkUtils.AutumnMVC.Annotation;
 
-import org.example.FrameworkUtils.AutumnMVC.Condition;
+import org.example.FrameworkUtils.AutumnMVC.MyCondition;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -16,5 +16,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface MyConditional {
-    Class<? extends Condition> value();
+    Class<? extends MyCondition> value();
 }

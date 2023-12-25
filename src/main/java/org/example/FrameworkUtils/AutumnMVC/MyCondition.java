@@ -5,9 +5,12 @@ package org.example.FrameworkUtils.AutumnMVC;
  * @since 2023.11
  */
 @FunctionalInterface
-public interface Condition {
+public interface MyCondition {
     default void init() {
     }
 
     boolean matches(MyContext myContext, Class<?> clazz);
+    default void after(){
+
+    }
 }

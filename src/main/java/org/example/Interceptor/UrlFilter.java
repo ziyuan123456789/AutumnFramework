@@ -5,8 +5,8 @@ import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyOrder;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Filter;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Request;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Response;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyRequest;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyResponse;
 
 /**
  * @author wsh
@@ -19,11 +19,11 @@ public class UrlFilter implements Filter {
     IndexFilter indexFilter;
 
     @Override
-    public boolean doChain(Request request, Response response) {
-        if ("GET".equals(request.getMethod())) {
+    public boolean doChain(MyRequest myRequest, MyResponse myResponse) {
+        if ("GET".equals(myRequest.getMethod())) {
             log.info("一级过滤链拦截,开始第一步鉴权");
-//            response.setCode(500).setResponseText("鉴权失败").outputMessage();
-            return indexFilter.doChain(request, response);
+//            myResponse.setCode(500).setResponseText("鉴权失败").outputMessage();
+            return indexFilter.doChain(myRequest, myResponse);
         } else {
             log.info("一级过滤链放行");
             return false;

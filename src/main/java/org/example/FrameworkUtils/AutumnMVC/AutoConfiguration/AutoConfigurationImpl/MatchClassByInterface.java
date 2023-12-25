@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConditional;
-import org.example.FrameworkUtils.AutumnMVC.Condition;
+import org.example.FrameworkUtils.AutumnMVC.MyCondition;
 import org.example.FrameworkUtils.AutumnMVC.MyContext;
 import org.reflections.Reflections;
 
@@ -16,7 +16,7 @@ import java.util.Set;
  */
 @MyComponent
 @Slf4j
-public class MatchClassByInterface implements Condition {
+public class MatchClassByInterface implements MyCondition {
 
     @MyAutoWired
     private Reflections reflections;
@@ -39,10 +39,10 @@ public class MatchClassByInterface implements Condition {
             if (myConditionalAnnotation == null) {
                 return false;
             } else {
-                Class<? extends Condition> conditionClass = myConditionalAnnotation.value();
-                Condition condition = myContext.getBean(conditionClass);
+                Class<? extends MyCondition> conditionClass = myConditionalAnnotation.value();
+                MyCondition myCondition = myContext.getBean(conditionClass);
 
-                if (condition.matches(myContext, implClass)) {
+                if (myCondition.matches(myContext, implClass)) {
                     return false;
 
                 }

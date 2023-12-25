@@ -9,7 +9,7 @@ import org.example.FrameworkUtils.AutumnMVC.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.Value;
 import org.example.FrameworkUtils.AutumnMVC.MyContext;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Request;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyRequest;
 import org.example.mapper.DepartmentMapper;
 import org.example.service.Test2Service;
 import org.example.service.TestService;
@@ -41,7 +41,7 @@ public class DataController {
     String password;
 
     @MyRequestMapping("/easytest")
-    public int easytest(Request request) {
+    public int easytest(MyRequest myRequest) {
         Integer[] nums = {1, 2, 3, 4, 5};
         int target = 1;
         if (nums.length == 0) {
@@ -65,10 +65,10 @@ public class DataController {
     }
 
     @MyRequestMapping("/test")
-    public String test(@MyRequestParam("str") String str,Request request) {
-        System.out.println(request.getParameters());
-        System.out.println(request.getUrl());
-        System.out.println(request.getMethod());
+    public String test(@MyRequestParam("str") String str, MyRequest myRequest) {
+        System.out.println(myRequest.getParameters());
+        System.out.println(myRequest.getUrl());
+        System.out.println(myRequest.getMethod());
         System.out.println(str);
         return "test";
     }
@@ -79,20 +79,20 @@ public class DataController {
     }
 
     @MyRequestMapping("/test1")
-    public String test1(Request request) {
+    public String test1(MyRequest myRequest) {
         return myContext.getBean(DataController.class).toString();
     }
 
 
     @MyRequestMapping("/getone")
-    public Department getOne(Request request) {
-        System.out.println(request.getMethod());
-        System.out.println(request.getUrl());
+    public Department getOne(MyRequest myRequest) {
+        System.out.println(myRequest.getMethod());
+        System.out.println(myRequest.getUrl());
         return departmentMapper.getFirstDepartment();
     }
 
     @MyRequestMapping("/getall")
-    public List<Department> getAll( Request requestrequestrequestrequest) {
+    public List<Department> getAll( MyRequest requestrequestrequestrequest) {
         return departmentMapper.getAllDepartment();
     }
 

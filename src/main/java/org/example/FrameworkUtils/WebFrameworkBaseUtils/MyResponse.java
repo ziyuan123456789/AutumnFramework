@@ -13,7 +13,7 @@ import java.net.Socket;
  * @since 2023.12
  */
 @Slf4j
-public class Response {
+public class MyResponse {
     private final Socket socket;
     private Cookie cookie;
     private HtmlResponse htmlResponse;
@@ -21,28 +21,28 @@ public class Response {
     private String responseText="";
     private View view;
 
-    public Response(HtmlResponse htmlResponse, Socket socket) {
+    public MyResponse(HtmlResponse htmlResponse, Socket socket) {
         this.htmlResponse = htmlResponse;
         this.socket = socket;
 
     }
-    public Response setView(View view) {
+    public MyResponse setView(View view) {
         this.view = view;
         return this;
     }
 
-    public Response setCookie(Cookie cookie) {
+    public MyResponse setCookie(Cookie cookie) {
         this.cookie = cookie;
         return this;
     }
 
-    public Response setCode(int code) {
+    public MyResponse setCode(int code) {
         this.httpCode = code;
         return this;
     }
 
 
-    public Response setResponseText(String responseText) {
+    public MyResponse setResponseText(String responseText) {
         this.responseText = responseText;
         return this;
     }

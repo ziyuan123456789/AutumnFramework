@@ -1,5 +1,8 @@
 package org.example;
 import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.AutunmnBean;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.SocketServer.AutumnFrameworkRunner;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
 import org.example.FrameworkUtils.AutumnMVC.MyContext;
@@ -9,6 +12,7 @@ import org.example.FrameworkUtils.AutumnMVC.MyContext;
   @author ziyuan
  * @since 2023.10
  */
+@MyConfig
 public class Main {
     public static void main(String[] args) {
         log.info("""
@@ -31,5 +35,14 @@ public class Main {
         }));
 
     }
+    @AutunmnBean
+    public String scheduled() {
+        return "autumn";
+    }
+
+//    @AutunmnBean
+//    public String scheduled2() {
+//        return "autumn";
+//    }
 
 }

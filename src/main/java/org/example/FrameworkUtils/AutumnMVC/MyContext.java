@@ -234,17 +234,18 @@ public class MyContext {
         for (Class<?> implClass : subTypesOf) {
             MyConditional myConditionalAnnotation = implClass.getAnnotation(MyConditional.class);
             if (myConditionalAnnotation != null) {
-                Class<? extends Condition> conditionClass = myConditionalAnnotation.value();
+                Class<? extends MyCondition> conditionClass = myConditionalAnnotation.value();
                 Object condition =  getBean(conditionClass);
                 autowireBeanProperties(condition);
-                Condition conditionAutoWired=(Condition) condition;
-                conditionAutoWired.init();
-                if (conditionAutoWired.matches(getInstance(), field.getType())) {
+                MyCondition myConditionAutoWired =(MyCondition) condition;
+                myConditionAutoWired.init();
+                if (myConditionAutoWired.matches(getInstance(), field.getType())) {
                     if (selectedImpl != null) {
                         throw new BeanCreationException("找到多个符合条件的实现：" + field.getType());
                     }
                     selectedImpl = implClass;
                 }
+                myConditionAutoWired.after();
             } else {
                 if (selectedImpl == null) {
                     selectedImpl = implClass;

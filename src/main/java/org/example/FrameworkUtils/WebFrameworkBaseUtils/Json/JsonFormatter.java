@@ -4,6 +4,7 @@ import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -40,6 +41,21 @@ public class JsonFormatter {
             return "{" + jsonMap + "}";
         }
 
+        // 新增对List的支持
+        if (obj instanceof List<?> list) {
+            String jsonList = list.stream()
+                    .map(item -> {
+                        try {
+                            return toJson(item);
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                            return "";
+                        }
+                    })
+                    .collect(Collectors.joining(","));
+            return "[" + jsonList + "]";
+        }
+
         Field[] fields = obj.getClass().getDeclaredFields();
         String json = Arrays.stream(fields)
                 .map(field -> {
@@ -59,7 +75,7 @@ public class JsonFormatter {
     }
 
     private boolean classChecker(Object obj) {
-        Class clazz = obj.getClass();
+        Class<?> clazz = obj.getClass();
         return clazz.equals(Boolean.class) || clazz.equals(Integer.class) ||
                 clazz.equals(Character.class) || clazz.equals(Byte.class) ||
                 clazz.equals(Short.class) || clazz.equals(Double.class) ||

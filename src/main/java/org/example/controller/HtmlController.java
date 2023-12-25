@@ -6,8 +6,8 @@ import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyRequestMapping;
 import org.example.Bean.Temp;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyRequest;
 import org.example.mapper.TestMapper;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Request;
 
 import java.util.List;
 
@@ -27,13 +27,13 @@ public class HtmlController {
     User u;
 
     @MyRequestMapping("/index")
-    public List<Temp> gotoMainHtml(Request request) {
+    public List<Temp> gotoMainHtml(MyRequest myRequest) {
         log.error(getClass().getName() + "@" + Integer.toHexString(hashCode()));
         return testmapper.selectById(1);
     }
 
     @MyRequestMapping("/123")
-    public String iio(Request request) {
+    public String iio(MyRequest myRequest) {
         return u.toString();
     }
 

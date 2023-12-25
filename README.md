@@ -28,6 +28,7 @@
 - response类加入,用户可以选择自己来控制返回头和内容,例如进行setCookie操作
 - cookie,session加入,自动为新用户setCookie,设置JSESSIONID
 - 依照JSESSIONID的value查找对应的session
+- 简易的swagger加入
 
 ## 代码示范
 ### Controller
@@ -41,32 +42,32 @@ String sqlUrl;
 
 @MyRequestMapping("/login")
 public String login(@MyRequestParam("username") @CheckParameter String username,
-                    @MyRequestParam("password") String password,Request request) {
+                    @MyRequestParam("password") String password,Request myRequest) {
     if(loginService.login(username,password)){
-        return request.getMethod()+request.getUrl()+username+"\n登录成功";
+        return myRequest.getMethod()+myRequest.getUrl()+username+"\n登录成功";
     }else{
         return "登录失败";
     }
 }
 @MyRequestMapping("/myhtml")
-public View myhtml(Request request) {
+public View myhtml(Request myRequest) {
     return new View("AutumnFrameworkMainPage.html");
 }
 
 @MyRequestMapping("/responseTest")
-public void responseTest(Request request,Response response) {
+public void responseTest(Request myRequest,Response myResponse) {
     Cookie cookie=new Cookie("newcookie","session1");
-    response.setCode(200)
+    myResponse.setCode(200)
             .setCookie(cookie)
             .setView(new View("AutumnFrameworkMainPage.html"))
             .outputHtml();
 }
 
 @MyRequestMapping("/session")
-public String session(Request request) {
-    String sessionId=request.getSession().getSessionId();
-    request.getSession().setAttribute("name",sessionId);
-    return (String) request.getSession().getAttribute("name");
+public String session(Request myRequest) {
+    String sessionId=myRequest.getSession().getSessionId();
+    myRequest.getSession().setAttribute("name",sessionId);
+    return (String) myRequest.getSession().getAttribute("name");
 }
 ```
 ### Service
@@ -127,10 +128,10 @@ public class UrlFilter implements Filter {
     IndexFilter indexFilter;
 
     @Override
-    public boolean doChain(Request request) {
-        if ("GET".equals(request.getMethod())) {
+    public boolean doChain(Request myRequest) {
+        if ("GET".equals(myRequest.getMethod())) {
             log.info("一级过滤链拦截,开始第一步鉴权");
-            return indexFilter.doChain(request);
+            return indexFilter.doChain(myRequest);
         } else {
             log.info("一级过滤链放行");
             return false;
@@ -229,9 +230,9 @@ public class MatchClassByInterface implements Condition {
                 return false;
             } else {
                 Class<? extends Condition> conditionClass = myConditionalAnnotation.value();
-                Condition condition = (Condition) myContext.getBean(conditionClass);
+                Condition myCondition = (Condition) myContext.getBean(conditionClass);
 
-                if (condition.matches(myContext, implClass)) {
+                if (myCondition.matches(myContext, implClass)) {
                     return false;
 
                 }
@@ -297,6 +298,10 @@ redisPort=6379
 - ~~@bean与依赖注入时机的问题:举个例子配置类a定义一个标注有@bean的方法,我的框架反射执行这个方法拿到object放入第一缓存.接着业务类b依赖这个bean,成功注入.但是有时候是业务类b先走到依赖注入这个环节,这时候因为@bean标注的是一个方法而不是一个类因此第一二三级缓存中没有这个元素,初始化失败.不知道spring是如何解决这个问题的,我目前的解决方法是初始化容器两次,勉勉强强解决了把(11/29已解决)~~
 
 ## 更新记录:
+### 2023/12/25
+- 优化了过滤器,可以手动接管response对象控制输出流
+- 加入了一个简易的swagger,反正能看到url-method映射表,以及需要什么参数返回什么类型,以后加入网络请求的功能
+
 ### 2023/12/22
 - 优化了对controller方法返回值判断的能力.可以正确区分是有返回值但是返回null还是没有返回值使用response接管输出流,不过无论你是否用了response接管,框架都会正确输出内容
 

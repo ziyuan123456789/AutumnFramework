@@ -10,13 +10,13 @@ import org.example.FrameworkUtils.AutumnMVC.MyMultipartFile;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.DataStructure.Tuple;
 import org.example.FrameworkUtils.Exception.NoAvailableUrlMappingException;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyRequest;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Icon;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Response;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.HtmlResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.MySession;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Request;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Filter;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Json.JsonFormatter;
 import org.example.FrameworkUtils.AutumnMVC.MyContext;
@@ -140,7 +140,7 @@ public class SocketServer {
         }
     }
 
-    public Tuple<Object, Class<?>> invokeMethod(String classurl, String methodName, Request request, Response response) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public Tuple<Object, Class<?>> invokeMethod(String classurl, String methodName, MyRequest myRequest, MyResponse myResponse) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<?> clazz = Class.forName(classurl);
         Object instance = myContext.getBean(clazz);
         Method domethod=null;
@@ -154,18 +154,18 @@ public class SocketServer {
                 Parameter[] parameters = method.getParameters();
                 for (Parameter parameter : parameters) {
                     MyRequestParam myRequestParam = parameter.getAnnotation(MyRequestParam.class);
-                    if (parameter.getType().equals(Request.class)) {
-                        objectList.add(request);
+                    if (parameter.getType().equals(MyRequest.class)) {
+                        objectList.add(myRequest);
                     }
                     if (parameter.getType().equals(MyMultipartFile.class)) {
-                        objectList.add(request.getMyMultipartFile());
+                        objectList.add(myRequest.getMyMultipartFile());
                     }
-                    if(parameter.getType().equals(Response.class)){
-                        objectList.add(response);
+                    if(parameter.getType().equals(MyResponse.class)){
+                        objectList.add(myResponse);
                     }
                     if (myRequestParam != null) {
                         if (!myRequestParam.value().isEmpty()) {
-                            objectList.add(useUrlGetParam(myRequestParam.value(), request));
+                            objectList.add(useUrlGetParam(myRequestParam.value(), myRequest));
                         }
                     }
                 }
@@ -173,41 +173,39 @@ public class SocketServer {
         }
         return new Tuple<>(domethod.invoke(instance, objectList.toArray()), domethod.getReturnType());
     }
-    public Object useUrlGetParam(String paramName, Request request){
-        Map<String,String> param=request.getParameters();
+    public Object useUrlGetParam(String paramName, MyRequest myRequest){
+        Map<String,String> param= myRequest.getParameters();
         return param.get(paramName);
     }
 
     public void processRequest(Socket clientSocket, Map sharedMap,String payload,String body,Integer lenth,String contentType,String boundary) throws IOException {
             boolean urlmark = true;
-            Request request = new Request(payload,body,lenth);
+            MyRequest myRequest = new MyRequest(payload,body,lenth);
             if("multipart/form-data".equals(contentType)){
-                request.setContentType("multipart/form-data");
-                request.setBoundary(boundary);
+                myRequest.setContentType("multipart/form-data");
+                myRequest.setBoundary(boundary);
             }
-            String baseurl = request.getUrl();
+            String baseurl = myRequest.getUrl();
             if (sharedMap != null) {
                 String str = extractPath(baseurl);
                 if (sharedMap.containsKey(str)) {
-                    request.setParameters(baseurl);
+                    myRequest.setParameters(baseurl);
                     urlmark = false;
                     str = (String) sharedMap.get(str);
                     int lastIndex = str.lastIndexOf(".");
                     String classurl = str.substring(0, lastIndex);
                     Filter filter = (Filter) myContext.getBean(annotationScanner.initFilterChain());
-                    Response response =new Response(htmlResponse, clientSocket);
-                    if (filter.doChain(request,response)) {
-//                        htmlResponse.redirectLocationWriter(clientSocket, "https://www.baidu.com/");
-                    } else {
+                    MyResponse myResponse =new MyResponse(htmlResponse, clientSocket);
+                    if (!filter.doChain(myRequest, myResponse)) {
                         String methodName = str.substring(lastIndex + 1);
                         try {
-                            Tuple<Object, Class<?>> result = invokeMethod(classurl, methodName, request, response);
+                            Tuple<Object, Class<?>> result = invokeMethod(classurl, methodName, myRequest, myResponse);
                             if (result.second.equals(void.class)) {
                                 htmlResponse.outPutMessageWriter(clientSocket, 200, "", null);
                                 return;
                             }
                             if (result.first != null) {
-                                handleSocketOutputByType(result.first.getClass(), clientSocket, result.first, request);
+                                handleSocketOutputByType(clientSocket, result.first, myRequest);
                             } else {
                                 htmlResponse.outPutMessageWriter(clientSocket, 200, "", null);
                             }
@@ -248,24 +246,32 @@ public class SocketServer {
     }
 
     //xxx:依照方法的返回值来确定选择哪种返回器
-    public void handleSocketOutputByType(Class<?> classType, Socket clientSocket, Object result, Request request) throws IOException, IllegalAccessException {
-        Cookie cookie = request.getCookieByName("userSession");
-        if(cookie!=null){
-            cookie=null;
-        }else{
-            String uuid=String.valueOf(UUID.randomUUID());
-            cookie=new Cookie("userSession",uuid);
+    public void handleSocketOutputByType(Socket clientSocket, Object result, MyRequest myRequest) throws IOException, IllegalAccessException {
+        Cookie cookie = myRequest.getCookieByName("userSession");
+        if (cookie != null) {
+            cookie = null;
+        } else {
+            String uuid = String.valueOf(UUID.randomUUID());
+            cookie = new Cookie("userSession", uuid);
             MySession newSession = new MySession(uuid);
             sessionmanager.getSessions().put(uuid, newSession);
-
         }
-        if (classType == View.class) {
+
+        if (result instanceof View) {
             htmlResponse.outPutHtmlWriter(clientSocket, ((View) result).getHtmlName(), cookie);
-        } else if (classType == Icon.class) {
+        } else if (result instanceof Icon) {
             htmlResponse.outPutIconWriter(clientSocket, ((Icon) result).getIconName(), cookie);
-        } else if (Map.class.isAssignableFrom(classType)) {
+        } else if (result instanceof Map) {
             htmlResponse.outPutMessageWriter(clientSocket, 200, jsonFormatter.toJson(result), cookie);
-        } else if (classType.isPrimitive() ||
+        } else if (isPrimitiveOrWrapper(result.getClass())) {
+            htmlResponse.outPutMessageWriter(clientSocket, 200, result.toString(), cookie);
+        } else {
+            htmlResponse.outPutMessageWriter(clientSocket, 200, jsonFormatter.toJson(result), cookie);
+        }
+    }
+
+    private boolean isPrimitiveOrWrapper(Class<?> classType) {
+        return classType.isPrimitive() ||
                 classType.equals(String.class) ||
                 classType.equals(Boolean.class) ||
                 classType.equals(Integer.class) ||
@@ -274,12 +280,9 @@ public class SocketServer {
                 classType.equals(Short.class) ||
                 classType.equals(Double.class) ||
                 classType.equals(Long.class) ||
-                classType.equals(Float.class)) {
-            htmlResponse.outPutMessageWriter(clientSocket, 200, result.toString(), cookie);
-        } else {
-            htmlResponse.outPutMessageWriter(clientSocket, 200, jsonFormatter.toJson(result), cookie);
-        }
+                classType.equals(Float.class);
     }
+
 
 
 }

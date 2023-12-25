@@ -18,7 +18,7 @@ import java.util.UUID;
 
 //@SuppressWarnings("all")
 @Slf4j
-public class Request {
+public class MyRequest {
     private final String payload;
     private final String body;
     private String method;
@@ -32,7 +32,7 @@ public class Request {
     private final MyContext myContext = MyContext.getInstance();
     private final SessionManager sessionManager = (SessionManager) myContext.getBean(SessionManager.class);
 
-    public Request(String payload, String body, Integer contentLength) {
+    public MyRequest(String payload, String body, Integer contentLength) {
         this.payload = payload;
         this.body = body;
         parseRequest(payload);
@@ -44,7 +44,7 @@ public class Request {
         }
     }
     //xxx:文件上传专用
-    public Request(String payload, String body, Integer contentLength, String contentType, String boundary) {
+    public MyRequest(String payload, String body, Integer contentLength, String contentType, String boundary) {
         this(payload, body, contentLength);
         this.contentType = contentType;
         this.boundary = boundary;
