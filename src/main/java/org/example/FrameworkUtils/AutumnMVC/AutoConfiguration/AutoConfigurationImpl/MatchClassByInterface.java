@@ -29,7 +29,7 @@ public class MatchClassByInterface implements MyCondition {
 
     @Override
     public boolean matches(MyContext myContext, Class<?> clazz) {
-        Set<Class<?>> subTypesOf = (Set<Class<?>>) reflections.getSubTypesOf(clazz);
+        Set<Class<?>> subTypesOf = (Set) reflections.getSubTypesOf(clazz);
 
         for (Class<?> implClass : subTypesOf) {
             if (clazz.equals(implClass)) {
