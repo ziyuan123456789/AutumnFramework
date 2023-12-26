@@ -18,6 +18,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -58,7 +59,7 @@ public class MyContext {
     //xxx: 二级缓存提前暴露的还未完全成熟的bean,用于解决循环依赖
     private final Map<Class<?>, Object> earlySingletonObjects = new ConcurrentHashMap<>();
 
-    //xxx: 三级缓存：对象工厂,创建Jdk代理/CgLib代理/配置类Bean/普通bean
+    //xxx: 三级缓存：对象工厂,创建Jdk代理/CgLib代理/配置类Bean/普通Bean
     private final Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();
     private Jdbcinit jdbcinit = new Jdbcinit();
     private Properties properties = jdbcinit.initProperties();
@@ -229,30 +230,28 @@ public class MyContext {
     private void injectInterfaceTypeDependency(Object bean, Field field) throws IllegalAccessException, NoSuchFieldException {
         String packageName = (String) get("packageUrl");
         Reflections reflections = new Reflections(packageName, new SubTypesScanner(false));
-        Set<Class<?>> subTypesOf = (Set<Class<?>>) reflections.getSubTypesOf(field.getType());
-        Class<?> selectedImpl = null;
+        Set<Class<?>> subTypesOf = new HashSet<>(reflections.getSubTypesOf(field.getType()));
+        Set<Class<?>> classesToRemove = new HashSet<>();
         for (Class<?> implClass : subTypesOf) {
             MyConditional myConditionalAnnotation = implClass.getAnnotation(MyConditional.class);
             if (myConditionalAnnotation != null) {
                 Class<? extends MyCondition> conditionClass = myConditionalAnnotation.value();
-                Object condition =  getBean(conditionClass);
+                MyCondition condition = getBean(conditionClass);
                 autowireBeanProperties(condition);
-                MyCondition myConditionAutoWired =(MyCondition) condition;
-                myConditionAutoWired.init();
-                if (myConditionAutoWired.matches(getInstance(), field.getType())) {
-                    if (selectedImpl != null) {
-                        throw new BeanCreationException("找到多个符合条件的实现：" + field.getType());
-                    }
-                    selectedImpl = implClass;
+                condition.init();
+                if (!condition.matches(getInstance(),implClass)) {
+                    classesToRemove.add(implClass);
                 }
-                myConditionAutoWired.after();
-            } else {
-                if (selectedImpl == null) {
-                    selectedImpl = implClass;
-                }
+                condition.after();
             }
         }
-
+        subTypesOf.removeAll(classesToRemove);
+        Class<?> selectedImpl = null;
+        if (subTypesOf.size() == 1) {
+            selectedImpl = subTypesOf.iterator().next();
+        } else if (subTypesOf.size() > 1) {
+            throw new BeanCreationException("找到多个符合条件的实现：" + subTypesOf);
+        }
         if (selectedImpl != null) {
             Object dependency = getBean(selectedImpl);
             field.setAccessible(true);
@@ -261,7 +260,6 @@ public class MyContext {
             throw new BeanCreationException("无法解析的依赖：" + field.getType());
         }
     }
-
 
 
     //xxx:注入一般Bean,依照字段查找类,从容器取出为字段赋值
