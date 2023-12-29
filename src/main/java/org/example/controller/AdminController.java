@@ -45,12 +45,15 @@ public class AdminController {
     @MyAutoWired
     MyReidsTemplate myReidsTemplate;
 
+    @MyAutoWired
+    AdminController adminController;
+
     @MyRequestMapping("/map")
     public Map<String, Integer> mapTest(MyRequest myRequest)  {
         Map<String,Integer>myMap =new HashMap<>();
         myMap.put("user",123);
         myMap.put("password",456);
-        return myMap;
+        throw  new RuntimeException();
     }
     @MyRequestMapping("/insert")
     public Integer insert(@MyRequestParam("username") String username,@MyRequestParam("password") String password){

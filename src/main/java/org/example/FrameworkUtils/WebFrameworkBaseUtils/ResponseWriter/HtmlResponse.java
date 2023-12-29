@@ -60,6 +60,44 @@ public class HtmlResponse {
         }
     }
 
+    public void outPutErrorMessageWriter(Socket socket, int statusCode, String errorMessage, String errorTime, Cookie cookie) throws IOException {
+        String  CrossOrigin=crossOriginBean.getOrigins();
+        String responseText = "<html><body>" +
+                "<h1>500 Error Page</h1>" +
+                "<p>服务器内部错误</p>" +
+                "<p id='created'>" + errorTime + "</p>" +
+                "<p>There was an unexpected error (type=Internal Server Error, status=500).</p>" +
+                "<p id='created' style='color:red'>报错原因:" + errorMessage + "</p>" +
+                "</body></html>";
+        byte[] responseBytes = responseText.getBytes(StandardCharsets.UTF_8);
+        StringBuilder responseHeader = new StringBuilder();
+        responseHeader.append("HTTP/1.1 ").append(statusCode).append(" OK\r\n");
+        responseHeader.append("Server: liTangDingZhen\r\n");
+        responseHeader.append("Content-Type: text/html;charset=UTF-8\r\n");
+        responseHeader.append("Content-Length: ").append(responseBytes.length).append("\r\n");
+        responseHeader.append("Connection: close\r\n");
+        responseHeader.append("Access-Control-Allow-Origin: ").append(CrossOrigin).append("\r\n");
+        if (cookie != null) {
+            responseHeader.append("Set-Cookie: ")
+                    .append(cookie.getCookieName()).append("=")
+                    .append(cookie.getCookieValue()).append(";");
+            if (cookie.getPath() != null) {
+                responseHeader.append(" Path=").append(cookie.getPath()).append(";");
+            }
+
+            if (cookie.getMaxAge() > 0) {
+                responseHeader.append(" Max-Age=").append(cookie.getMaxAge()).append(";");
+            }
+            responseHeader.append("\r\n");
+        }
+        responseHeader.append("\r\n");
+        try (OutputStream out = socket.getOutputStream()) {
+            out.write(responseHeader.toString().getBytes(StandardCharsets.UTF_8));
+            out.write(responseBytes);
+        }
+    }
+
+
     //xxx:302重定向
     public void redirectLocationWriter(Socket socket, String location) throws IOException {
         String responseBody = "<html><body><h1>页面重定向/拦截器拦截</h1></body></html>";

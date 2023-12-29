@@ -32,6 +32,7 @@
 - cookie,session加入,自动为新用户setCookie,设置JSESSIONID
 - 依照JSESSIONID的value查找对应的session
 - 简易的swagger加入
+- 循环依赖提示器加入
 
 ## 代码示范
 ### Controller
@@ -262,6 +263,7 @@ iconName=myicon.ico
 crossOrigin=*
 redisHost=127.0.0.1
 redisPort=6379
+allow-circular-references=true
 ```
 ## 未来打算实现:
 
@@ -301,6 +303,11 @@ redisPort=6379
 - ~~@bean与依赖注入时机的问题:举个例子配置类a定义一个标注有@bean的方法,我的框架反射执行这个方法拿到object放入第一缓存.接着业务类b依赖这个bean,成功注入.但是有时候是业务类b先走到依赖注入这个环节,这时候因为@bean标注的是一个方法而不是一个类因此第一二三级缓存中没有这个元素,初始化失败.不知道spring是如何解决这个问题的,我目前的解决方法是初始化容器两次,勉勉强强解决了把(11/29已解决)~~
 
 ## 更新记录:
+### 2023/12/29
+- 增加了循环依赖检测器,可以像spring boot那样检测循环依赖并输出哪些Bean有循环引用的问题
+- 可以在配置文件中添加allow-circular-references=true开启循环依赖
+- 增加了更多配置文件注入器的类型转换功能
+
 ### 2023/12/26
 - 修正了注入接口实现类的时候有多个实现类但框架不报错的问题
 - 现在可以通知用户是哪些实现类冲突,而不是一个个去查

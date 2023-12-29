@@ -17,8 +17,12 @@ import org.reflections.scanners.SubTypesScanner;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -50,9 +54,8 @@ public class MyContext {
         }
         return instance;
     }
-    private  AopProxyFactory aopProxyFactory= new AopProxyFactory();
-    private Map<String, Object> sharedMap = new HashMap<>();
-    private Set<Class<?>> iocContainer;
+    private final AopProxyFactory aopProxyFactory= new AopProxyFactory();
+    private final Map<String, Object> sharedMap = new HashMap<>();
     //xxx:一级缓存存储成熟bean
     private final Map<Class<?>, Object> singletonObjects = new ConcurrentHashMap<>();
 
@@ -64,7 +67,16 @@ public class MyContext {
     private Jdbcinit jdbcinit = new Jdbcinit();
     private Properties properties = jdbcinit.initProperties();
 
+    private List<Class<?>> cycleSet=new ArrayList<>();
+    Map<String,List<Class<?>>> beanDependencies=new HashMap<>();
+    int times=1;
+
+
     public <T>  T getBean(Class<T> beanClass) {
+        if(times!=1){
+            cycleSet.add(beanClass);
+        }
+        times++;
         //xxx:寻找一级缓存
         Object singletonObject = singletonObjects.get(beanClass);
         //xxx:一级缓存找不到
@@ -87,19 +99,25 @@ public class MyContext {
                 }
             }
         }
-
         return (T)singletonObject;
     }
 
     //xxx:初始化第三缓存
     public void initIocCache(Set<Class<?>> prototypeIocContainer) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
-        this.iocContainer = prototypeIocContainer;
         //xxx:填充第三级缓存
-        registerBeanDefinition(this.iocContainer);
+        registerBeanDefinition(prototypeIocContainer);
         //xxx:缓存添加好后,遍历外界传递的Set,对Bean进行初始化
-        for (Class<?> clazz : this.iocContainer) {
-            initBean(clazz);
+        for (Class<?> clazz : prototypeIocContainer) {// 为每个类创建新的集合
+            cycleSet = new ArrayList<>();
+            initBean(clazz); // 初始化Bean
+            if (!cycleSet.isEmpty()) {
+                beanDependencies.put(clazz.getName(), new ArrayList<>(cycleSet));
+            }
+            times=1;
         }
+        DependencyChecker dependencyChecker=getBean(DependencyChecker.class);
+        dependencyChecker.checkForCyclicDependencies(beanDependencies);
+
     }
 
     private void initBean(Class<?> clazz) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
@@ -108,6 +126,7 @@ public class MyContext {
             //xxx:依赖注入开始
             autowireBeanProperties(bean);
         }
+
 
     }
 
@@ -208,6 +227,7 @@ public class MyContext {
             else if (field.isAnnotationPresent(Value.class)) {
                 injectValueAnnotation(bean, field);
             }
+
         }
         //xxx:依赖注入后更新缓存,这个bean从第二缓存移除,进入一级缓存,提前暴露期转为成熟的AutumnBean
         singletonObjects.put(bean.getClass(), bean);
@@ -224,6 +244,7 @@ public class MyContext {
             //xxx:正常的Bean
             injectNormalDependency(bean, field);
         }
+
     }
 
 
@@ -304,11 +325,28 @@ public class MyContext {
             return Integer.parseInt(value);
         } else if (Float.TYPE.equals(type) || Float.class.equals(type)) {
             return Float.parseFloat(value);
+        } else if (Double.TYPE.equals(type) || Double.class.equals(type)) {
+            return Double.parseDouble(value);
+        } else if (Long.TYPE.equals(type) || Long.class.equals(type)) {
+            return Long.parseLong(value);
+        } else if (Boolean.TYPE.equals(type) || Boolean.class.equals(type)) {
+            return Boolean.parseBoolean(value);
+        } else if (Byte.TYPE.equals(type) || Byte.class.equals(type)) {
+            return Byte.parseByte(value);
+        } else if (Short.TYPE.equals(type) || Short.class.equals(type)) {
+            return Short.parseShort(value);
+        } else if (Character.TYPE.equals(type) || Character.class.equals(type)) {
+            if (value.length() == 1) {
+                return value.charAt(0);
+            } else {
+                throw new IllegalArgumentException("Cannot convert String to Character: \"" + value + "\" is not a single character");
+            }
         } else if (String.class.equals(type)) {
             return value;
         }
         throw new IllegalArgumentException("不支持的类型: " + type);
     }
+
 
     public void put(String key, Object value) {
         sharedMap.put(key, value);
@@ -321,4 +359,5 @@ public class MyContext {
     public Map<Class<?>, Object> getIocContainer() {
         return singletonObjects;
     }
+
 }

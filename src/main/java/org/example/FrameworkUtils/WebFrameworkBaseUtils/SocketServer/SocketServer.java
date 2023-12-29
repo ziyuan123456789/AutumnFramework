@@ -32,6 +32,7 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -178,7 +179,7 @@ public class SocketServer {
         return param.get(paramName);
     }
 
-    public void processRequest(Socket clientSocket, Map sharedMap,String payload,String body,Integer lenth,String contentType,String boundary) throws IOException {
+    public void processRequest(Socket clientSocket, Map sharedMap,String payload,String body,Integer lenth,String contentType,String boundary) throws IOException, ClassNotFoundException {
             boolean urlmark = true;
             MyRequest myRequest = new MyRequest(payload,body,lenth);
             if("multipart/form-data".equals(contentType)){
@@ -211,11 +212,11 @@ public class SocketServer {
                             }
 
                         } catch (InvocationTargetException | ClassNotFoundException | NoSuchMethodException |
-                                 IllegalAccessException e) {
+                                 IllegalAccessException | RuntimeException e) {
                             Throwable cause = e.getCause();
                             log.warn("异常来自" + methodName);
                             cause.printStackTrace(System.err);
-                            htmlResponse.outPutMessageWriter(clientSocket, 500, e.getCause().toString(), null);
+                            htmlResponse.outPutErrorMessageWriter(clientSocket, 500, e.getCause().toString(),new Date().toString(), null);
                         }
                     }
                 }

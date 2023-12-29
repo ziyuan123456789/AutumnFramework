@@ -13,6 +13,7 @@ import org.example.service.TestService;
 public class CycleServiceImpl implements CycleService {
     @MyAutoWired
     TestService testService;
+
     @Override
     public void cycle() {
         System.out.println("循环依赖");
