@@ -22,7 +22,7 @@ public class UrlFilter implements Filter {
     public boolean doChain(MyRequest myRequest, MyResponse myResponse) {
         if ("GET".equals(myRequest.getMethod())) {
             log.info("一级过滤链拦截,开始第一步鉴权");
-//            myResponse.setCode(500).setResponseText("鉴权失败").outputMessage();
+//            myResponse.setCode(400).setResponseText("鉴权失败").outputErrorMessage();
             return indexFilter.doChain(myRequest, myResponse);
         } else {
             log.info("一级过滤链放行");

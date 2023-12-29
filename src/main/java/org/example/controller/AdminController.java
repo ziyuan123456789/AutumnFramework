@@ -2,7 +2,7 @@ package org.example.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
-import org.example.Aop.UserAopProxyFactory;
+import org.example.Aop.UserAopProxyHandler;
 import org.example.Bean.Temp;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.EnableAop;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
@@ -29,7 +29,7 @@ import java.util.Map;
  */
 @MyController
 @Slf4j
-@EnableAop(getMethod = {"myhtml","login"}, getClassFactory = UserAopProxyFactory.class)
+@EnableAop(getMethod = {"myhtml","login"}, getClassFactory = UserAopProxyHandler.class)
 public class AdminController {
 
     @MyAutoWired

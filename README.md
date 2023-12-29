@@ -103,10 +103,14 @@ public class AdminController {
 ```java
 @Slf4j
 @MyAspect
-public class UserAopProxyFactory implements AutunmnAopFactory {
+public class UserAopProxyHandler implements AutunmnAopFactory {
+    @Override
+    public void doBefore(Object obj, Method method, Object[] args) {
+        log.warn("用户切面方法开始预处理,切面处理器是"+this.getClass().getName()+"处理的方法为:"+method.getName() );
+    }
+
     @Override
     public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-        log.warn("用户切面方法开始预处理,切面处理器是"+this.getClass().getName()+"处理的方法为:"+method.getName() );
         Annotation[][] paramAnnotations = method.getParameterAnnotations();
         for (int i = 0; i < paramAnnotations.length; i++) {
             for (Annotation annotation : paramAnnotations[i]) {
@@ -116,11 +120,20 @@ public class UserAopProxyFactory implements AutunmnAopFactory {
                 }
             }
         }
-        Object aop= proxy.invokeSuper(obj, args);
+        return proxy.invokeSuper(obj, args);
+    }
+
+    @Override
+    public void doAfter(Object obj, Method method, Object[] args) {
         log.info("用户自定义逻辑执行结束");
-        return aop;
+    }
+
+    @Override
+    public void doThrowing(Object obj, Method method, Object[] args,Exception e) {
+        log.error("用户切面方法抛出异常",e);
     }
 }
+
 ```
 ### 拦截器
 ```java
@@ -132,16 +145,18 @@ public class UrlFilter implements Filter {
     IndexFilter indexFilter;
 
     @Override
-    public boolean doChain(Request myRequest) {
+    public boolean doChain(MyRequest myRequest, MyResponse myResponse) {
         if ("GET".equals(myRequest.getMethod())) {
             log.info("一级过滤链拦截,开始第一步鉴权");
-            return indexFilter.doChain(myRequest);
+//            myResponse.setCode(400).setResponseText("鉴权失败").outputErrorMessage();
+            return indexFilter.doChain(myRequest, myResponse);
         } else {
             log.info("一级过滤链放行");
             return false;
         }
     }
 }
+
 ```
 ### Mapper
 ```java
@@ -149,7 +164,10 @@ public class UrlFilter implements Filter {
 public interface UserMapper {
     @MySelect("select username,password from user where username=#{username} and password=#{password}")
     User login(@MyParam("username") String username,@MyParam("password") String password);
+    @MyInsert("insert into  user (username,password) values (#{username},#{password})")
+    Integer insertUser(@MyParam("username") String username,@MyParam("password") String password);
 }
+
 ```
 ### 配置类,@Bean
 ```java

@@ -5,8 +5,10 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.HtmlResponse;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Date;
 
 /**
  * @author ziyuan
@@ -50,6 +52,14 @@ public class MyResponse {
     public void outputMessage()  {
         try{
             htmlResponse.outPutMessageWriter(socket, httpCode, responseText,cookie);
+        }catch (IOException e){
+            log.error("htmlResponse输出失败");
+        }
+    }
+
+    public void outputErrorMessage()  {
+        try{
+            htmlResponse.outPutErrorMessageWriter(socket, httpCode, responseText,new Date().toString(), null);
         }catch (IOException e){
             log.error("htmlResponse输出失败");
         }

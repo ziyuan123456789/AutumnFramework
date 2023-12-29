@@ -32,6 +32,7 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -154,6 +155,9 @@ public class SocketServer {
                 domethod = method;
                 Parameter[] parameters = method.getParameters();
                 for (Parameter parameter : parameters) {
+                    if(isJavaBean(parameter.getClass())){
+                        log.info(parameter.getClass()+"是一个Javabean");
+                    }
                     MyRequestParam myRequestParam = parameter.getAnnotation(MyRequestParam.class);
                     if (parameter.getType().equals(MyRequest.class)) {
                         objectList.add(myRequest);
@@ -282,6 +286,25 @@ public class SocketServer {
                 classType.equals(Double.class) ||
                 classType.equals(Long.class) ||
                 classType.equals(Float.class);
+    }
+
+    public static boolean isJavaBean(Class<?> clazz) {
+        try {
+            clazz.getConstructor();
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+        if (Collection.class.isAssignableFrom(clazz) ||
+                Map.class.isAssignableFrom(clazz) ||
+                clazz.isArray() ||
+                clazz.isPrimitive() ||
+                clazz == String.class ||
+                Number.class.isAssignableFrom(clazz) ||
+                Date.class.isAssignableFrom(clazz)) {
+            return false;
+        }
+
+        return true;
     }
 
 

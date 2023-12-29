@@ -13,4 +13,8 @@ public class BeanCreationException extends RuntimeException{
         super(message);
     }
 
+    public BeanCreationException(String s, Exception e) {
+        super(s, e);
+
+    }
 }

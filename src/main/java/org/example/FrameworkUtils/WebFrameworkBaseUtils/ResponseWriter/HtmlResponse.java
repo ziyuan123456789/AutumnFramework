@@ -63,10 +63,10 @@ public class HtmlResponse {
     public void outPutErrorMessageWriter(Socket socket, int statusCode, String errorMessage, String errorTime, Cookie cookie) throws IOException {
         String  CrossOrigin=crossOriginBean.getOrigins();
         String responseText = "<html><body>" +
-                "<h1>500 Error Page</h1>" +
+                "<h1>"+statusCode+" Error Page</h1>" +
                 "<p>服务器内部错误</p>" +
                 "<p id='created'>" + errorTime + "</p>" +
-                "<p>There was an unexpected error (type=Internal Server Error, status=500).</p>" +
+                "<p>There was an unexpected error (type=Internal Server Error, status="+statusCode+").</p>" +
                 "<p id='created' style='color:red'>报错原因:" + errorMessage + "</p>" +
                 "</body></html>";
         byte[] responseBytes = responseText.getBytes(StandardCharsets.UTF_8);

@@ -13,15 +13,12 @@ import org.example.FrameworkUtils.Orm.MineBatis.MapperUtils;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -55,7 +52,7 @@ public class MyContext {
         return instance;
     }
     private final AopProxyFactory aopProxyFactory= new AopProxyFactory();
-    private final Map<String, Object> sharedMap = new HashMap<>();
+    private final Map<String, Object> sharedMap = new ConcurrentHashMap<>();
     //xxx:一级缓存存储成熟bean
     private final Map<Class<?>, Object> singletonObjects = new ConcurrentHashMap<>();
 
@@ -64,11 +61,11 @@ public class MyContext {
 
     //xxx: 三级缓存：对象工厂,创建Jdk代理/CgLib代理/配置类Bean/普通Bean
     private final Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();
-    private Jdbcinit jdbcinit = new Jdbcinit();
-    private Properties properties = jdbcinit.initProperties();
+    private final Jdbcinit jdbcinit = new Jdbcinit();
+    private final Properties properties = jdbcinit.initProperties();
 
     private List<Class<?>> cycleSet=new ArrayList<>();
-    Map<String,List<Class<?>>> beanDependencies=new HashMap<>();
+    private final Map<String,List<Class<?>>> beanDependencies=new HashMap<>();
     int times=1;
 
 
@@ -94,7 +91,7 @@ public class MyContext {
                         earlySingletonObjects.put(beanClass, singletonObject);
                         singletonFactories.remove(beanClass.getName());
                     } catch (Exception e) {
-                        throw new RuntimeException("创建Bean实例失败: " + beanClass.getName(), e);
+                        throw new BeanCreationException("创建Bean实例失败: " + beanClass.getName(), e);
                     }
                 }
             }
@@ -107,9 +104,9 @@ public class MyContext {
         //xxx:填充第三级缓存
         registerBeanDefinition(prototypeIocContainer);
         //xxx:缓存添加好后,遍历外界传递的Set,对Bean进行初始化
-        for (Class<?> clazz : prototypeIocContainer) {// 为每个类创建新的集合
+        for (Class<?> clazz : prototypeIocContainer) {
             cycleSet = new ArrayList<>();
-            initBean(clazz); // 初始化Bean
+            initBean(clazz);
             if (!cycleSet.isEmpty()) {
                 beanDependencies.put(clazz.getName(), new ArrayList<>(cycleSet));
             }
@@ -120,7 +117,7 @@ public class MyContext {
 
     }
 
-    private void initBean(Class<?> clazz) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
+    private void initBean(Class<?> clazz) throws NoSuchFieldException, IllegalAccessException {
         Object bean = getBean(clazz);
         if (bean != null) {
             //xxx:依赖注入开始
@@ -156,7 +153,7 @@ public class MyContext {
             //xxx:用成熟的自己来反射执行方法
             return method.invoke(magicBean);
         } catch (Exception e) {
-            throw new RuntimeException("创建@bean标注的实例失败,请检查你是否存在一个有参构造器,有的话创建一个无参构造器", e);
+            throw new BeanCreationException("创建@bean标注的实例失败,请检查你是否存在一个有参构造器,有的话创建一个无参构造器", e);
         }
     }
     //xxx:判断使用哪种工厂
@@ -178,7 +175,7 @@ public class MyContext {
 
 
     //xxx:Aop工厂
-    private Object createAopBeanInstance(Class<?> beanClass) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    private Object createAopBeanInstance(Class<?> beanClass) {
         String[] methods=beanClass.getAnnotation(EnableAop.class).getMethod();
         Class<?> clazz = beanClass.getAnnotation(EnableAop.class).getClassFactory();
         if(clazz==null || methods==null || methods.length==0){
@@ -187,7 +184,7 @@ public class MyContext {
         try{
             return aopProxyFactory.create(clazz ,beanClass,methods);
         }catch (Exception e){
-            throw new RuntimeException("解析注解错误,保证Aop配置类可以被实例化\n创建CgLibBean实例失败", e);
+            throw new BeanCreationException("解析注解错误,保证Aop配置类可以被实例化\n创建CgLibBean实例失败", e);
         }
 
     }
@@ -198,7 +195,7 @@ public class MyContext {
         try {
             return beanClass.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
-            throw new RuntimeException("创建普通bean实例失败,请检查你是否存在一个有参构造器,有的话创建一个无参构造器", e);
+            throw new BeanCreationException("创建普通bean实例失败,请检查你是否存在一个有参构造器,有的话创建一个无参构造器", e);
         }
     }
 
@@ -207,7 +204,7 @@ public class MyContext {
         try {
             return MapperUtils.init(beanClass);
         } catch (Exception e) {
-            throw new RuntimeException("创建MapperBean实例失败", e);
+            throw new BeanCreationException("创建MapperBean实例失败", e);
         }
     }
 

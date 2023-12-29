@@ -11,10 +11,14 @@ import java.lang.reflect.Method;
 
 @Slf4j
 @MyAspect
-public class UserAopProxyFactory implements AutunmnAopFactory {
+public class UserAopProxyHandler implements AutunmnAopFactory {
+    @Override
+    public void doBefore(Object obj, Method method, Object[] args) {
+        log.warn("用户切面方法开始预处理,切面处理器是"+this.getClass().getName()+"处理的方法为:"+method.getName() );
+    }
+
     @Override
     public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-        log.warn("用户切面方法开始预处理,切面处理器是"+this.getClass().getName()+"处理的方法为:"+method.getName() );
         Annotation[][] paramAnnotations = method.getParameterAnnotations();
         for (int i = 0; i < paramAnnotations.length; i++) {
             for (Annotation annotation : paramAnnotations[i]) {
@@ -24,9 +28,17 @@ public class UserAopProxyFactory implements AutunmnAopFactory {
                 }
             }
         }
-        Object aop= proxy.invokeSuper(obj, args);
+        return proxy.invokeSuper(obj, args);
+    }
+
+    @Override
+    public void doAfter(Object obj, Method method, Object[] args) {
         log.info("用户自定义逻辑执行结束");
-        return aop;
+    }
+
+    @Override
+    public void doThrowing(Object obj, Method method, Object[] args,Exception e) {
+        log.error("用户切面方法抛出异常",e);
     }
 }
 
