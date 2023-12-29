@@ -228,7 +228,7 @@ public class AutumnMvcConfigurationBaseImpl implements AutumnMvcConfiguration{
 ```java
 @MyComponent
 @Slf4j
-public class MatchClassByInterface implements Condition {
+public class MatchClassByInterface implements MyCondition {
 
     @MyAutoWired
     private Reflections reflections;
@@ -241,29 +241,39 @@ public class MatchClassByInterface implements Condition {
 
     @Override
     public boolean matches(MyContext myContext, Class<?> clazz) {
-        Set<Class<?>> subTypesOf = (Set<Class<?>>) reflections.getSubTypesOf(clazz);
-
-        for (Class<?> implClass : subTypesOf) {
-            if (clazz.equals(implClass)) {
-                continue;
-            }
-            MyConditional myConditionalAnnotation = implClass.getAnnotation(MyConditional.class);
-            if (myConditionalAnnotation == null) {
-                return false;
-            } else {
-                Class<? extends Condition> conditionClass = myConditionalAnnotation.value();
-                Condition myCondition = (Condition) myContext.getBean(conditionClass);
-
-                if (myCondition.matches(myContext, implClass)) {
-                    return false;
-
+        Set<Class<?>> subTypesOf = (Set) reflections.getSubTypesOf(clazz.getInterfaces()[0]);
+        List<Class> injectImplList=new ArrayList<>();
+        if (subTypesOf.size() == 2) {
+            return false;
+        } else if (subTypesOf.size() > 2) {
+            for (Class<?> implClass : subTypesOf) {
+                if(implClass.equals(clazz)){
+                    continue;
+                }
+                MyConditional myCondition = implClass.getAnnotation(MyConditional.class);
+                if (myCondition != null) {
+                    Class<? extends MyCondition> otherCondition = myCondition.value();
+                    MyCondition myConditionImpl = myContext.getBean(otherCondition);
+                    myConditionImpl.init();
+                    if (myConditionImpl.matches(myContext, implClass)) {
+                        throw new IllegalStateException("多个条件处理器均被命中,请确认到底要注入哪一个"+injectImplList);
+                    }
+                    myConditionImpl.after();
+                }else{
+                    injectImplList.add(implClass);
                 }
             }
         }
+        if(injectImplList.size()==1){
+            return false;
 
-        return true;
+        }else{
+            throw new IllegalStateException("多个条件处理器均被命中,请确认到底要注入哪一个");
+        }
+
     }
 }
+
 ```
 ### 配置文件
 ```html
