@@ -23,7 +23,13 @@ public class Jdbcinit {
 
     public  ResultSet querySql(String sql) throws SQLException {
         Properties properties=initProperties();
-        Connection connection = DriverManager.getConnection(properties.getProperty("url"), properties.getProperty("user"), properties.getProperty("password"));
+        Connection connection = null;
+        try{
+            connection = DriverManager.getConnection(properties.getProperty("url"), properties.getProperty("user"), properties.getProperty("password"));
+            Statement statement = connection.createStatement();
+        }catch (Exception e){
+            log.error("数据库链接失败,检查端口地址账号密码",e);
+        }
         Statement statement = connection.createStatement();
         return statement.executeQuery(sql);
     }

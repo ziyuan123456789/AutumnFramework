@@ -268,7 +268,8 @@ public class MyContext {
         if (subTypesOf.size() == 1) {
             selectedImpl = subTypesOf.iterator().next();
         } else if (subTypesOf.size() > 1) {
-            throw new BeanCreationException("找到多个符合条件的实现：" + subTypesOf);
+            log.error("多个实现类均命中,请添加合理的条件注解来进行选择性注入,冲突的实现类如下:\n"+subTypesOf);
+            throw new BeanCreationException("多个实现类命中");
         }
         if (selectedImpl != null) {
             Object dependency = getBean(selectedImpl);

@@ -1,9 +1,8 @@
 package org.example;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.AutunmnBean;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.SocketServer.AutumnFrameworkRunner;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFrameworkRunner;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
 import org.example.FrameworkUtils.AutumnMVC.MyContext;
 

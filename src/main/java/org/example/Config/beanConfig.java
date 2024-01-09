@@ -19,14 +19,14 @@ public class beanConfig {
 
     @MyAutoWired
     TestMapper testMapper;
-    @AutunmnBean
-    public User beanTest(){
-        return  userMapper.login("wzy","123");
-    }
-
-    @AutunmnBean
-    public Temp beanTest1() {
-        return testMapper.selectById1(1);
-    }
+//    @AutunmnBean
+//    public User beanTest(){
+//        return  userMapper.login("wzy","123");
+//    }
+//
+//    @AutunmnBean
+//    public Temp beanTest1() {
+//        return testMapper.selectById1(1);
+//    }
 
 }

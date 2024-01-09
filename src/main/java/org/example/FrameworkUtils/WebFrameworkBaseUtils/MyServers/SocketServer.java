@@ -1,10 +1,7 @@
-package org.example.FrameworkUtils.WebFrameworkBaseUtils.SocketServer;
+package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyRequestParam;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.Value;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.*;
 import org.example.FrameworkUtils.AutumnMVC.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnMVC.MyMultipartFile;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
@@ -12,6 +9,7 @@ import org.example.FrameworkUtils.DataStructure.Tuple;
 import org.example.FrameworkUtils.Exception.NoAvailableUrlMappingException;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyRequest;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyResponse;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ConditionCheck.SocketServerConditionCheck;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.HtmlResponse;
@@ -45,7 +43,8 @@ import java.util.concurrent.Executors;
  */
 @Slf4j
 @MyComponent
-public class SocketServer {
+@MyConditional(SocketServerConditionCheck.class)
+public class SocketServer implements MyServer {
     private ExecutorService threadPool;
     private ServerSocket serverSocket;
     private final MyContext myContext = MyContext.getInstance();
@@ -62,6 +61,7 @@ public class SocketServer {
     private Integer threadNums;
 
 
+    @Override
     public void init() throws Exception {
         threadPool = Executors.newFixedThreadPool(threadNums);
         Map<String, String> sharedMap = (Map<String, String>) myContext.get("urlmapping");
@@ -142,7 +142,7 @@ public class SocketServer {
         }
     }
 
-    public Tuple<Object, Class<?>> invokeMethod(String classurl, String methodName, MyRequest myRequest, MyResponse myResponse) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private Tuple<Object, Class<?>> invokeMethod(String classurl, String methodName, MyRequest myRequest, MyResponse myResponse) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<?> clazz = Class.forName(classurl);
         Object instance = myContext.getBean(clazz);
         Method domethod=null;
@@ -178,12 +178,12 @@ public class SocketServer {
         }
         return new Tuple<>(domethod.invoke(instance, objectList.toArray()), domethod.getReturnType());
     }
-    public Object useUrlGetParam(String paramName, MyRequest myRequest){
+    private Object useUrlGetParam(String paramName, MyRequest myRequest){
         Map<String,String> param= myRequest.getParameters();
         return param.get(paramName);
     }
 
-    public void processRequest(Socket clientSocket, Map sharedMap,String payload,String body,Integer lenth,String contentType,String boundary) throws IOException, ClassNotFoundException {
+    private void processRequest(Socket clientSocket, Map sharedMap,String payload,String body,Integer lenth,String contentType,String boundary) throws IOException, ClassNotFoundException {
             boolean urlmark = true;
             MyRequest myRequest = new MyRequest(payload,body,lenth);
             if("multipart/form-data".equals(contentType)){
@@ -236,7 +236,7 @@ public class SocketServer {
         }
 
     //xxx:解析url
-    public String extractPath(String url) {
+    private String extractPath(String url) {
         int questionMarkIndex = url.indexOf('?');
         if (questionMarkIndex != -1) {
             return url.substring(0, questionMarkIndex);
@@ -245,13 +245,13 @@ public class SocketServer {
         }
     }
     //xxx:输出异常信息
-    public <T extends Exception> void exceptionPrinter(T e, String message) {
+    private <T extends Exception> void exceptionPrinter(T e, String message) {
         e.printStackTrace();
         log.error(message, e);
     }
 
     //xxx:依照方法的返回值来确定选择哪种返回器
-    public void handleSocketOutputByType(Socket clientSocket, Object result, MyRequest myRequest) throws IOException, IllegalAccessException {
+    private void handleSocketOutputByType(Socket clientSocket, Object result, MyRequest myRequest) throws IOException, IllegalAccessException {
         Cookie cookie = myRequest.getCookieByName("userSession");
         if (cookie != null) {
             cookie = null;
@@ -288,7 +288,7 @@ public class SocketServer {
                 classType.equals(Float.class);
     }
 
-    public static boolean isJavaBean(Class<?> clazz) {
+    private static boolean isJavaBean(Class<?> clazz) {
         try {
             clazz.getConstructor();
         } catch (NoSuchMethodException e) {

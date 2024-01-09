@@ -1,13 +1,9 @@
-package org.example.FrameworkUtils.WebFrameworkBaseUtils.SocketServer;
+package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyController;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.*;
 import org.example.FrameworkUtils.AutumnMVC.AnnotationScanner;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyRequestMapping;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyService;
 import org.example.FrameworkUtils.AutumnMVC.MyContext;
 
 import java.lang.annotation.Annotation;
@@ -24,38 +20,28 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2023.10
  */
 @Slf4j
+@MyComponent
 public class AutumnFrameworkRunner {
+    MyContext myContext = MyContext.getInstance();
 
     public void run(Class<?> mainClass) {
-        Thread t = new Thread(() -> {
-            MyContext myContext = MyContext.getInstance();
-            myContext.put("packageUrl", mainClass.getPackageName());
-            try {
-                componentScan(mainClass, myContext);
-            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | NoSuchFieldException |
-                     ClassNotFoundException | InstantiationException e) {
-                throw new RuntimeException(e);
+        myContext.put("packageUrl", mainClass.getPackageName());
+        try {
+            componentScan(mainClass, myContext);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | NoSuchFieldException |
+                 ClassNotFoundException | InstantiationException e) {
+            throw new RuntimeException(e);
+        }
+        ConcurrentHashMap<String, String> urlMap = new ConcurrentHashMap<>();
+        Map<Class<?>, Object> iocContainer = myContext.getIocContainer();
+        for (Class<?> clazz : iocContainer.keySet()) {
+            if (clazz.getName().contains("$$EnhancerByCGLIB")) {
+                processClassForMapping(clazz.getSuperclass(),urlMap);
+            } else {
+                processClassForMapping(clazz,urlMap);
             }
-            ConcurrentHashMap<String, String> urlMap = new ConcurrentHashMap<>();
-            Map<Class<?>, Object> iocContainer = myContext.getIocContainer();
-            for (Class<?> clazz : iocContainer.keySet()) {
-                if (clazz.getName().contains("$$EnhancerByCGLIB")) {
-                    processClassForMapping(clazz.getSuperclass(),urlMap);
-                } else {
-                    processClassForMapping(clazz,urlMap);
-                }
-            }
-            myContext.put("urlmapping", urlMap);
-            SocketServer server = myContext.getBean(SocketServer.class);
-            try {
-                server.init();
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
-                System.exit(1);
-
-            }
-        });
-        t.start();
+        }
+        myContext.put("urlmapping", urlMap);
     }
 
     private void componentScan(Class<?> mainClass, MyContext myContext) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException, ClassNotFoundException, InstantiationException {
@@ -72,6 +58,9 @@ public class AutumnFrameworkRunner {
         myContext.initIocCache(annotatedClasses);
         long endTime = System.currentTimeMillis();
         log.info("容器花费了：" + (endTime - startTime) + " 毫秒实例化");
+        ServerRunner serverRunner=myContext.getBean(ServerRunner.class);
+        serverRunner.run();
+
     }
     private void processClassForMapping(Class<?> clazz,ConcurrentHashMap<String, String> urlMap) {
         if (clazz.isAnnotationPresent(MyController.class)) {
