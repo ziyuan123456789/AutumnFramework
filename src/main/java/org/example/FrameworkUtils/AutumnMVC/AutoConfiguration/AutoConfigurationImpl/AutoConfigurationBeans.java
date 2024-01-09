@@ -16,6 +16,7 @@ public class AutoConfigurationBeans {
     private final MyContext myContext=MyContext.getInstance();
     String packageName = (String) myContext.get("packageUrl");
 
+
     @AutunmnBean
     @SuppressWarnings("deprecation")
     public Reflections getReflection() {
