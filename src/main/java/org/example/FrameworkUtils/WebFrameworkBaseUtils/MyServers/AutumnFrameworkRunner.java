@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @MyComponent
 public class AutumnFrameworkRunner {
     MyContext myContext = MyContext.getInstance();
-
     public void run(Class<?> mainClass) {
         myContext.put("packageUrl", mainClass.getPackageName());
         try {
@@ -42,6 +41,8 @@ public class AutumnFrameworkRunner {
             }
         }
         myContext.put("urlmapping", urlMap);
+        ServerRunner server = myContext.getBean(ServerRunner.class);
+        server.run();
     }
 
     private void componentScan(Class<?> mainClass, MyContext myContext) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException, ClassNotFoundException, InstantiationException {
@@ -58,8 +59,6 @@ public class AutumnFrameworkRunner {
         myContext.initIocCache(annotatedClasses);
         long endTime = System.currentTimeMillis();
         log.info("容器花费了：" + (endTime - startTime) + " 毫秒实例化");
-        ServerRunner serverRunner=myContext.getBean(ServerRunner.class);
-        serverRunner.run();
 
     }
     private void processClassForMapping(Class<?> clazz,ConcurrentHashMap<String, String> urlMap) {
