@@ -3,6 +3,7 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.*;
 import org.example.FrameworkUtils.AutumnMVC.AnnotationScanner;
+import org.example.FrameworkUtils.AutumnMVC.MyBeanDefinition;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
 import org.example.FrameworkUtils.AutumnMVC.MyContext;
 
@@ -32,7 +33,7 @@ public class AutumnFrameworkRunner {
             throw new RuntimeException(e);
         }
         ConcurrentHashMap<String, String> urlMap = new ConcurrentHashMap<>();
-        Map<Class<?>, Object> iocContainer = myContext.getIocContainer();
+        Map<Class<?>, MyBeanDefinition> iocContainer = myContext.getIocContainer();
         for (Class<?> clazz : iocContainer.keySet()) {
             if (clazz.getName().contains("$$EnhancerByCGLIB")) {
                 processClassForMapping(clazz.getSuperclass(),urlMap);

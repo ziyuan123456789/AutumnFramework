@@ -1,7 +1,7 @@
 package org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutoConfigurationImpl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.AutunmnBean;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.AutumnBean;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
 import org.example.FrameworkUtils.AutumnMVC.MyContext;
 import org.reflections.Reflections;
@@ -17,7 +17,7 @@ public class AutoConfigurationBeans {
     String packageName = (String) myContext.get("packageUrl");
 
 
-    @AutunmnBean
+    @AutumnBean
     @SuppressWarnings("deprecation")
     public Reflections getReflection() {
         return new Reflections(packageName,new SubTypesScanner(false));

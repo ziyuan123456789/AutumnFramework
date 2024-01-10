@@ -1,7 +1,7 @@
 package org.example.FrameworkUtils.AutumnMVC;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.AutunmnBean;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.AutumnBean;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.EnableAop;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConditional;
@@ -13,6 +13,8 @@ import org.example.FrameworkUtils.Orm.MineBatis.MapperUtils;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
+
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -53,11 +55,13 @@ public class MyContext {
     }
     private final AopProxyFactory aopProxyFactory= new AopProxyFactory();
     private final Map<String, Object> sharedMap = new ConcurrentHashMap<>();
+
+    private final Map<String, MyBeanDefinition> beanDefinitionMaps = new ConcurrentHashMap<>();
     //xxx:一级缓存存储成熟bean
-    private final Map<Class<?>, Object> singletonObjects = new ConcurrentHashMap<>();
+    private final Map<Class<?>, MyBeanDefinition> singletonObjects = new ConcurrentHashMap<>();
 
     //xxx: 二级缓存提前暴露的还未完全成熟的bean,用于解决循环依赖
-    private final Map<Class<?>, Object> earlySingletonObjects = new ConcurrentHashMap<>();
+    private final Map<Class<?>, MyBeanDefinition> earlySingletonObjects = new ConcurrentHashMap<>();
 
     //xxx: 三级缓存：对象工厂,创建Jdk代理/CgLib代理/配置类Bean/普通Bean
     private final Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();
@@ -69,26 +73,33 @@ public class MyContext {
     int times=1;
 
 
-    public <T>  T getBean(Class<T> beanClass) {
-        if(times!=1){
+    public <T> T getBean(Class<T> beanClass) {
+        if (times != 1) {
             cycleSet.add(beanClass);
         }
         times++;
-        //xxx:寻找一级缓存
-        Object singletonObject = singletonObjects.get(beanClass);
-        //xxx:一级缓存找不到
+
+        // xxx:寻找一级缓存
+        MyBeanDefinition singletonDefinition = singletonObjects.get(beanClass);
+        Object singletonObject = (singletonDefinition != null) ? singletonDefinition.getInstance() : null;
+
+        // xxx:一级缓存找不到
         if (singletonObject == null) {
-            //xxx:二级缓存寻找
-            singletonObject = earlySingletonObjects.get(beanClass);
-            //xxx:二级缓存中找不到
-            if (singletonObject == null) {
-                //xxx: 从三级缓存获取工厂方法
+            // xxx:二级缓存寻找
+            MyBeanDefinition earlySingleton = earlySingletonObjects.get(beanClass);
+            if (earlySingleton != null) {
+                singletonObject = earlySingleton.getInstance();
+            } else {
+                // xxx:二级缓存中找不到
+                // xxx: 从三级缓存获取工厂方法
                 ObjectFactory<?> singletonFactory = singletonFactories.get(beanClass.getName());
                 if (singletonFactory != null) {
                     try {
                         singletonObject = singletonFactory.getObject();
-                        //xxx:生产对象后从第三级移除,进入第二级缓存
-                        earlySingletonObjects.put(beanClass, singletonObject);
+                        // xxx:生产对象后从第三级移除,进入第二级缓存
+                        MyBeanDefinition mb = new MyBeanDefinition(beanClass.getName(), beanClass);
+                        mb.setInstance(singletonObject);
+                        earlySingletonObjects.put(beanClass, mb);
                         singletonFactories.remove(beanClass.getName());
                     } catch (Exception e) {
                         throw new BeanCreationException("创建Bean实例失败: " + beanClass.getName(), e);
@@ -96,13 +107,17 @@ public class MyContext {
                 }
             }
         }
-        return (T)singletonObject;
+        return (T) singletonObject;
     }
+
 
     //xxx:初始化第三缓存
     public void initIocCache(Set<Class<?>> prototypeIocContainer) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
+        for(Class<?> clazz:prototypeIocContainer){
+            beanDefinitionMaps.put(clazz.getName(),new MyBeanDefinition(clazz.getName(),clazz));
+        }
         //xxx:填充第三级缓存
-        registerBeanDefinition(prototypeIocContainer);
+        registerBeanDefinition(beanDefinitionMaps);
         //xxx:缓存添加好后,遍历外界传递的Set,对Bean进行初始化
         for (Class<?> clazz : prototypeIocContainer) {
             cycleSet = new ArrayList<>();
@@ -128,16 +143,22 @@ public class MyContext {
     }
 
     //xxx:遍历set去填充第三缓存
-    public void registerBeanDefinition(Set<Class<?>> beanDefinitionMap) {
-        for (Class<?> beanClass : beanDefinitionMap) {
-            ObjectFactory<?> beanFactory = createBeanFactory(beanClass);
-            singletonFactories.put(beanClass.getName(), beanFactory);
+    public void registerBeanDefinition(Map<String,MyBeanDefinition>  beanDefinitionMaps) {
+        for (MyBeanDefinition beanDefinition : beanDefinitionMaps.values()) {
+            ObjectFactory<?> beanFactory = createBeanFactory(beanDefinition.getBeanClass());
+            singletonFactories.put(beanDefinition.getName(), beanFactory);
             //xxx:查找带@AutunmnBean的字段,生成工厂放入第三缓存
-            if (beanClass.getAnnotation(MyConfig.class) != null) {
-                Method[] methods = beanClass.getDeclaredMethods();
+            if (beanDefinition.getBeanClass().getAnnotation(MyConfig.class) != null) {
+                Method[] methods = beanDefinition.getBeanClass().getDeclaredMethods();
                 for (Method method : methods) {
-                    if (method.getAnnotation(AutunmnBean.class) != null) {
-                        singletonFactories.put(method.getReturnType().getName(), createBeanFactory(beanClass,method));
+                    AutumnBean annotation = method.getAnnotation(AutumnBean.class);
+                    if (annotation != null) {
+                        if(!annotation.value().isEmpty()){
+                            singletonFactories.put(annotation.value(), createBeanFactory(beanDefinition.getBeanClass(),method));
+                        }else{
+                            singletonFactories.put(method.getReturnType().getName(), createBeanFactory(beanDefinition.getBeanClass(),method));
+                        }
+
                     }
                 }
             }
@@ -227,7 +248,9 @@ public class MyContext {
 
         }
         //xxx:依赖注入后更新缓存,这个bean从第二缓存移除,进入一级缓存,提前暴露期转为成熟的AutumnBean
-        singletonObjects.put(bean.getClass(), bean);
+        MyBeanDefinition mb=new MyBeanDefinition(bean.getClass().getName(), bean.getClass());
+        mb.setInstance(bean);
+        singletonObjects.put(bean.getClass(), mb);
         earlySingletonObjects.remove(bean.getClass());
     }
 
@@ -290,7 +313,12 @@ public class MyContext {
             return;
         }
         field.setAccessible(true);
-        field.set(bean, dependency);
+        if(dependency.getClass().equals(MyBeanDefinition.class)){
+            field.set(bean, (MyBeanDefinition)((MyBeanDefinition) dependency).getInstance());
+        }else{
+            field.set(bean, dependency);
+        }
+
     }
 
     //xxx:注入配置文件
@@ -354,7 +382,7 @@ public class MyContext {
         return sharedMap.get(key);
     }
 
-    public Map<Class<?>, Object> getIocContainer() {
+    public Map<Class<?>, MyBeanDefinition> getIocContainer() {
         return singletonObjects;
     }
 

@@ -48,8 +48,8 @@ public class AnnotationScanner {
     }
 
     public Class<?> initFilterChain() {
-        Map<Class<?>, Object> iocContainer = myContext.getIocContainer();
-        for (Map.Entry<Class<?>, Object> entry : iocContainer.entrySet()) {
+        Map<Class<?>, MyBeanDefinition> iocContainer = myContext.getIocContainer();
+        for (Map.Entry<Class<?>, MyBeanDefinition> entry : iocContainer.entrySet()) {
             Class<?> clazz = entry.getKey();
             if (clazz.isAnnotationPresent(MyOrder.class)) {
                 MyOrder myOrder = clazz.getAnnotation(MyOrder.class);

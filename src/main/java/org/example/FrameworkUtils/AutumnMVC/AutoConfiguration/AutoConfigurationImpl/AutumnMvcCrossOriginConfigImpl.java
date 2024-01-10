@@ -1,6 +1,6 @@
 package org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutoConfigurationImpl;
 
-import org.example.FrameworkUtils.AutumnMVC.Annotation.AutunmnBean;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.AutumnBean;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConditional;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.Value;
@@ -20,7 +20,7 @@ public class AutumnMvcCrossOriginConfigImpl implements AutumnMvcCrossOriginConfi
     String crossOriginString;
 
     @Override
-    @AutunmnBean
+    @AutumnBean
     public CrossOriginBean setAllowCrossOrigin() {
         crossOrigin.setOrigins(crossOriginString);
         return crossOrigin;

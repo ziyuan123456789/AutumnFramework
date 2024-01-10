@@ -1,12 +1,15 @@
 package org.example.Config;
 
-import org.example.Bean.Temp;
-import org.example.Bean.User;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.AutunmnBean;
+import org.example.Bean.Car;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.AutumnBean;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
+import org.example.mapper.CarMapper;
 import org.example.mapper.TestMapper;
 import org.example.mapper.UserMapper;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author ziyuan
@@ -14,19 +17,27 @@ import org.example.mapper.UserMapper;
  */
 @MyConfig
 public class beanConfig {
+
+    @MyAutoWired
+    CarMapper carMapper;
     @MyAutoWired
     UserMapper userMapper;
 
     @MyAutoWired
     TestMapper testMapper;
-//    @AutunmnBean
-//    public User beanTest(){
-//        return  userMapper.login("wzy","123");
+//    @AutumnBean("beanTest")
+//    public String beanTest(){
+//        return  "123";
 //    }
-//
-//    @AutunmnBean
-//    public Temp beanTest1() {
-//        return testMapper.selectById1(1);
-//    }
+
+    @AutumnBean("beanTest")
+    public ArrayList<Car> beanTest(){
+        return carMapper.getAllCarList();
+    }
+
+    @AutumnBean("beanTest2")
+    public String beanTest2() {
+        return "123456";
+    }
 
 }

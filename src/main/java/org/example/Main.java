@@ -1,6 +1,6 @@
 package org.example;
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.AutunmnBean;
+import org.example.FrameworkUtils.AutumnMVC.Annotation.AutumnBean;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFrameworkRunner;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
@@ -34,10 +34,10 @@ public class Main {
         }));
 
     }
-    @AutunmnBean
-    public String scheduled() {
-        return "autumn";
-    }
+//    @AutumnBean
+//    public String scheduled() {
+//        return "autumn";
+//    }
 
 //    @AutunmnBean
 //    public String scheduled2() {

@@ -3,6 +3,7 @@ package org.example.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
 import org.example.Aop.UserAopProxyHandler;
+import org.example.Bean.Car;
 import org.example.Bean.Temp;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.EnableAop;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
@@ -15,12 +16,15 @@ import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyRequest;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
+import org.example.mapper.CarMapper;
 import org.example.service.LoginService;
 import org.example.service.TestService;
 
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,12 +52,18 @@ public class AdminController {
     @MyAutoWired
     AdminController adminController;
 
+    @MyAutoWired
+    ArrayList<Car> carList;
+
+
+
     @MyRequestMapping("/map")
-    public Map<String, Integer> mapTest(MyRequest myRequest)  {
-        Map<String,Integer>myMap =new HashMap<>();
+    public Map<String, Object> mapTest(MyRequest myRequest)  {
+        Map<String,Object>myMap =new HashMap<>();
         myMap.put("user",123);
         myMap.put("password",456);
-        throw  new RuntimeException();
+        return  myMap;
+
     }
     @MyRequestMapping("/insert")
     public Integer insert(@MyRequestParam("username") String username,@MyRequestParam("password") String password){
@@ -128,8 +138,8 @@ public class AdminController {
 
 
     @MyRequestMapping("/testt")
-    public String sayHello(){
-        return sqlUrl;
+    public ArrayList<Car> sayHello(){
+        return carList;
     }
 
 
