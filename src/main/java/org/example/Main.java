@@ -6,6 +6,10 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFramewor
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
 import org.example.FrameworkUtils.AutumnMVC.MyContext;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.util.List;
+
 @Slf4j
 /*
   @author ziyuan
@@ -14,6 +18,12 @@ import org.example.FrameworkUtils.AutumnMVC.MyContext;
 @MyConfig
 public class Main {
     public static void main(String[] args) {
+        RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+        List<String> jvmArgs = runtimeMXBean.getInputArguments();
+
+        for (String arg : jvmArgs) {
+            log.warn(arg);
+        }
         log.info("""
 
                                 _                         __  ____      _______\s

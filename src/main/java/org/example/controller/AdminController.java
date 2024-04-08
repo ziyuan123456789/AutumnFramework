@@ -11,21 +11,28 @@ import org.example.FrameworkUtils.AutumnMVC.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.Value;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyRequest;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
-import org.example.mapper.CarMapper;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocket;
 import org.example.service.LoginService;
 import org.example.service.TestService;
 
-
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author ziyuan
@@ -55,7 +62,11 @@ public class AdminController {
     @MyAutoWired
     ArrayList<Car> carList;
 
-
+    @MyRequestMapping("/websocketTest")
+    public MyWebSocket websocketTest(){
+        //websocket初始化工作
+        return new MyWebSocket();
+    }
 
     @MyRequestMapping("/map")
     public Map<String, Object> mapTest(MyRequest myRequest)  {

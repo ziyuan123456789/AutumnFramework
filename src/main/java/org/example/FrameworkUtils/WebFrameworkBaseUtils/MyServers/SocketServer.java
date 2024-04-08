@@ -18,18 +18,23 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Filter;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Json.JsonFormatter;
 import org.example.FrameworkUtils.AutumnMVC.MyContext;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocket;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -72,14 +77,18 @@ public class SocketServer implements MyServer {
             while (!serverSocket.isClosed()) {
                 final Socket clientSocket = serverSocket.accept();
                 InputStream is = clientSocket.getInputStream();
+
                 InputStreamReader isr = new InputStreamReader(is);
                 BufferedReader reader = new BufferedReader(isr);
                 StringBuilder headerBuilder = new StringBuilder();
                 String line;
+
                 String contentType="";
                 String boundary="";
                 int contentLength = 2048;
                 while ((line = reader.readLine()) != null && !line.isEmpty()) {
+
+
                     headerBuilder.append(line).append("\n");
                     if (line.startsWith("GET")) {
                        break;
@@ -98,6 +107,8 @@ public class SocketServer implements MyServer {
                         }
 
                     }
+
+
                 }
                 if (contentLength == -1) {
                     htmlResponse.outPutMessageWriter(clientSocket, 500, "POST方法你不带长度?", null);
@@ -270,7 +281,9 @@ public class SocketServer implements MyServer {
             htmlResponse.outPutMessageWriter(clientSocket, 200, jsonFormatter.toJson(result), cookie);
         } else if (isPrimitiveOrWrapper(result.getClass())) {
             htmlResponse.outPutMessageWriter(clientSocket, 200, result.toString(), cookie);
-        } else {
+        } else if(result instanceof MyWebSocket){
+            htmlResponse.outPutSocketWriter(clientSocket,myRequest.getBody(),myRequest.getUrl() );
+        }else{
             htmlResponse.outPutMessageWriter(clientSocket, 200, jsonFormatter.toJson(result), cookie);
         }
     }

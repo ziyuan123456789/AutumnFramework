@@ -23,6 +23,10 @@ public class MyResponse {
     private String responseText="";
     private View view;
 
+    public Socket getSocket() {
+        return socket;
+    }
+
     public MyResponse(HtmlResponse htmlResponse, Socket socket) {
         this.htmlResponse = htmlResponse;
         this.socket = socket;

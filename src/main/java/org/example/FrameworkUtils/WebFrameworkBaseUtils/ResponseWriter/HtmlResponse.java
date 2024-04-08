@@ -1,28 +1,43 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
+import org.example.FrameworkUtils.AutumnMVC.AnnotationScanner;
+import org.example.FrameworkUtils.AutumnMVC.MyBeanDefinition;
+import org.example.FrameworkUtils.AutumnMVC.MyContext;
 import org.example.FrameworkUtils.AutumnMVC.ResourceFinder;
-
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.WebSocketBaseConfig;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author ziyuan
  * @since 2023.11
  */
+@Slf4j
 @MyComponent
 public class HtmlResponse {
     @MyAutoWired
     ResourceFinder resourceFinder;
     @MyAutoWired
     CrossOriginBean crossOriginBean;
+    @MyAutoWired
+    AnnotationScanner annotationScanner;
 
 
 
@@ -201,5 +216,129 @@ public class HtmlResponse {
     }
 
 
+    public void outPutSocketWriter(Socket clientSocket, String requestHeaders, String url) throws IOException {
+        MyContext myContext = MyContext.getInstance();
+        WebSocketBaseConfig webSocketMaster = null;
+        Pattern pattern = Pattern.compile("Sec-WebSocket-Key: (.+)");
+        Matcher matcher = pattern.matcher(requestHeaders);
+        if (!matcher.find()) {
+            throw new RuntimeException("没有WebSocketKey");
+        }
+        String secWebSocketKey = matcher.group(1).trim();
+        OutputStream out = clientSocket.getOutputStream();
+        try {
+            String MAGIC_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+            secWebSocketKey += MAGIC_STRING;
+            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            byte[] hash = md.digest(secWebSocketKey.getBytes(StandardCharsets.UTF_8));
+            String responseKey = Base64.getEncoder().encodeToString(hash);
 
+            StringBuilder responseHeader = new StringBuilder();
+            responseHeader.append("HTTP/1.1 101 Switching Protocols\r\n");
+            responseHeader.append("Upgrade: websocket\r\n");
+            responseHeader.append("Connection: Upgrade\r\n");
+            responseHeader.append("Sec-WebSocket-Accept: ").append(responseKey).append("\r\n");
+            responseHeader.append("\r\n");
+
+
+            out.write(responseHeader.toString().getBytes(StandardCharsets.UTF_8));
+            for (Map.Entry<Class<?>, MyBeanDefinition> entry : myContext.getIocContainer().entrySet()) {
+                Class<?> clazz = entry.getKey();
+                if (clazz.isAnnotationPresent(MyWebSocketConfig.class)) {
+                    MyWebSocketConfig annotation = clazz.getAnnotation(MyWebSocketConfig.class);
+                    if (url.equals(annotation.value())) {
+                        webSocketMaster = (WebSocketBaseConfig) myContext.getBean(clazz);
+                        break;
+                    }
+                }
+            }
+            if (webSocketMaster == null) {
+                throw new RuntimeException("没有符合的WebSocket处理器");
+            } else {
+                webSocketMaster.onOpen();
+            }
+
+
+        } catch (NoSuchAlgorithmException e) {
+            System.err.println("SHA-1失败");
+        }
+        try {
+            InputStream in = clientSocket.getInputStream();
+            byte[] buffer = new byte[4096];
+            int bytes;
+
+            while ((bytes = in.read(buffer)) != -1) {
+                if (bytes < 2) {
+                    continue; // 最小的帧头长度是2字节，继续等待数据
+                }
+
+                boolean isFinalFragment = (buffer[0] & 0x80) != 0; // 检查FIN位
+                int opcode = buffer[0] & 0x0F; // 获取操作码
+                boolean isMasked = (buffer[1] & 0x80) != 0; // 检查MASK位
+                int payloadLength = buffer[1] & 0x7F; // 初始负载长度
+
+                if (opcode == 0x1 && isMasked && isFinalFragment) { // 文本帧、被掩码、是最后的片段
+                    // 确定掩码键和负载数据的起始位置
+                    int maskingKeyIndex = 2;
+                    if (payloadLength == 126) {
+                        maskingKeyIndex = 4;
+                    } else if (payloadLength == 127) {
+                        maskingKeyIndex = 10;
+                    }
+                    int payloadIndex = maskingKeyIndex + 4; // 负载数据紧随掩码键之后
+
+                    // 应用掩码键
+                    for (int i = 0; i < payloadLength; i++) {
+                        buffer[payloadIndex + i] ^= buffer[maskingKeyIndex + (i % 4)];
+                    }
+                    String message = new String(buffer, payloadIndex, payloadLength, StandardCharsets.UTF_8);
+
+                    out.write(encodeTextFrame(webSocketMaster.onMsg(message)));
+                }
+            }
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+
+
+    }
+
+
+    public static byte[] encodeTextFrame(String message) {
+        byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
+        int messageLength = messageBytes.length;
+
+        // 创建数据帧字节数组
+        byte[] frame;
+
+        // 根据消息长度确定数据帧的长度前缀
+        if (messageLength <= 125) {
+            frame = new byte[messageLength + 2];
+            frame[1] = (byte) messageLength;
+        } else if (messageLength <= 65535) {
+            frame = new byte[messageLength + 4];
+            frame[1] = (byte) 126;
+            frame[2] = (byte) ((messageLength >> 8) & 0xFF);
+            frame[3] = (byte) (messageLength & 0xFF);
+        } else {
+            frame = new byte[messageLength + 10];
+            frame[1] = (byte) 127;
+            frame[2] = (byte) ((messageLength >> 56) & 0xFF);
+            frame[3] = (byte) ((messageLength >> 48) & 0xFF);
+            frame[4] = (byte) ((messageLength >> 40) & 0xFF);
+            frame[5] = (byte) ((messageLength >> 32) & 0xFF);
+            frame[6] = (byte) ((messageLength >> 24) & 0xFF);
+            frame[7] = (byte) ((messageLength >> 16) & 0xFF);
+            frame[8] = (byte) ((messageLength >> 8) & 0xFF);
+            frame[9] = (byte) (messageLength & 0xFF);
+        }
+
+        // 设置 FIN 位和操作码（0x81 表示文本帧）
+        frame[0] = (byte) 0x81;
+
+        // 复制消息数据到数据帧
+        System.arraycopy(messageBytes, 0, frame, frame.length - messageLength, messageLength);
+
+        return frame;
+    }
 }

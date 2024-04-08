@@ -6,6 +6,7 @@ import org.example.FrameworkUtils.AutumnMVC.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnMVC.MyBeanDefinition;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
 import org.example.FrameworkUtils.AutumnMVC.MyContext;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -54,6 +55,7 @@ public class AutumnFrameworkRunner {
         annotations.add(MyComponent.class);
         annotations.add(MyMapper.class);
         annotations.add(MyConfig.class);
+        annotations.add(MyWebSocketConfig.class);
         Set<Class<?>> annotatedClasses = scanner.findAnnotatedClassesList(mainClass.getPackageName(), annotations);
         long startTime = System.currentTimeMillis();
         log.info("ioc容器开始初始化");

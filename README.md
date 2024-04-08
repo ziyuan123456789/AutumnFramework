@@ -12,7 +12,7 @@
 - 重构初期问题极多,代码写的和屎差不多,但是能跑.建议回滚到1.9日,提交日志为md更新这个版本.
 
 ## 打个广告:
-- 大四没事干,找了个java实习一个月2000,大连的hr有没有想联系我的 邮箱:3139196862@qq.com
+- 大四没事干,~~找了个java实习一个月2000~~,大连的hr有没有想联系我的 邮箱:3139196862@qq.com
 - 开始做毕业设计了,大幅度延缓更新
 
 ## 项目描述:
@@ -36,6 +36,7 @@
 - 依照JSESSIONID的value查找对应的session
 - 简易的swagger加入
 - 循环依赖提示器加入
+- 简易的WebSocket加入,仿照Springboot写法可以处理协议升级与后续数据传递,此过程通过注解指定处理器
 
 ## 代码示范
 ### Controller
@@ -231,7 +232,7 @@ public class AutumnMvcConfigurationBaseImpl implements AutumnMvcConfiguration{
 ```java
 @MyComponent
 @Slf4j
-public class MatchClassByInterface implements Condition {
+public class MatchClassByInterface implements MyCondition {
 
     @MyAutoWired
     private Reflections reflections;
@@ -244,30 +245,72 @@ public class MatchClassByInterface implements Condition {
 
     @Override
     public boolean matches(MyContext myContext, Class<?> clazz) {
-        Set<Class<?>> subTypesOf = (Set<Class<?>>) reflections.getSubTypesOf(clazz);
-
-        for (Class<?> implClass : subTypesOf) {
-            if (clazz.equals(implClass)) {
-                continue;
-            }
-            MyConditional myConditionalAnnotation = implClass.getAnnotation(MyConditional.class);
-            if (myConditionalAnnotation == null) {
-                return false;
-            } else {
-                Class<? extends Condition> conditionClass = myConditionalAnnotation.value();
-                Condition myCondition = (Condition) myContext.getBean(conditionClass);
-
-                if (myCondition.matches(myContext, implClass)) {
-                    return false;
-
+        Set<Class<?>> subTypesOf = (Set) reflections.getSubTypesOf(clazz.getInterfaces()[0]);
+        List<Class> injectImplList=new ArrayList<>();
+        if (subTypesOf.size() == 2) {
+            return false;
+        } else if (subTypesOf.size() > 2) {
+            for (Class<?> implClass : subTypesOf) {
+                if(implClass.equals(clazz)){
+                    continue;
+                }
+                MyConditional myCondition = implClass.getAnnotation(MyConditional.class);
+                if (myCondition != null) {
+                    Class<? extends MyCondition> otherCondition = myCondition.value();
+                    MyCondition myConditionImpl = myContext.getBean(otherCondition);
+                    myConditionImpl.init();
+                    if (myConditionImpl.matches(myContext, implClass)) {
+                        throw new IllegalStateException("多个条件处理器均被命中,请确认到底要注入哪一个"+injectImplList);
+                    }
+                    myConditionImpl.after();
+                }else{
+                    injectImplList.add(implClass);
                 }
             }
         }
+        if(injectImplList.size()==1){
+            return false;
 
-        return true;
+        }else{
+            throw new IllegalStateException("多个条件处理器均被命中,请确认到底要注入哪一个");
+        }
+
     }
 }
 ```
+
+### WebSocket握手
+```java
+@MyRequestMapping("/websocketTest")
+public MyWebSocket websocketTest(){
+    //websocket初始化工作
+    return new MyWebSocket();
+}
+```
+### WebSocket处理器
+```java
+@MyWebSocketConfig("/websocketTest")
+@Slf4j
+public class WebSocketController implements WebSocketBaseConfig {
+
+    @Override
+    public void onOpen() {
+        log.warn("切换到WebSocket");
+    }
+
+    @Override
+    public void onClose() {
+        log.warn("用户离开");
+    }
+
+    @Override
+    public String onMsg(String text) {
+        log.info("接受的讯息为"+text);
+        return text;
+    }
+}
+```
+
 ### 配置文件
 ```html
 url=jdbc:mysql://localhost:3306/threeproject?serverTimezone=UTC&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
@@ -305,9 +348,10 @@ allow-circular-references=true
 ## 更长远的想法:
 - 加入beandefinition(实现中)
 - 加入真正可用的aop(aop定义权限现在已经移交给用户,可以指定处理器和拦截方法了)
-- 加入websocket
+- 加入websocket(实现中)
 - 架构设计的稀碎,核心组件每一个都违背单一原则,有时间进行推倒重来,大范围重构
 - 使用c#重构这个框架
+- 支持https
 
 ## 人生目标:
 - 找到月薪3000的实习
@@ -323,6 +367,8 @@ allow-circular-references=true
 - ~~@bean与依赖注入时机的问题:举个例子配置类a定义一个标注有@bean的方法,我的框架反射执行这个方法拿到object放入第一缓存.接着业务类b依赖这个bean,成功注入.但是有时候是业务类b先走到依赖注入这个环节,这时候因为@bean标注的是一个方法而不是一个类因此第一二三级缓存中没有这个元素,初始化失败.不知道spring是如何解决这个问题的,我目前的解决方法是初始化容器两次,勉勉强强解决了把(11/29已解决)~~
 
 ## 更新记录:
+### 2024/4/8
+- 实现了简易的WebSocket协议,首先前端发送正常Get请求到Controller,SocketServer发现这个方法返回值是MyWebSocket则自动接管输出流,先获取前端发来的Sec-WebSocket-Key之后在构造对应的返回报文,同意升级协议,之后从Ioc容器取出带有MyWebSocketConfig注解的类,比对请求头中的url是否和注解内要求的内容一致,如果一致则从容器取出相应的处理器,对WebSocket解码为String后调用各自的处理方法,对返回值编码进行返回
 ### 2023/12/29
 - 增加了循环依赖检测器,可以像spring boot那样检测循环依赖并输出哪些Bean有循环引用的问题
 - 可以在配置文件中添加allow-circular-references=true开启循环依赖
@@ -418,4 +464,6 @@ allow-circular-references=true
 
 
 ### 感谢:
-没有Gpt4写代码寸步难行
+- 没有Gpt4写代码寸步难行
+- 感谢Jetbrains提供的开源支持idea/pycharm/rider/clion license
+- 感谢GitHub提供的学生免费copilot

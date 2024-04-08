@@ -30,7 +30,7 @@ public class MyRequest {
     private String boundary;
     private final Cookie[] cookie;
     private final MyContext myContext = MyContext.getInstance();
-    private final SessionManager sessionManager = (SessionManager) myContext.getBean(SessionManager.class);
+    private final SessionManager sessionManager = myContext.getBean(SessionManager.class);
 
     public MyRequest(String payload, String body, Integer contentLength) {
         this.payload = payload;
@@ -74,6 +74,7 @@ public class MyRequest {
 
     //xxx:解析Cookie
     private Cookie[] extractCookie(String httpRequest) {
+        System.out.println();
         String cookieHeader = "Cookie: ";
         int start = httpRequest.indexOf(cookieHeader);
         if (start == -1) {
