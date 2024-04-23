@@ -2,9 +2,10 @@
 对spring的拙劣的模仿
 
 ![Java17](https://img.shields.io/badge/JDK-17+-success.svg)
-[![License](https://img.shields.io/npm/l/echarts?color=5470c6)]()
+![License](https://img.shields.io/npm/l/mithril.svg)
 
 ## 注意事项:
+- `仅仅是一个玩具级别的Demo,无论是Web服务层还是Bean容器也好,都是非常简陋的实现,仅仅模仿SpringBoot的表层实现与基本特性,不具备任何实际使用价值仅供学习参考,另外这个项目诞生自一年前写的一个单例容器,当时并没有对Spring底层有所了解,大多数实现方式也并非Spring的官方实现方式,但感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
 - ~~cglib不支持java17以及之后的版本了,降低jdk版本~~
 - 编译结束后方法形参名称不再保留,虽然可以加入编译参数解决,但是为了泛用性选择了形参注解标注形参,mapper接口层同理
 - 目前仅支持调用字段的无参默认构造器注入,以后可能会修改
@@ -83,6 +84,8 @@ public String session(Request myRequest) {
 public interface LoginService {
     boolean login(String username, String password);
 }
+
+
 @MyService
 public class LoginServiceImpl implements LoginService {
     @MyAutoWired
@@ -329,6 +332,19 @@ redisHost=127.0.0.1
 redisPort=6379
 allow-circular-references=true
 ```
+
+### 项目依赖
+
+```
+- Jedis 
+- Spring-core Spring重写的Cglib,用于实现Aop
+- Lombok 
+- Reflections 注解扫描库
+- Mysql-connector-java 
+- Slf4j-api
+- Logback-classic 实现彩色日志
+```
+
 ## 未来打算实现:
 
 - 解决代码耦合严重的问题,再下去就要臭不可闻了(修改了大量ioc容器代码,解除大量耦合和莫名其妙的代码,逻辑更加清晰了)
@@ -338,8 +354,8 @@ allow-circular-references=true
 - 实现自己写的http服务器与servlet或者其他成熟的web框架的切换(@bean+条件注解实现)(半实现)
 - ~~修正icon获取不到的问题 (已经解决)~~
 - ~~实现json输出的功能(已经实现)~~
-- 加入对Cookie的支持(已实现,等待测试)
-- 加入对Session的支持(已实现,等待测试)
+- ~~加入对Cookie的支持(已实现)~~
+- ~~加入对Session的支持(已实现)~~
 - 加入对Token的支持
 - controller方法形参直接注入JavaBean
 - 增加JVM关闭钩子,在关机的时候把session序列化到redis/mysql等保存,下次启动先恢复
@@ -349,8 +365,6 @@ allow-circular-references=true
 - 加入beandefinition(实现中)
 - 加入真正可用的aop(aop定义权限现在已经移交给用户,可以指定处理器和拦截方法了)
 - 加入websocket(实现中)
-- 架构设计的稀碎,核心组件每一个都违背单一原则,有时间进行推倒重来,大范围重构
-- 使用c#重构这个框架
 - 支持https
 
 ## 人生目标:
@@ -366,6 +380,15 @@ allow-circular-references=true
 - aop指定被代理方法时候框架没办法判断重载,以后会进行完善
 - ~~@bean与依赖注入时机的问题:举个例子配置类a定义一个标注有@bean的方法,我的框架反射执行这个方法拿到object放入第一缓存.接着业务类b依赖这个bean,成功注入.但是有时候是业务类b先走到依赖注入这个环节,这时候因为@bean标注的是一个方法而不是一个类因此第一二三级缓存中没有这个元素,初始化失败.不知道spring是如何解决这个问题的,我目前的解决方法是初始化容器两次,勉勉强强解决了把(11/29已解决)~~
 
+## 流程图:
+- 项目启动
+![Main_main.jpg](pics/AutumnFrameworkRunner_run.jpg)
+- Mapper工厂(旧版)
+- ![MapperFactory.jpg](pics/MyContext_createBeanFactory.jpg)
+- Aop工厂
+- ![AopFactory.jpg](pics/MyContext_createAopBeanInstance.jpg)
+- Socket实现的简陋http服务器
+- ![SocketServer.jpg](pics/SocketServer_init.jpg)
 ## 更新记录:
 ### 2024/4/8
 - 实现了简易的WebSocket协议,首先前端发送正常Get请求到Controller,SocketServer发现这个方法返回值是MyWebSocket则自动接管输出流,先获取前端发来的Sec-WebSocket-Key之后在构造对应的返回报文,同意升级协议,之后从Ioc容器取出带有MyWebSocketConfig注解的类,比对请求头中的url是否和注解内要求的内容一致,如果一致则从容器取出相应的处理器,对WebSocket解码为String后调用各自的处理方法,对返回值编码进行返回

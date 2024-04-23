@@ -14,7 +14,6 @@ import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -291,7 +290,7 @@ public class MyContext {
         if (subTypesOf.size() == 1) {
             selectedImpl = subTypesOf.iterator().next();
         } else if (subTypesOf.size() > 1) {
-            log.error("多个实现类均命中,请添加合理的条件注解来进行选择性注入,冲突的实现类如下:\n"+subTypesOf);
+            log.error("多个实现类均命中,请添加合理的条件注解来进行选择性注入,冲突的实现类如下:\n{}", subTypesOf);
             throw new BeanCreationException("多个实现类命中");
         }
         if (selectedImpl != null) {
@@ -305,16 +304,16 @@ public class MyContext {
 
 
     //xxx:注入一般Bean,依照字段查找类,从容器取出为字段赋值
-    private void injectNormalDependency(Object bean, Field field) throws IllegalAccessException, NoSuchFieldException {
+    private void injectNormalDependency(Object bean, Field field) throws IllegalAccessException {
         Class<?> dependencyType = field.getType();
         Object dependency = getBean(dependencyType);
         if (dependency == null) {
-            log.warn("无法解析的依赖：" + dependencyType.getName());
+            log.warn("无法解析的依赖：{}", dependencyType.getName());
             return;
         }
         field.setAccessible(true);
         if(dependency.getClass().equals(MyBeanDefinition.class)){
-            field.set(bean, (MyBeanDefinition)((MyBeanDefinition) dependency).getInstance());
+            field.set(bean, ((MyBeanDefinition) dependency).getInstance());
         }else{
             field.set(bean, dependency);
         }
@@ -322,7 +321,7 @@ public class MyContext {
     }
 
     //xxx:注入配置文件
-    private void injectValueAnnotation(Object instance, Field field) throws NoSuchFieldException {
+    private void injectValueAnnotation(Object instance, Field field) {
         Value value = field.getAnnotation(Value.class);
         if (value == null || "".equals(value.value())) {
             log.error("没有传递内容,注入失败");
@@ -340,7 +339,7 @@ public class MyContext {
             Object convertedValue = convertStringToType(propertyValue, field.getType());
             field.set(instance, convertedValue);
         } catch (Exception e) {
-            log.error("依赖注入失败：" + e.getMessage());
+            log.error("依赖注入失败：{}", e.getMessage());
         }
         }
 

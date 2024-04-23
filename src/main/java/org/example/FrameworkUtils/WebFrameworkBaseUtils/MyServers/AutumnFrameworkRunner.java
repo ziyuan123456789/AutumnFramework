@@ -61,7 +61,7 @@ public class AutumnFrameworkRunner {
         log.info("ioc容器开始初始化");
         myContext.initIocCache(annotatedClasses);
         long endTime = System.currentTimeMillis();
-        log.info("容器花费了：" + (endTime - startTime) + " 毫秒实例化");
+        log.info("容器花费了：{} 毫秒实例化", endTime - startTime);
 
     }
     private void processClassForMapping(Class<?> clazz,ConcurrentHashMap<String, String> urlMap) {
