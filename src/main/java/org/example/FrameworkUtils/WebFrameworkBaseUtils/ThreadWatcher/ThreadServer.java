@@ -23,7 +23,7 @@ public class ThreadServer implements Server{
     }
 
     @Override
-    public void tellObservers(String str) {
+    public void tellObservers(String str) throws ClassNotFoundException {
         for(Watcher watcher:watchers){
             watcher.getmessage(str);
         }

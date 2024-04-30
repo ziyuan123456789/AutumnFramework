@@ -242,15 +242,20 @@ public class HtmlResponse {
 
 
             out.write(responseHeader.toString().getBytes(StandardCharsets.UTF_8));
-            for (Map.Entry<Class<?>, MyBeanDefinition> entry : myContext.getIocContainer().entrySet()) {
-                Class<?> clazz = entry.getKey();
-                if (clazz.isAnnotationPresent(MyWebSocketConfig.class)) {
-                    MyWebSocketConfig annotation = clazz.getAnnotation(MyWebSocketConfig.class);
-                    if (url.equals(annotation.value())) {
-                        webSocketMaster = (WebSocketBaseConfig) myContext.getBean(clazz);
-                        break;
+            for (Map.Entry<String, Object> entry : myContext.getIocContainer().entrySet()) {
+                try{
+                    Class<?> clazz = Class.forName(entry.getKey());
+                    if (clazz.isAnnotationPresent(MyWebSocketConfig.class)) {
+                        MyWebSocketConfig annotation = clazz.getAnnotation(MyWebSocketConfig.class);
+                        if (url.equals(annotation.value())) {
+                            webSocketMaster = (WebSocketBaseConfig) myContext.getBean(entry.getKey());
+                            break;
+                        }
                     }
+                }catch (Exception e){
+
                 }
+
             }
             if (webSocketMaster == null) {
                 throw new RuntimeException("没有符合的WebSocket处理器");
@@ -297,7 +302,17 @@ public class HtmlResponse {
                 }
             }
         } catch (IOException e) {
-            log.error(e.getMessage(), e);
+
+            if (webSocketMaster != null) {
+                webSocketMaster.onClose();
+            }
+        } finally {
+            try {
+                out.close();
+                clientSocket.close();
+            } catch (IOException ex) {
+                log.error("关闭连接异常", ex);
+            }
         }
 
 

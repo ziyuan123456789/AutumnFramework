@@ -15,7 +15,6 @@ public class CrossOriginConfig implements AutumnMvcCrossOriginConfig {
     CrossOriginBean crossOrigin=new CrossOriginBean();
 
     @Override
-    @AutumnBean
     public CrossOriginBean setAllowCrossOrigin() {
         crossOrigin.setOrigins("*");
         return crossOrigin;

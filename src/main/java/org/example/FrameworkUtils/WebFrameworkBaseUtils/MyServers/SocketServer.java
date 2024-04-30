@@ -53,7 +53,7 @@ public class SocketServer implements MyServer {
     private ExecutorService threadPool;
     private ServerSocket serverSocket;
     private final MyContext myContext = MyContext.getInstance();
-    private final SessionManager sessionmanager = myContext.getBean(SessionManager.class);
+    private final SessionManager sessionmanager = (SessionManager) myContext.getBean(SessionManager.class.getName());
     @MyAutoWired
     HtmlResponse htmlResponse;
     @MyAutoWired
@@ -155,7 +155,7 @@ public class SocketServer implements MyServer {
 
     private Tuple<Object, Class<?>> invokeMethod(String classurl, String methodName, MyRequest myRequest, MyResponse myResponse) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<?> clazz = Class.forName(classurl);
-        Object instance = myContext.getBean(clazz);
+        Object instance = myContext.getBean(clazz.getName());
         Method domethod=null;
         List<Object> objectList = new ArrayList<>();
         if (classurl.contains("$$")) {
@@ -210,7 +210,7 @@ public class SocketServer implements MyServer {
                     str = (String) sharedMap.get(str);
                     int lastIndex = str.lastIndexOf(".");
                     String classurl = str.substring(0, lastIndex);
-                    Filter filter = (Filter) myContext.getBean(annotationScanner.initFilterChain());
+                    Filter filter = (Filter) myContext.getBean(annotationScanner.initFilterChain().getName());
                     MyResponse myResponse =new MyResponse(htmlResponse, clientSocket);
                     if (!filter.doChain(myRequest, myResponse)) {
                         String methodName = str.substring(lastIndex + 1);
@@ -228,6 +228,7 @@ public class SocketServer implements MyServer {
 
                         } catch (InvocationTargetException | ClassNotFoundException | NoSuchMethodException |
                                  IllegalAccessException | RuntimeException e) {
+                            System.out.println(e);
                             Throwable cause = e.getCause();
                             log.warn("异常来自" + methodName);
                             cause.printStackTrace(System.err);

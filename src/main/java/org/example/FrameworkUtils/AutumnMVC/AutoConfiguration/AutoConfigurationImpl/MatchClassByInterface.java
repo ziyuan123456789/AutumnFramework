@@ -1,5 +1,6 @@
 package org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutoConfigurationImpl;
 
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
@@ -18,6 +19,7 @@ import java.util.Set;
  */
 @MyComponent
 @Slf4j
+@Data
 public class MatchClassByInterface implements MyCondition {
 
     @MyAutoWired
@@ -25,7 +27,7 @@ public class MatchClassByInterface implements MyCondition {
 
     @Override
     public void init(){
-        log.info(this.getClass().getSimpleName() + "条件处理器中的初始化方法被执行");
+        log.info("{}条件处理器中的初始化方法被执行{}", this.getClass().getSimpleName(), this.reflections);
     }
 
 
@@ -43,7 +45,7 @@ public class MatchClassByInterface implements MyCondition {
                 MyConditional myCondition = implClass.getAnnotation(MyConditional.class);
                 if (myCondition != null) {
                     Class<? extends MyCondition> otherCondition = myCondition.value();
-                    MyCondition myConditionImpl = myContext.getBean(otherCondition);
+                    MyCondition myConditionImpl = (MyCondition) myContext.getBean(otherCondition.getName());
                     myConditionImpl.init();
                     if (myConditionImpl.matches(myContext, implClass)) {
                         throw new IllegalStateException("多个条件处理器均被命中,请确认到底要注入哪一个"+injectImplList);

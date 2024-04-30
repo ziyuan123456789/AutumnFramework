@@ -15,13 +15,13 @@ public class MyBeanDefinition {
 
     private boolean isCglib;
 
-    private int order;
-
-    private boolean primary;
-
     private Class<?> beanClass;
+    //xxx:是谁成产了这个@bean
+    private Class<?> configurationClass;
 
     private Object instance = null;
+
+    private Method doMethod;
 
     private Constructor<?> constructor;
 
@@ -38,4 +38,7 @@ public class MyBeanDefinition {
         this.beanClass = beanClass;
     }
 
+    public MyBeanDefinition() {
+
+    }
 }

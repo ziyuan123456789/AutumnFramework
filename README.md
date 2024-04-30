@@ -25,74 +25,151 @@
 - 由三级缓存组成的ioc容器,解决循环依赖的问题
 - 非常弱的依赖注入实现,可以实现@autowired标注的字段的自动注入,以及@value注入配置文件,还可以注入接口的实现类,基本上和springboot写法一样了
 - cglib实现的aop,稍微解决了代理类注解擦除的问题,可以正常依赖注入
-- mybaits的简易实现,使用jdk动态代理接口,实现参数映射以及实体类映射
+- Mybaits的简易实现,使用jdk动态代理接口,实现参数映射以及实体类映射
 - 加入了责任链模式的过滤器,~~使用@order声明顺序~~
-- 实现@bean功能,添加配置类,配置框架行为
+- 实现@Bean功能,添加配置类,配置框架行为
 - 用户重写autumnMvcConfig接口覆盖默认实现类,实现自定义首页面,icon等
-- 简易的redistemplate加入,可以连接redis了
+- 简易的RedisTemplate加入,可以连接redis了
 - 加入了Json与JavaBean的转换,可以跟前端用Json通讯了
 - 类级别的条件注解的完整加入,用户可以自定义处理器了,只需要实现condition接口覆盖match逻辑
-- response类加入,用户可以选择自己来控制返回头和内容,例如进行setCookie操作
-- cookie,session加入,自动为新用户setCookie,设置JSESSIONID
+- Response类加入,用户可以选择自己来控制返回头和内容,例如进行setCookie操作
+- Cookie,session加入,自动为新用户setCookie,设置JSESSIONID
 - 依照JSESSIONID的value查找对应的session
-- 简易的swagger加入
+- 简易的Swagger加入
 - 循环依赖提示器加入
 - 简易的WebSocket加入,仿照Springboot写法可以处理协议升级与后续数据传递,此过程通过注解指定处理器
+- @Bean功能可以使用自定义名字了,使用@AutumnBean("beanName")与@MyAutowire("beanName")实现为同一个字段注入不同实例
+- @Bean功能可以自定义Init方法了,在依赖注入之后立刻调用
 
 ## 代码示范
 ### Controller
 ```java
-@MyAutoWired
-LoginService loginService;
-@MyAutoWired
-TestService testService;
-@Value("url")
-String sqlUrl;
+@MyController
+@Slf4j
+//xxx:测试Aop切面是否正常工作
+@EnableAop(getMethod = {"myhtml", "login"}, getClassFactory = UserAopProxyHandler.class)
+public class AutumnTestController {
+    //xxx:测试配置文件注入器
+    @Value("url")
+    private String sqlUrl;
 
-@MyRequestMapping("/login")
-public String login(@MyRequestParam("username") @CheckParameter String username,
-                    @MyRequestParam("password") String password,Request myRequest) {
-    if(loginService.login(username,password)){
-        return myRequest.getMethod()+myRequest.getUrl()+username+"\n登录成功";
-    }else{
-        return "登录失败";
+    //xxx:测试自身循环依赖
+    @MyAutoWired
+    private AutumnTestController autumnTestController;
+
+    @MyAutoWired
+    LoginService loginService;
+
+    @MyAutoWired
+    HardwareSettingMapper hardwareSettingMapper;
+
+    @MyAutoWired
+    MyReidsTemplate myReidsTemplate;
+
+    @MyAutoWired("BYD")
+    Car car;
+
+    //xxx:测试request功能
+    @MyRequestMapping("/request")
+    public String requestTest(MyRequest request) {
+        return request.getUrl() + request.getMethod() + request.getParameters();
+    }
+
+    //xxx:测试response与setCookie功能
+    @MyRequestMapping("/response")
+    public void responseTest(MyResponse myResponse) {
+        Cookie cookie = new Cookie("newcookie", "session1");
+        myResponse.setCode(200)
+                .setCookie(cookie)
+                .setView(new View("AutumnFrameworkMainPage.html"))
+                .outputHtml();
+    }
+
+    //xxx:测试参数注入
+    @MyRequestMapping("/paramTest")
+    public String paramTest(@MyRequestParam("name") String name, @MyRequestParam("age") String age) {
+        return name + age;
+    }
+
+    //xxx:循环依赖测试
+    @MyRequestMapping("/cycletest")
+    public Map<String, Object> cycleTest() {
+        return autumnTestController.mapTest();
+    }
+
+    //xxx:测试@Bean("BeanName")功能是否正常,同时看看Json解析器好不好用
+    @MyRequestMapping("/map")
+    public Map<String, Object> mapTest() {
+        Map<String, Object> myMap = new HashMap<>();
+        myMap.put("url", sqlUrl);
+        log.info(car.toString());
+        return myMap;
+    }
+
+    //xxx:测试redis
+    @MyRequestMapping("/redis")
+    public String redis() {
+        myReidsTemplate.init();
+        myReidsTemplate.set("test", "test");
+        return myReidsTemplate.toString() + "\n" + myReidsTemplate.get("test");
+    }
+
+    //xxx:测试View层功能,同时看看Aop拦截了没
+    @MyRequestMapping("/html")
+    public View myhtml() {
+        return new View("AutumnFrameworkMainPage.html");
+    }
+
+
+    //xxx:测试session功能
+    @MyRequestMapping("/session")
+    public String session(MyRequest myRequest) {
+        String sessionId = myRequest.getSession().getSessionId();
+        myRequest.getSession().setAttribute("name", sessionId);
+        return (String) myRequest.getSession().getAttribute("name");
+    }
+
+    //xxx:测试WebSocket功能
+    @MyRequestMapping("/websocket")
+    public MyWebSocket websocketTest() {
+        return new MyWebSocket();
+    }
+
+    //xxx:测试数据库功能
+    @MyRequestMapping("/login")
+    public String login(@MyRequestParam("username") @CheckParameter String userId,
+                        @MyRequestParam("password") String password) {
+        if (loginService.checkLogin(userId, password)) {
+            return "登录成功";
+
+        } else {
+            return "登录失败";
+        }
+
+    }
+
+    //xxx:测试数据库功能
+    @MyRequestMapping("/getall")
+    public HardwareSetting getAll() {
+        return hardwareSettingMapper.getOneHardware(1);
     }
 }
-@MyRequestMapping("/myhtml")
-public View myhtml(Request myRequest) {
-    return new View("AutumnFrameworkMainPage.html");
-}
 
-@MyRequestMapping("/responseTest")
-public void responseTest(Request myRequest,Response myResponse) {
-    Cookie cookie=new Cookie("newcookie","session1");
-    myResponse.setCode(200)
-            .setCookie(cookie)
-            .setView(new View("AutumnFrameworkMainPage.html"))
-            .outputHtml();
-}
-
-@MyRequestMapping("/session")
-public String session(Request myRequest) {
-    String sessionId=myRequest.getSession().getSessionId();
-    myRequest.getSession().setAttribute("name",sessionId);
-    return (String) myRequest.getSession().getAttribute("name");
-}
 ```
 ### Service
 ```java
 public interface LoginService {
-    boolean login(String username, String password);
+    boolean checkLogin(String userid, String password);
 }
-
 
 @MyService
 public class LoginServiceImpl implements LoginService {
     @MyAutoWired
     UserMapper userMapper;
+
     @Override
-    public boolean login(String username, String password) {
-        return userMapper.login(username, password) != null;
+    public boolean checkLogin(String userId, String password) {
+        return userMapper.checkUser(userId, password) != null;
     }
 }
 ```
@@ -113,7 +190,7 @@ public class AdminController {
 public class UserAopProxyHandler implements AutunmnAopFactory {
     @Override
     public void doBefore(Object obj, Method method, Object[] args) {
-        log.warn("用户切面方法开始预处理,切面处理器是"+this.getClass().getName()+"处理的方法为:"+method.getName() );
+        log.warn("用户切面方法开始预处理,切面处理器是{}处理的方法为:{}", this.getClass().getName(), method.getName());
     }
 
     @Override
@@ -122,7 +199,7 @@ public class UserAopProxyHandler implements AutunmnAopFactory {
         for (int i = 0; i < paramAnnotations.length; i++) {
             for (Annotation annotation : paramAnnotations[i]) {
                 if (annotation.annotationType().equals(CheckParameter.class)) {
-                    log.error("参数"+args[i].getClass().getSimpleName()+"被拦截");
+                    log.error("参数{}被拦截", args[i].getClass().getSimpleName());
                     args[i] = "AopCheck";
                 }
             }
@@ -140,7 +217,6 @@ public class UserAopProxyHandler implements AutunmnAopFactory {
         log.error("用户切面方法抛出异常",e);
     }
 }
-
 ```
 ### 拦截器
 ```java
@@ -169,31 +245,48 @@ public class UrlFilter implements Filter {
 ```java
 @MyMapper
 public interface UserMapper {
-    @MySelect("select username,password from user where username=#{username} and password=#{password}")
-    User login(@MyParam("username") String username,@MyParam("password") String password);
-    @MyInsert("insert into  user (username,password) values (#{username},#{password})")
-    Integer insertUser(@MyParam("username") String username,@MyParam("password") String password);
-}
+    @MySelect("select UserID,Password from user ")
+    List<User> getAllUser();
 
+    @MySelect("select * from user where UserName=#{UserName} and Password=#{Password} limit 1")
+    User checkUser(@MyParam("UserName") String UserName, @MyParam("Password")String Password);
+}
 ```
-### 配置类,@Bean
+### 配置类 @Bean
 ```java
 @MyConfig
-public class beanConfig {
-    @MyAutoWired
-    UserMapper userMapper;
-
-    @MyAutoWired
-    TestMapper testMapper;
-    @AutunmnBean
-    public User beanTest(){
-        return  userMapper.login("wzy","123");
+@Slf4j
+public class BeanTestConfig {
+    @AutumnBean("BYD")
+    public Car giveMeBydCar(){
+        Car car=new Car();
+        car.setName("BYD");
+        return car;
     }
 
-    @AutunmnBean
-    public Temp beanTest1() {
-        return testMapper.selectById1(1);
+    @AutumnBean("WenJie")
+    public Car giveMeWenJieCar(){
+        Car car=new Car();
+        car.setName("WenJie");
+        return car;
     }
+}
+
+@Data
+@Slf4j
+public class Car {
+    private String name;
+
+    @MyPostConstruct
+    public void init() {
+        log.warn("{}{} init", this.getClass().getSimpleName(), name);
+    }
+
+    @MyPreDestroy
+    public void destroy() {
+        log.warn("{}{} destroy", this.getClass().getSimpleName(), name);
+    }
+
 }
 ```
 ```java
@@ -347,7 +440,7 @@ allow-circular-references=true
 
 ## 未来打算实现:
 
-- 解决代码耦合严重的问题,再下去就要臭不可闻了(修改了大量ioc容器代码,解除大量耦合和莫名其妙的代码,逻辑更加清晰了)
+- ~~解决代码耦合严重的问题,再下去就要臭不可闻了(修改了大量ioc容器代码,解除大量耦合和莫名其妙的代码,逻辑更加清晰了)(beandefinition重构容器)~~ 
 - ~~手写的mybaits增加 增删改的功能(已实现)~~
 - 实现文件上传的功能 (半实现)
 - 加入类似于spring的事务,支持回滚
@@ -360,9 +453,10 @@ allow-circular-references=true
 - controller方法形参直接注入JavaBean
 - 增加JVM关闭钩子,在关机的时候把session序列化到redis/mysql等保存,下次启动先恢复
 - request和response承担了过多的责任,考虑分出更多的类
+- 新版MineBatis即将加入
 
 ## 更长远的想法:
-- 加入beandefinition(实现中)
+- ~~加入beandefinition(已实现)~~
 - 加入真正可用的aop(aop定义权限现在已经移交给用户,可以指定处理器和拦截方法了)
 - 加入websocket(实现中)
 - 支持https
@@ -390,6 +484,9 @@ allow-circular-references=true
 - Socket实现的简陋http服务器
 - ![SocketServer.jpg](pics/SocketServer_init.jpg)
 ## 更新记录:
+### 2024/4/30
+- 完善了@Bean功能,使用@AutumnBean("beanName")与@MyAutowire("beanName")实现为同一个字段注入不同实例
+- 使用MyBeanDefinition彻底重写了Ioc与Di部分
 ### 2024/4/8
 - 实现了简易的WebSocket协议,首先前端发送正常Get请求到Controller,SocketServer发现这个方法返回值是MyWebSocket则自动接管输出流,先获取前端发来的Sec-WebSocket-Key之后在构造对应的返回报文,同意升级协议,之后从Ioc容器取出带有MyWebSocketConfig注解的类,比对请求头中的url是否和注解内要求的内容一致,如果一致则从容器取出相应的处理器,对WebSocket解码为String后调用各自的处理方法,对返回值编码进行返回
 ### 2023/12/29

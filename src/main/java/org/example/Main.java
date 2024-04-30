@@ -1,14 +1,11 @@
 package org.example;
+
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.AutumnBean;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFrameworkRunner;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
-import org.example.FrameworkUtils.AutumnMVC.MyContext;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.sql.SQLOutput;
 import java.util.List;
 
 @Slf4j
@@ -18,7 +15,7 @@ import java.util.List;
  */
 @MyConfig
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ClassNotFoundException {
         RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
         List<String> jvmArgs = runtimeMXBean.getInputArguments();
 
@@ -36,14 +33,16 @@ public class Main {
                                                                                \s
                                                                                 \
                 """);
-
-        AutumnFrameworkRunner autumnFrameworkRunner=new AutumnFrameworkRunner();
+        AutumnFrameworkRunner autumnFrameworkRunner = new AutumnFrameworkRunner();
         autumnFrameworkRunner.run(Main.class);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            MyContext myContext = MyContext.getInstance();
-            SessionManager sessionManager = myContext.getBean(SessionManager.class);
-            sessionManager.exitSave();
-        }));
+
+//        AutumnFrameworkRunner autumnFrameworkRunner=new AutumnFrameworkRunner();
+//        autumnFrameworkRunner.run(Main.class);
+//        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+//            MyContext myContext = MyContext.getInstance();
+//            SessionManager sessionManager = myContext.getBean(SessionManager.class);
+//            sessionManager.exitSave();
+//        }));
 
     }
 //    @AutumnBean
@@ -51,7 +50,7 @@ public class Main {
 //        return "autumn";
 //    }
 
-//    @AutunmnBean
+//    @AutumnBean
 //    public String scheduled2() {
 //        return "autumn";
 //    }

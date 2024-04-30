@@ -18,7 +18,6 @@ public class AutoConfigurationBeans {
 
 
     @AutumnBean
-    @SuppressWarnings("deprecation")
     public Reflections getReflection() {
         return new Reflections(packageName,new SubTypesScanner(false));
     }

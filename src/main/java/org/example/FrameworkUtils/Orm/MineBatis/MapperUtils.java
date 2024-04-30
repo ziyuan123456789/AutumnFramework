@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 @Slf4j
 @MyComponent
 public class MapperUtils {
-    static Jdbcinit jdbcinit = MyContext.getInstance().getBean(Jdbcinit.class);
+    static Jdbcinit jdbcinit = (Jdbcinit) MyContext.getInstance().getBean(Jdbcinit.class.getName());
 
     //xxx jdk动态代理,代理接口
     public static <T> T init(Class<T> targetClass) {

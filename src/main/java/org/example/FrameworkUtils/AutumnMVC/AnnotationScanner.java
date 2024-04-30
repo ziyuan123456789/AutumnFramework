@@ -47,10 +47,10 @@ public class AnnotationScanner {
         return annotatedClasses;
     }
 
-    public Class<?> initFilterChain() {
-        Map<Class<?>, MyBeanDefinition> iocContainer = myContext.getIocContainer();
-        for (Map.Entry<Class<?>, MyBeanDefinition> entry : iocContainer.entrySet()) {
-            Class<?> clazz = entry.getKey();
+    public Class<?> initFilterChain() throws ClassNotFoundException {
+        Map<String, Object> iocContainer = myContext.getIocContainer();
+        for (Map.Entry<String, Object> entry : iocContainer.entrySet()) {
+            Class<?> clazz = Class.forName(entry.getKey());
             if (clazz.isAnnotationPresent(MyOrder.class)) {
                 MyOrder myOrder = clazz.getAnnotation(MyOrder.class);
                 if (myOrder.value() == 1) {

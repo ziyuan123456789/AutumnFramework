@@ -8,6 +8,6 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.ThreadWatcher;
 public interface Server {
     void registerObserver(Watcher watcher);
     void removeObserver(Watcher watcher);
-    void tellObservers(String str);
+    void tellObservers(String str) throws ClassNotFoundException;
 
 }

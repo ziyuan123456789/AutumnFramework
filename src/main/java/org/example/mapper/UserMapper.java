@@ -1,19 +1,21 @@
 package org.example.mapper;
 
 import org.example.Bean.User;
-import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyInsert;
-import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyParam;
+import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MySelect;
+
+import java.util.List;
 
 /**
  * @author ziyuan
- * @since 2023.11
+ * @since 2024.04
  */
 @MyMapper
 public interface UserMapper {
-    @MySelect("select username,password from user where username=#{username} and password=#{password}")
-    User login(@MyParam("username") String username,@MyParam("password") String password);
-    @MyInsert("insert into  user (username,password) values (#{username},#{password})")
-    Integer insertUser(@MyParam("username") String username,@MyParam("password") String password);
+    @MySelect("select UserID,Password from user ")
+    List<User> getAllUser();
+
+    @MySelect("select * from user where UserName=#{UserName} and Password=#{Password} limit 1")
+    User checkUser(@MyParam("UserName") String UserName, @MyParam("Password")String Password);
 }

@@ -1,11 +1,9 @@
 package org.example.FrameworkUtils.AutumnMVC;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.AutumnBean;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.EnableAop;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConditional;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.Value;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Orm.MineBatis.Jdbcinit;
@@ -55,12 +53,11 @@ public class MyContext {
     private final AopProxyFactory aopProxyFactory= new AopProxyFactory();
     private final Map<String, Object> sharedMap = new ConcurrentHashMap<>();
 
-    private final Map<String, MyBeanDefinition> beanDefinitionMaps = new ConcurrentHashMap<>();
     //xxx:一级缓存存储成熟bean
-    private final Map<Class<?>, MyBeanDefinition> singletonObjects = new ConcurrentHashMap<>();
+    private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>();
 
     //xxx: 二级缓存提前暴露的还未完全成熟的bean,用于解决循环依赖
-    private final Map<Class<?>, MyBeanDefinition> earlySingletonObjects = new ConcurrentHashMap<>();
+    private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>();
 
     //xxx: 三级缓存：对象工厂,创建Jdk代理/CgLib代理/配置类Bean/普通Bean
     private final Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();
@@ -69,138 +66,135 @@ public class MyContext {
 
     private List<Class<?>> cycleSet=new ArrayList<>();
     private final Map<String,List<Class<?>>> beanDependencies=new HashMap<>();
-    int times=1;
+    private int times=1;
 
 
-    public <T> T getBean(Class<T> beanClass) {
-        if (times != 1) {
-            cycleSet.add(beanClass);
+    public Object getBean(String beanName) {
+        try {
+            if (times != 1) {
+                cycleSet.add(Class.forName(beanName));
+            }
+            times++;
+        } catch (ClassNotFoundException _) {
         }
-        times++;
 
         // xxx:寻找一级缓存
-        MyBeanDefinition singletonDefinition = singletonObjects.get(beanClass);
-        Object singletonObject = (singletonDefinition != null) ? singletonDefinition.getInstance() : null;
+        Object singletonObject = singletonObjects.get(beanName);
 
         // xxx:一级缓存找不到
         if (singletonObject == null) {
             // xxx:二级缓存寻找
-            MyBeanDefinition earlySingleton = earlySingletonObjects.get(beanClass);
-            if (earlySingleton != null) {
-                singletonObject = earlySingleton.getInstance();
-            } else {
+            singletonObject = earlySingletonObjects.get(beanName);
+            if (singletonObject == null) {
                 // xxx:二级缓存中找不到
                 // xxx: 从三级缓存获取工厂方法
-                ObjectFactory<?> singletonFactory = singletonFactories.get(beanClass.getName());
+                ObjectFactory<?> singletonFactory = singletonFactories.get(beanName);
                 if (singletonFactory != null) {
                     try {
                         singletonObject = singletonFactory.getObject();
-                        // xxx:生产对象后从第三级移除,进入第二级缓存
-                        MyBeanDefinition mb = new MyBeanDefinition(beanClass.getName(), beanClass);
-                        mb.setInstance(singletonObject);
-                        earlySingletonObjects.put(beanClass, mb);
-                        singletonFactories.remove(beanClass.getName());
+                        //xxx:生产对象后更新缓存
+                        earlySingletonObjects.put(beanName, singletonObject);
+                        singletonFactories.remove(beanName);
                     } catch (Exception e) {
-                        throw new BeanCreationException("创建Bean实例失败: " + beanClass.getName(), e);
+                        log.error(String.valueOf(e));
+                        throw new BeanCreationException("创建Bean实例失败: " + beanName, e);
                     }
                 }
             }
-        }
-        return (T) singletonObject;
-    }
-
-
-    //xxx:初始化第三缓存
-    public void initIocCache(Set<Class<?>> prototypeIocContainer) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
-        for(Class<?> clazz:prototypeIocContainer){
-            beanDefinitionMaps.put(clazz.getName(),new MyBeanDefinition(clazz.getName(),clazz));
-        }
-        //xxx:填充第三级缓存
-        registerBeanDefinition(beanDefinitionMaps);
-        //xxx:缓存添加好后,遍历外界传递的Set,对Bean进行初始化
-        for (Class<?> clazz : prototypeIocContainer) {
-            cycleSet = new ArrayList<>();
-            initBean(clazz);
-            if (!cycleSet.isEmpty()) {
-                beanDependencies.put(clazz.getName(), new ArrayList<>(cycleSet));
+            if (singletonObject != null) {
+                //xxx:更新一级缓存
+                singletonObjects.put(beanName, singletonObject);
+                //xxx:从二级缓存移除
+                earlySingletonObjects.remove(beanName);
             }
-            times=1;
         }
-        DependencyChecker dependencyChecker=getBean(DependencyChecker.class);
-        dependencyChecker.checkForCyclicDependencies(beanDependencies);
-
+        return singletonObject;
     }
 
-    private void initBean(Class<?> clazz) throws NoSuchFieldException, IllegalAccessException {
-        Object bean = getBean(clazz);
+
+    public void initIocCache(Map<String, MyBeanDefinition> beanDefinitionMap) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
+
+        registerBeanDefinition(beanDefinitionMap);
+        // 缓存添加好后，遍历外界传递的 Map 的 values，对每个 Bean 进行初始化
+        for (MyBeanDefinition definition : beanDefinitionMap.values()) {
+            cycleSet = new ArrayList<>();
+            initBean(definition);
+            if (!cycleSet.isEmpty()) {
+                beanDependencies.put(definition.getName(), new ArrayList<>(cycleSet));
+            }
+            times = 1;
+        }
+        DependencyChecker dependencyChecker = (DependencyChecker) getBean(DependencyChecker.class.getName());
+        dependencyChecker.checkForCyclicDependencies(beanDependencies);
+    }
+
+
+    private void initBean(MyBeanDefinition myBeanDefinition) throws NoSuchFieldException, IllegalAccessException {
+        //xxx:这时候第三级缓存已经存满了factory
+        //xxx:从第三缓存删掉自己,拿到工厂把自己生出来,放入第二缓存
+        Object bean = getBean(myBeanDefinition.getName());
         if (bean != null) {
-            //xxx:依赖注入开始
-            autowireBeanProperties(bean);
+            //xxx:对未成熟bean进行依赖注入
+            autowireBeanProperties(bean, myBeanDefinition);
+        } else {
+            log.error("Bean为空");
         }
 
 
     }
 
     //xxx:遍历set去填充第三缓存
-    public void registerBeanDefinition(Map<String,MyBeanDefinition>  beanDefinitionMaps) {
+    private void registerBeanDefinition(Map<String, MyBeanDefinition> beanDefinitionMaps) {
         for (MyBeanDefinition beanDefinition : beanDefinitionMaps.values()) {
-            ObjectFactory<?> beanFactory = createBeanFactory(beanDefinition.getBeanClass());
+            //xxx:先看看用哪个工厂
+            ObjectFactory<?> beanFactory = createBeanFactory(beanDefinition);
+            //xxx:然后狠狠的塞到第三级缓存中
             singletonFactories.put(beanDefinition.getName(), beanFactory);
-            //xxx:查找带@AutunmnBean的字段,生成工厂放入第三缓存
-            if (beanDefinition.getBeanClass().getAnnotation(MyConfig.class) != null) {
-                Method[] methods = beanDefinition.getBeanClass().getDeclaredMethods();
-                for (Method method : methods) {
-                    AutumnBean annotation = method.getAnnotation(AutumnBean.class);
-                    if (annotation != null) {
-                        if(!annotation.value().isEmpty()){
-                            singletonFactories.put(annotation.value(), createBeanFactory(beanDefinition.getBeanClass(),method));
-                        }else{
-                            singletonFactories.put(method.getReturnType().getName(), createBeanFactory(beanDefinition.getBeanClass(),method));
-                        }
-
-                    }
-                }
-            }
         }
     }
 
-    private Object createAutumnBeanInstance(Class<?> beanClass, Method method) {
+
+    private Object createAutumnBeanInstance(MyBeanDefinition mb) {
         try {
-            //xxx:第三级缓存拿到自己的原始对象
-            Object magicBean=getBean(beanClass);
-            //xxx:对自己进行依赖注入
-            autowireBeanProperties(magicBean);
-            //xxx:用成熟的自己来反射执行方法
-            return method.invoke(magicBean);
+            Object configInstance = getBean(mb.getConfigurationClass().getName());
+            //xxx:对配置类进行依赖注入,得到成熟的bean
+            autowireBeanProperties(configInstance, mb);
+            //xxx:获取mb定义的生产方法
+            Method beanMethod = mb.getDoMethod();
+            Object autumnBean = beanMethod.invoke(configInstance);
+            Method initMethod = mb.getInitMethod();
+            if (initMethod != null) {
+                initMethod.invoke(autumnBean);
+            }
+            return autumnBean;
+
         } catch (Exception e) {
+            log.error(String.valueOf(e));
+
             throw new BeanCreationException("创建@bean标注的实例失败,请检查你是否存在一个有参构造器,有的话创建一个无参构造器", e);
         }
     }
+
     //xxx:判断使用哪种工厂
-    private ObjectFactory<?> createBeanFactory(Class<?> beanClass) {
-        if (beanClass.getDeclaredAnnotation(MyMapper.class) != null) {
-            return () -> createMapperBeanInstance(beanClass);
-        } else if (beanClass.getAnnotation(EnableAop.class) != null) {
-            return () -> createAopBeanInstance(beanClass);
-        }  else {
-            return () -> createBeanInstance(beanClass);
+    private ObjectFactory<?> createBeanFactory(MyBeanDefinition mb) {
+        //xxx:mapper工厂,生产jdk动态代理类
+        if (mb.getBeanClass().getDeclaredAnnotation(MyMapper.class) != null) {
+            return () -> createMapperBeanInstance(mb.getBeanClass());
+            //xxx:aop工厂,利用cglib生产代理类
+        } else if (mb.isCglib()) {
+            return () -> createAopBeanInstance(mb.getBeanClass());
+        } else if (mb.getDoMethod() != null) {
+            return () -> createAutumnBeanInstance(mb);
+        } else {
+            return () -> createBeanInstance(mb.getBeanClass());
         }
 
     }
-
-    //xxx:判断器重载
-    private ObjectFactory<?> createBeanFactory(Class<?> beanClass, Method method) {
-        return () -> createAutumnBeanInstance(beanClass,method);
-    }
-
 
     //xxx:Aop工厂
     private Object createAopBeanInstance(Class<?> beanClass) {
         String[] methods=beanClass.getAnnotation(EnableAop.class).getMethod();
         Class<?> clazz = beanClass.getAnnotation(EnableAop.class).getClassFactory();
-        if(clazz==null || methods==null || methods.length==0){
-            throw new IllegalArgumentException("检查Aop注解参数是否加全了");
-        }
         try{
             return aopProxyFactory.create(clazz ,beanClass,methods);
         }catch (Exception e){
@@ -213,6 +207,7 @@ public class MyContext {
     //xxx:普通bean工厂
     private Object createBeanInstance(Class<?> beanClass) {
         try {
+            //xxx:调用工厂生产一个朴实无华童叟无欺的小bean出来
             return beanClass.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             throw new BeanCreationException("创建普通bean实例失败,请检查你是否存在一个有参构造器,有的话创建一个无参构造器", e);
@@ -229,16 +224,26 @@ public class MyContext {
     }
 
     //xxx:di部分:
-
-    public void autowireBeanProperties(Object bean) throws IllegalAccessException, NoSuchFieldException {
+    private void autowireBeanProperties(Object bean, MyBeanDefinition mb) throws IllegalAccessException, NoSuchFieldException {
         //xxx:是否为CgLib代理类?,是的话因为子类不能继承父类字段等注解,需要去父类身上查找
         Class<?> clazz = bean.getClass().getName().contains("$$")
                 ? bean.getClass().getSuperclass() : bean.getClass();
-
         for (Field field : clazz.getDeclaredFields()) {
             //xxx:标记@auto wired进行对象/接口依赖注入
             if (field.isAnnotationPresent(MyAutoWired.class)) {
-                injectDependencies(bean, field);
+                String myAutoWired = field.getAnnotation(MyAutoWired.class).value();
+                if (myAutoWired.isEmpty()) {
+                    injectDependencies(bean, field, mb);
+                } else {
+                    Object dependency = getBean(myAutoWired);
+                    if (dependency == null) {
+                        log.warn("无法解析的依赖：{}", myAutoWired);
+                        return;
+                    }
+                    field.setAccessible(true);
+                    field.set(bean, dependency);
+                }
+
             }
             //xxx:进行配置文件注入
             else if (field.isAnnotationPresent(Value.class)) {
@@ -247,18 +252,17 @@ public class MyContext {
 
         }
         //xxx:依赖注入后更新缓存,这个bean从第二缓存移除,进入一级缓存,提前暴露期转为成熟的AutumnBean
-        MyBeanDefinition mb=new MyBeanDefinition(bean.getClass().getName(), bean.getClass());
         mb.setInstance(bean);
-        singletonObjects.put(bean.getClass(), mb);
-        earlySingletonObjects.remove(bean.getClass());
+        singletonObjects.put(bean.getClass().getName(), bean);
+        earlySingletonObjects.remove(bean.getClass().getName());
     }
 
-    private void injectDependencies(Object bean, Field field) throws IllegalAccessException, NoSuchFieldException {
+    private void injectDependencies(Object bean, Field field, MyBeanDefinition mb) throws IllegalAccessException, NoSuchFieldException {
         Class<?> fieldType = field.getType();
-        //xxx:接口,还是不是mapper
+        //xxx:接口,还是不是mapper,那一定是service
         if (fieldType.isInterface() && fieldType.getAnnotation(MyMapper.class) == null) {
             //xxx:进入查找实现类环节
-            injectInterfaceTypeDependency(bean, field);
+            injectInterfaceTypeDependency(bean, field, mb);
         } else {
             //xxx:正常的Bean
             injectNormalDependency(bean, field);
@@ -266,8 +270,8 @@ public class MyContext {
 
     }
 
-
-    private void injectInterfaceTypeDependency(Object bean, Field field) throws IllegalAccessException, NoSuchFieldException {
+    //xxx:这个是依照接口找实现类,还得处理条件注解,别提多辛苦了
+    private void injectInterfaceTypeDependency(Object bean, Field field, MyBeanDefinition mb) throws IllegalAccessException, NoSuchFieldException {
         String packageName = (String) get("packageUrl");
         Reflections reflections = new Reflections(packageName, new SubTypesScanner(false));
         Set<Class<?>> subTypesOf = new HashSet<>(reflections.getSubTypesOf(field.getType()));
@@ -276,8 +280,8 @@ public class MyContext {
             MyConditional myConditionalAnnotation = implClass.getAnnotation(MyConditional.class);
             if (myConditionalAnnotation != null) {
                 Class<? extends MyCondition> conditionClass = myConditionalAnnotation.value();
-                MyCondition condition = getBean(conditionClass);
-                autowireBeanProperties(condition);
+                MyCondition condition = (MyCondition) getBean(conditionClass.getName());
+                autowireBeanProperties(condition, mb);
                 condition.init();
                 if (!condition.matches(getInstance(),implClass)) {
                     classesToRemove.add(implClass);
@@ -294,7 +298,7 @@ public class MyContext {
             throw new BeanCreationException("多个实现类命中");
         }
         if (selectedImpl != null) {
-            Object dependency = getBean(selectedImpl);
+            Object dependency = getBean(selectedImpl.getName());
             field.setAccessible(true);
             field.set(bean, dependency);
         } else {
@@ -306,17 +310,14 @@ public class MyContext {
     //xxx:注入一般Bean,依照字段查找类,从容器取出为字段赋值
     private void injectNormalDependency(Object bean, Field field) throws IllegalAccessException {
         Class<?> dependencyType = field.getType();
-        Object dependency = getBean(dependencyType);
+        //xxx:去容器里看看有没有啊,如果循环依赖了?没关系,反正容器里都是单例,注入一个未成熟的bean进去也无所谓,反正内存地址都一样
+        Object dependency = getBean(dependencyType.getName());
         if (dependency == null) {
             log.warn("无法解析的依赖：{}", dependencyType.getName());
             return;
         }
         field.setAccessible(true);
-        if(dependency.getClass().equals(MyBeanDefinition.class)){
-            field.set(bean, ((MyBeanDefinition) dependency).getInstance());
-        }else{
-            field.set(bean, dependency);
-        }
+        field.set(bean, dependency);
 
     }
 
@@ -381,7 +382,7 @@ public class MyContext {
         return sharedMap.get(key);
     }
 
-    public Map<Class<?>, MyBeanDefinition> getIocContainer() {
+    public Map<String, Object> getIocContainer() {
         return singletonObjects;
     }
 

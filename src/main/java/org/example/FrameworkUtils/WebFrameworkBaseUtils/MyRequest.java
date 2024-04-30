@@ -30,7 +30,7 @@ public class MyRequest {
     private String boundary;
     private final Cookie[] cookie;
     private final MyContext myContext = MyContext.getInstance();
-    private final SessionManager sessionManager = myContext.getBean(SessionManager.class);
+    private final SessionManager sessionManager = (SessionManager) myContext.getBean(SessionManager.class.getName());
 
     public MyRequest(String payload, String body, Integer contentLength) {
         this.payload = payload;

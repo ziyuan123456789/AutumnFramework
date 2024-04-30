@@ -6,6 +6,6 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.ThreadWatcher;
  */
 public interface Watcher {
 
-    void getmessage(String message);
+    void getmessage(String message) throws ClassNotFoundException;
 
 }

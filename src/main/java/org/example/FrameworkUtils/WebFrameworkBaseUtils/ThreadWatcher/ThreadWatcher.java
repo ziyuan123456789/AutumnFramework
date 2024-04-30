@@ -11,7 +11,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFramewor
 @Slf4j
 public class ThreadWatcher implements  Watcher{
     @Override
-    public void getmessage(String message) {
+    public void getmessage(String message) throws ClassNotFoundException {
         AutumnFrameworkRunner autumnFrameworkRunner=new AutumnFrameworkRunner();
         autumnFrameworkRunner.run(Main.class);
     }

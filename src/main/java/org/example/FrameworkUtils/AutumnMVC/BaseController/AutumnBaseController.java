@@ -1,4 +1,4 @@
-package org.example.FrameworkUtils.AutumnMVC.Controller;
+package org.example.FrameworkUtils.AutumnMVC.BaseController;
 
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyController;
@@ -12,7 +12,6 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyRequest;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

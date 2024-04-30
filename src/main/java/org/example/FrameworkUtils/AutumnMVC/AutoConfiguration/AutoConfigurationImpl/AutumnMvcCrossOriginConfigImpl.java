@@ -14,7 +14,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.CrossOrig
 @MyConfig
 @MyConditional(MatchClassByInterface.class)
 public class AutumnMvcCrossOriginConfigImpl implements AutumnMvcCrossOriginConfig {
-    CrossOriginBean crossOrigin=new CrossOriginBean();
+
 
     @Value("crossOrigin")
     String crossOriginString;
@@ -22,6 +22,7 @@ public class AutumnMvcCrossOriginConfigImpl implements AutumnMvcCrossOriginConfi
     @Override
     @AutumnBean
     public CrossOriginBean setAllowCrossOrigin() {
+        CrossOriginBean crossOrigin=new CrossOriginBean();
         crossOrigin.setOrigins(crossOriginString);
         return crossOrigin;
     }

@@ -11,7 +11,7 @@ import java.net.http.WebSocket;
  * @author ziyuan
  * @since 2024.04
  */
-@MyWebSocketConfig("/websocketTest")
+@MyWebSocketConfig("/websocket")
 @Slf4j
 public class WebSocketController implements WebSocketBaseConfig {
 
@@ -27,7 +27,7 @@ public class WebSocketController implements WebSocketBaseConfig {
 
     @Override
     public String onMsg(String text) {
-        log.info("接受的讯息为"+text);
+        log.info("接受的讯息为{}", text);
         return text;
     }
 }

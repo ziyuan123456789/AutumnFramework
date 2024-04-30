@@ -2,10 +2,8 @@ package org.example.service;
 
 /**
  * @author ziyuan
- * @since 2023.11
+ * @since 2024.04
  */
-
 public interface LoginService {
-    boolean login(String username, String password);
-    Integer insertUser(String username, String password);
+    boolean checkLogin(String userid, String password);
 }
