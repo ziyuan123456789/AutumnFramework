@@ -7,7 +7,7 @@ import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyDelete;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyInsert;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MySelect;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyUpdate;
-import org.example.FrameworkUtils.AutumnMVC.MyContext;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.MyContext;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;

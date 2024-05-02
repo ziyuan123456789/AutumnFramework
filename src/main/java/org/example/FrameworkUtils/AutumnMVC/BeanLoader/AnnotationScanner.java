@@ -1,16 +1,20 @@
-package org.example.FrameworkUtils.AutumnMVC;
+package org.example.FrameworkUtils.AutumnMVC.BeanLoader;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyOrder;
-import org.example.FrameworkUtils.AutumnMVC.MyContext;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.MyContext;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 
 import java.lang.annotation.Annotation;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author wsh
@@ -50,13 +54,18 @@ public class AnnotationScanner {
     public Class<?> initFilterChain() throws ClassNotFoundException {
         Map<String, Object> iocContainer = myContext.getIocContainer();
         for (Map.Entry<String, Object> entry : iocContainer.entrySet()) {
-            Class<?> clazz = Class.forName(entry.getKey());
-            if (clazz.isAnnotationPresent(MyOrder.class)) {
-                MyOrder myOrder = clazz.getAnnotation(MyOrder.class);
-                if (myOrder.value() == 1) {
-                    return clazz;
+            try {
+                Class<?> clazz = Class.forName(entry.getKey());
+                if (clazz.isAnnotationPresent(MyOrder.class)) {
+                    MyOrder myOrder = clazz.getAnnotation(MyOrder.class);
+                    if (myOrder.value() == 1) {
+                        return clazz;
+                    }
                 }
+            }catch (Exception e){
+
             }
+
         }
         return null;
     }

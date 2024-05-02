@@ -2,9 +2,9 @@ package org.example.Interceptor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Filter;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyRequest;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyResponse;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.Filter;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyRequest;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyResponse;
 
 /**
  * @author ziyuan

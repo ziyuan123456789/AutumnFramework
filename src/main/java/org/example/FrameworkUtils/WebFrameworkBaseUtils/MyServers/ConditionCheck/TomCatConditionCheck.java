@@ -2,8 +2,8 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ConditionChec
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnMVC.MyCondition;
-import org.example.FrameworkUtils.AutumnMVC.MyContext;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.MyCondition;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.MyContext;
 
 @MyComponent
 @Slf4j

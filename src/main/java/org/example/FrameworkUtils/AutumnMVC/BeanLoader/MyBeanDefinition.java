@@ -1,4 +1,4 @@
-package org.example.FrameworkUtils.AutumnMVC;
+package org.example.FrameworkUtils.AutumnMVC.BeanLoader;
 
 import lombok.Data;
 
@@ -16,6 +16,10 @@ public class MyBeanDefinition {
     private boolean isCglib;
 
     private Class<?> beanClass;
+
+    private boolean isStarter = false;
+
+    private ObjectFactory<?> starterMethod;
     //xxx:是谁成产了这个@bean
     private Class<?> configurationClass;
 

@@ -1,13 +1,15 @@
-package org.example.FrameworkUtils.AutumnMVC;
+package org.example.FrameworkUtils.AutumnMVC.Ioc;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.EnableAop;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConditional;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.Value;
+import org.example.FrameworkUtils.AutumnMVC.Aop.AopProxyFactory;
+import org.example.FrameworkUtils.AutumnMVC.BeanLoader.MyBeanDefinition;
+import org.example.FrameworkUtils.AutumnMVC.BeanLoader.ObjectFactory;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Orm.MineBatis.Jdbcinit;
-import org.example.FrameworkUtils.Orm.MineBatis.MapperUtils;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
@@ -29,12 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 public class MyContext {
-    @FunctionalInterface
-    interface ObjectFactory<T> {
-        T getObject() throws Exception;
-    }
-
-
     private static volatile MyContext instance;
 
     private MyContext() {
@@ -75,7 +71,7 @@ public class MyContext {
                 cycleSet.add(Class.forName(beanName));
             }
             times++;
-        } catch (ClassNotFoundException _) {
+        } catch (ClassNotFoundException e) {
         }
 
         // xxx:寻找一级缓存
@@ -115,7 +111,7 @@ public class MyContext {
     public void initIocCache(Map<String, MyBeanDefinition> beanDefinitionMap) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
 
         registerBeanDefinition(beanDefinitionMap);
-        // 缓存添加好后，遍历外界传递的 Map 的 values，对每个 Bean 进行初始化
+        //xxx:缓存添加好后，遍历外界传递的 Map 的 values对每个 Bean 进行初始化
         for (MyBeanDefinition definition : beanDefinitionMap.values()) {
             cycleSet = new ArrayList<>();
             initBean(definition);
@@ -177,11 +173,12 @@ public class MyContext {
 
     //xxx:判断使用哪种工厂
     private ObjectFactory<?> createBeanFactory(MyBeanDefinition mb) {
-        //xxx:mapper工厂,生产jdk动态代理类
-        if (mb.getBeanClass().getDeclaredAnnotation(MyMapper.class) != null) {
-            return () -> createMapperBeanInstance(mb.getBeanClass());
-            //xxx:aop工厂,利用cglib生产代理类
-        } else if (mb.isCglib()) {
+        //xxx:第三方实现
+        if (mb.isStarter()) {
+            return () -> createStarterBeanInstance(mb);
+        }
+        //xxx:aop工厂,利用cglib生产代理类
+        else if (mb.isCglib()) {
             return () -> createAopBeanInstance(mb.getBeanClass());
         } else if (mb.getDoMethod() != null) {
             return () -> createAutumnBeanInstance(mb);
@@ -190,6 +187,26 @@ public class MyContext {
         }
 
     }
+
+    private Object createStarterBeanInstance(MyBeanDefinition mb) {
+        try {
+            ObjectFactory<?> factory = mb.getStarterMethod();
+            if (factory == null) {
+                throw new IllegalStateException("没有为 " + mb.getBeanClass().getName() + " 定义工厂方法");
+            }
+            Object beanInstance = factory.getObject();
+
+            if (mb.getInitMethod() != null) {
+                mb.getInitMethod().invoke(beanInstance);
+            }
+            return beanInstance;
+
+        } catch (Exception e) {
+            log.error("创建Bean实例失败: " + mb.getName(), e);
+            throw new BeanCreationException("创建Bean实例失败: " + mb.getName(), e);
+        }
+    }
+
 
     //xxx:Aop工厂
     private Object createAopBeanInstance(Class<?> beanClass) {
@@ -203,7 +220,6 @@ public class MyContext {
 
     }
 
-
     //xxx:普通bean工厂
     private Object createBeanInstance(Class<?> beanClass) {
         try {
@@ -211,15 +227,6 @@ public class MyContext {
             return beanClass.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             throw new BeanCreationException("创建普通bean实例失败,请检查你是否存在一个有参构造器,有的话创建一个无参构造器", e);
-        }
-    }
-
-    //xxx:MapperBean工厂
-    private Object createMapperBeanInstance(Class<?> beanClass) {
-        try {
-            return MapperUtils.init(beanClass);
-        } catch (Exception e) {
-            throw new BeanCreationException("创建MapperBean实例失败", e);
         }
     }
 

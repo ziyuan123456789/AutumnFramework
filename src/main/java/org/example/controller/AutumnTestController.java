@@ -13,8 +13,8 @@ import org.example.FrameworkUtils.AutumnMVC.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.Value;
 import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyRequest;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyResponse;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyRequest;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocket;
 import org.example.mapper.HardwareSettingMapper;
@@ -109,7 +109,7 @@ public class AutumnTestController {
     public String session(MyRequest myRequest) {
         String sessionId = myRequest.getSession().getSessionId();
         myRequest.getSession().setAttribute("name", sessionId);
-        return (String) myRequest.getSession().getAttribute("name");
+        return (String) "切换阅览器查看唯一标识符是否变化? 标识符如下:"+myRequest.getSession().getAttribute("name");
     }
 
     //xxx:测试WebSocket功能

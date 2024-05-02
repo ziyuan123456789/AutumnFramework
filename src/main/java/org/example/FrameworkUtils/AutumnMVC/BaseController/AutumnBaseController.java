@@ -5,10 +5,10 @@ import org.example.FrameworkUtils.AutumnMVC.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.Value;
 import org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutumnMvcConfiguration;
-import org.example.FrameworkUtils.AutumnMVC.MyContext;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.MyContext;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyRequest;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyRequest;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;

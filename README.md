@@ -9,8 +9,16 @@
 - ~~cglib不支持java17以及之后的版本了,降低jdk版本~~
 - 编译结束后方法形参名称不再保留,虽然可以加入编译参数解决,但是为了泛用性选择了形参注解标注形参,mapper接口层同理
 - 目前仅支持调用字段的无参默认构造器注入,以后可能会修改
-- 逐步使用MyBeanDefinition重构Ioc容器,以实现@Bean(BeanName)以及@MyAutoWired(BeanName)依照自定义名字注入同一类型实例的功能
-- 重构初期问题极多,代码写的和屎差不多,但是能跑.建议回滚到1.9日,提交日志为md更新这个版本.
+- 框架中的ioc容器只负责基本的依赖注入,现在用户可以编写自己的Starter干预BeanDefinition的生产过程,我们约定在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明Starter,容器在启动的时候会调用Starter中的生产方法
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans>
+    <AutumnStarters>
+        <bean class="org.example.MineBatisStarter"/>
+    </AutumnStarters>
+</beans>
+ ```
+
 
 ## 打个广告:
 - 大四没事干,~~找了个java实习一个月2000~~,大连的hr有没有想联系我的 邮箱:3139196862@qq.com
@@ -40,6 +48,7 @@
 - 简易的WebSocket加入,仿照Springboot写法可以处理协议升级与后续数据传递,此过程通过注解指定处理器
 - @Bean功能可以使用自定义名字了,使用@AutumnBean("beanName")与@MyAutowire("beanName")实现为同一个字段注入不同实例
 - @Bean功能可以自定义Init方法了,在依赖注入之后立刻调用
+- 用户可以自定义Starter,干预BeanDefinition的生产过程,例如Mapper的注入,框架在启动的时候会调用Starter中的生产方法
 
 ## 代码示范
 ### Controller
@@ -239,8 +248,50 @@ public class UrlFilter implements Filter {
         }
     }
 }
+```
+### 第三方Starter生产自己的Bean
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans>
+    <AutumnStarters>
+        <bean class="org.example.MineBatisStarter"/>
+    </AutumnStarters>
+</beans>
+```
+
+```java
+@Slf4j
+public class MineBatisStarter implements AutumnStarterRegisterer {
+
+    @Override
+    public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, Map<String, MyBeanDefinition> registry) throws Exception {
+        log.info(this.getClass().getSimpleName() + "从xml中加载,现在要干预BeanDefinition的生成");
+        List<Class<?>> classSet = scanner.findAnnotatedClasses("org.example", MyMapper.class);
+        for (Class<?> clazz : classSet) {
+            MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
+            myBeanDefinition.setName(clazz.getName());
+            myBeanDefinition.setBeanClass(clazz);
+            myBeanDefinition.setStarter(true);
+            myBeanDefinition.setStarterMethod(createFactoryMethod(clazz));
+            registry.put(clazz.getName(), myBeanDefinition);
+        }
+    }
+
+    @Override
+    public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) throws Exception {
+        return () -> {
+            try {
+                return MapperUtils.init(beanClass);
+            } catch (Exception e) {
+                log.error("创建MapperBean实例失败", e);
+                throw new BeanCreationException("创建MapperBean实例失败", e);
+            }
+        };
+    }
+}
 
 ```
+
 ### Mapper
 ```java
 @MyMapper
@@ -478,12 +529,14 @@ allow-circular-references=true
 - 项目启动
 ![Main_main.jpg](pics/AutumnFrameworkRunner_run.jpg)
 - Mapper工厂(旧版)
-- ![MapperFactory.jpg](pics/MyContext_createBeanFactory.jpg)
+ ![MapperFactory.jpg](pics/MyContext_createBeanFactory.jpg)
 - Aop工厂
-- ![AopFactory.jpg](pics/MyContext_createAopBeanInstance.jpg)
+ ![AopFactory.jpg](pics/MyContext_createAopBeanInstance.jpg)
 - Socket实现的简陋http服务器
-- ![SocketServer.jpg](pics/SocketServer_init.jpg)
+ ![SocketServer.jpg](pics/SocketServer_init.jpg)
 ## 更新记录:
+### 2024/5/02
+- 框架中的ioc容器只负责基本的依赖注入,现在用户可以编写自己的Starter干预BeanDefinition的生产过程,我们约定在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明Starter,容器在启动的时候解析xml中的内容去反射创建实例,检查是否实现了AutumnStarterRegisterer接口,如果实现了则调用postProcessBeanDefinitionRegistry方法,用户可以在这个方法中干预BeanDefinition的生成,例如Mapper的注入
 ### 2024/4/30
 - 完善了@Bean功能,使用@AutumnBean("beanName")与@MyAutowire("beanName")实现为同一个字段注入不同实例
 - 使用MyBeanDefinition彻底重写了Ioc与Di部分

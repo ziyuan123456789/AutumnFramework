@@ -1,4 +1,4 @@
-package org.example.FrameworkUtils.AutumnMVC;
+package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.Data;
 

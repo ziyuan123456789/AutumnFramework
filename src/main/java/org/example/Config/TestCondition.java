@@ -1,8 +1,8 @@
 package org.example.Config;
 
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnMVC.MyCondition;
-import org.example.FrameworkUtils.AutumnMVC.MyContext;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.MyCondition;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.MyContext;
 
 /**
  * @author ziyuan

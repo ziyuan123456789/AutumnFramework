@@ -10,14 +10,14 @@ import org.example.FrameworkUtils.AutumnMVC.Annotation.MyPostConstruct;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyPreDestroy;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyService;
-import org.example.FrameworkUtils.AutumnMVC.AnnotationScanner;
-import org.example.FrameworkUtils.AutumnMVC.MyBeanDefinition;
-import org.example.FrameworkUtils.AutumnMVC.MyContext;
-import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
+import org.example.FrameworkUtils.AutumnMVC.BeanLoader.AnnotationScanner;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.AutumnStarterRegisterer;
+import org.example.FrameworkUtils.AutumnMVC.BeanLoader.XMLBeansLoader;
+import org.example.FrameworkUtils.AutumnMVC.BeanLoader.MyBeanDefinition;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.MyContext;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,8 +38,8 @@ public class AutumnFrameworkRunner {
         myContext.put("packageUrl", mainClass.getPackageName());
         try {
             componentScan(mainClass, myContext);
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | NoSuchFieldException |
-                 ClassNotFoundException | InstantiationException e) {
+        } catch (Exception e) {
+            log.error(String.valueOf(e));
             throw new RuntimeException(e);
         }
         ConcurrentHashMap<String, String> urlMap = new ConcurrentHashMap<>();
@@ -62,19 +62,25 @@ public class AutumnFrameworkRunner {
         server.run();
     }
 
-    private void componentScan(Class<?> mainClass, MyContext myContext) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException, ClassNotFoundException, InstantiationException {
+    private void componentScan(Class<?> mainClass, MyContext myContext) throws Exception {
+        XMLBeansLoader xmlBeansLoader = new XMLBeansLoader();
         Map<String, MyBeanDefinition> beanDefinitionMap = new HashMap<>();
         AnnotationScanner scanner = new AnnotationScanner();
         List<Class<? extends Annotation>> annotations = new ArrayList<>();
         annotations.add(MyController.class);
         annotations.add(MyService.class);
         annotations.add(MyComponent.class);
-        annotations.add(MyMapper.class);
+//        annotations.add(MyMapper.class);
         annotations.add(MyConfig.class);
         annotations.add(MyWebSocketConfig.class);
         Set<Class<?>> annotatedClasses = scanner.findAnnotatedClassesList(mainClass.getPackageName(), annotations);
+        List<Class<AutumnStarterRegisterer>> starterRegisterer = xmlBeansLoader.loadStarterClasses("plugins");
         long startTime = System.currentTimeMillis();
         log.info("ioc容器开始初始化");
+        for (Class<AutumnStarterRegisterer> registerer : starterRegisterer) {
+            AutumnStarterRegisterer autumnStarterRegisterer = registerer.newInstance();
+            autumnStarterRegisterer.postProcessBeanDefinitionRegistry(scanner,beanDefinitionMap);
+        }
         for (Class clazz : annotatedClasses) {
             MyConfig myConfig = (MyConfig) clazz.getAnnotation(MyConfig.class);
             if (myConfig != null) {
@@ -147,11 +153,12 @@ public class AutumnFrameworkRunner {
 
             }
         }
+
         myContext.initIocCache(beanDefinitionMap);
         long endTime = System.currentTimeMillis();
         log.info("容器花费了：{} 毫秒实例化", endTime - startTime);
         //xxx:加载驱动
-        Class.forName("org.example.ClassCall");
+        Class.forName("org.example.MineBatisStarter");
 
 
     }

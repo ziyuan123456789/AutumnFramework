@@ -1,4 +1,4 @@
-package org.example.FrameworkUtils.AutumnMVC;
+package org.example.FrameworkUtils.AutumnMVC.Ioc;
 
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.Value;

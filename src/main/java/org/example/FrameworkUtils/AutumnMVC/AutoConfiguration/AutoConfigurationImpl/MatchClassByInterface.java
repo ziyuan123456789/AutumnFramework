@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConditional;
-import org.example.FrameworkUtils.AutumnMVC.MyCondition;
-import org.example.FrameworkUtils.AutumnMVC.MyContext;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.MyCondition;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.MyContext;
 import org.reflections.Reflections;
 
 import java.util.ArrayList;

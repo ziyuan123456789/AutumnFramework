@@ -3,7 +3,7 @@ package org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutoConfiguration
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.AutumnBean;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
-import org.example.FrameworkUtils.AutumnMVC.MyContext;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.MyContext;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 

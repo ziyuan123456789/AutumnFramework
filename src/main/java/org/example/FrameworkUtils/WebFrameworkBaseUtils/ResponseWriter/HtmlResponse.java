@@ -3,10 +3,9 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnMVC.AnnotationScanner;
-import org.example.FrameworkUtils.AutumnMVC.MyBeanDefinition;
-import org.example.FrameworkUtils.AutumnMVC.MyContext;
-import org.example.FrameworkUtils.AutumnMVC.ResourceFinder;
+import org.example.FrameworkUtils.AutumnMVC.BeanLoader.AnnotationScanner;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.MyContext;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.ResourceFinder;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.WebSocketBaseConfig;
@@ -45,7 +44,6 @@ public class HtmlResponse {
     //xxx:http返回报文(直接返回拼接的html文本,Content-Type: text/html)
     public void outPutMessageWriter(Socket socket, int statusCode, String responseText,Cookie cookie) throws IOException {
         String  CrossOrigin=crossOriginBean.getOrigins();
-//        String responseTextWithHtml = "<html><body>" + "<h3 style='color:red'>" + responseText + "</h3>" + "</body></html>";
         byte[] responseBytes = responseText.getBytes(StandardCharsets.UTF_8);
 
         StringBuilder responseHeader = new StringBuilder();
@@ -164,7 +162,7 @@ public class HtmlResponse {
     }
 
 
-    //xxx:http返回报文(返回找到的iocn,Content-Type: image/x-icon)
+    //xxx:http返回报文(返回找到的icon,Content-Type: image/x-icon)
     public void outPutIconWriter(Socket socket, String htmlUrl,Cookie cookie) throws IOException {
         String filePath = resourceFinder.getIconLocation(htmlUrl).replaceFirst("^/", "");
         Path path = Path.of(filePath);

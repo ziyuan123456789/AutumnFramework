@@ -1,4 +1,4 @@
-package org.example.FrameworkUtils.AutumnMVC;
+package org.example.FrameworkUtils.AutumnMVC.Ioc;
 
 /**
  * @author ziyuan

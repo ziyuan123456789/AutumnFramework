@@ -1,6 +1,6 @@
 package org.example.FrameworkUtils.AutumnMVC.Annotation;
 
-import org.example.FrameworkUtils.AutumnMVC.MyCondition;
+import org.example.FrameworkUtils.AutumnMVC.Ioc.MyCondition;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
