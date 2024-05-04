@@ -1,0 +1,16 @@
+<configuration>
+    <dataSource>
+        <property name="driverClass" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="jdbcUrl"
+                  value="jdbc:mysql://localhost:3306/demo?serverTimezone=UTC&amp;useUnicode=true&amp;characterEncoding=utf-8&amp;useSSL=false&amp;allowPublicKeyRetrieval=true"/>
+        <property name="username" value="root"/>
+        <property name="password" value="root"/>
+    </dataSource>
+
+    <mappers>
+        <mapper resource="mapper/UserMapper.xml"/>
+    </mappers>
+
+    <myConfig>
+    </myConfig>
+</configuration>

@@ -10,19 +10,25 @@
 - 编译结束后方法形参名称不再保留,虽然可以加入编译参数解决,但是为了泛用性选择了形参注解标注形参,mapper接口层同理
 - 目前仅支持调用字段的无参默认构造器注入,以后可能会修改
 - 框架中的ioc容器只负责基本的依赖注入,现在用户可以编写自己的Starter干预BeanDefinition的生产过程,我们约定在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明Starter,容器在启动的时候会调用Starter中的生产方法
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans>
     <AutumnStarters>
-        <bean class="org.example.MineBatisStarter"/>
+        <bean class="org.example.FrameworkUtils.Orm.MineBatis.MineBatisStarter"/>
     </AutumnStarters>
 </beans>
  ```
+- MineBatis目前只可以进行查询,不能增删改,马上就会加上这些功能.另外现在只可以注册XmlMapper,注解注册的方式日后添加
+- MineBatis的TypeHandler扫描也将在最近加入
+- 如果使用idea可以在xml加入如下内容以获得idea代码提示与跳转,用其他的ide就可以不加
 
+```xml
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ ```
 
 ## 打个广告:
 - 大四没事干,~~找了个java实习一个月2000~~,大连的hr有没有想联系我的 邮箱:3139196862@qq.com
-- 开始做毕业设计了,大幅度延缓更新
 
 ## 项目描述:
 不依赖TomCat,Servlet等技术实现的网络服务框架,参照了Mybatis,SpringMvc等设计思想从0手写了一个基于注解的仿SpringBoot框架
@@ -49,6 +55,7 @@
 - @Bean功能可以使用自定义名字了,使用@AutumnBean("beanName")与@MyAutowire("beanName")实现为同一个字段注入不同实例
 - @Bean功能可以自定义Init方法了,在依赖注入之后立刻调用
 - 用户可以自定义Starter,干预BeanDefinition的生产过程,例如Mapper的注入,框架在启动的时候会调用Starter中的生产方法
+
 
 ## 代码示范
 ### Controller
@@ -250,11 +257,12 @@ public class UrlFilter implements Filter {
 }
 ```
 ### 第三方Starter生产自己的Bean
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans>
     <AutumnStarters>
-        <bean class="org.example.MineBatisStarter"/>
+        <bean class="org.example.FrameworkUtils.Orm.MineBatis.MineBatisStarter"/>
     </AutumnStarters>
 </beans>
 ```
@@ -262,26 +270,43 @@ public class UrlFilter implements Filter {
 ```java
 @Slf4j
 public class MineBatisStarter implements AutumnStarterRegisterer {
+    static {
+        Properties p = new Properties(System.getProperties());
+        p.put("com.mchange.v2.log.MLog", "com.mchange.v2.log.FallbackMLog");
+        p.put("com.mchange.v2.log.FallbackMLog.DEFAULT_CUTOFF_LEVEL", "OFF");
+        System.setProperties(p);
+    }
+
+    private final MyContext myContext = MyContext.getInstance();
 
     @Override
     public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, Map<String, MyBeanDefinition> registry) throws Exception {
-        log.info(this.getClass().getSimpleName() + "从xml中加载,现在要干预BeanDefinition的生成");
-        List<Class<?>> classSet = scanner.findAnnotatedClasses("org.example", MyMapper.class);
+        log.info("{}从xml中加载,现在要干预BeanDefinition的生成", this.getClass().getSimpleName());
+        String minebatisXml = myContext.getProperties().getProperty("MineBatis-configXML");
+        InputStream inputStream;
+        if (minebatisXml == null || minebatisXml.isEmpty()) {
+            inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
+        } else {
+            inputStream = Resources.getResourceAsSteam(minebatisXml);
+        }
+        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+        SqlSession sqlSession = sqlSessionFactory.openSession();
+        Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
         for (Class<?> clazz : classSet) {
             MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
             myBeanDefinition.setName(clazz.getName());
             myBeanDefinition.setBeanClass(clazz);
             myBeanDefinition.setStarter(true);
-            myBeanDefinition.setStarterMethod(createFactoryMethod(clazz));
+            myBeanDefinition.setStarterMethod(createFactoryMethod(clazz, sqlSession));
             registry.put(clazz.getName(), myBeanDefinition);
         }
     }
 
-    @Override
-    public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) throws Exception {
+
+    public ObjectFactory<?> createFactoryMethod(Class<?> beanClass, SqlSession sqlSession) throws Exception {
         return () -> {
             try {
-                return MapperUtils.init(beanClass);
+                return sqlSession.getMapper(beanClass);
             } catch (Exception e) {
                 log.error("创建MapperBean实例失败", e);
                 throw new BeanCreationException("创建MapperBean实例失败", e);
@@ -290,17 +315,79 @@ public class MineBatisStarter implements AutumnStarterRegisterer {
     }
 }
 
-```
 
+
+```
 ### Mapper
 ```java
-@MyMapper
 public interface UserMapper {
-    @MySelect("select UserID,Password from user ")
-    List<User> getAllUser();
+    List<User> getOneUser(Integer userId);
+    List<User> getAllUser(Integer userId);
+    User checkUser(String userId, String password);
+}
+```
+```xml
+<mapper namespace="org.example.mapper.UserMapper">
+    <select id="getOneUser" resultMap="whyYouDoThis" parameterType="java.lang.Integer">
+        SELECT UserID as testUserID,
+               Username as testUserName,
+               Role,
+               `Password`,
+               Salt,
+               Telephone,
+               regTime,
+               enabled
+        FROM `user`
+        where UserId > #{userId}
+    </select>
 
-    @MySelect("select * from user where UserName=#{UserName} and Password=#{Password} limit 1")
-    User checkUser(@MyParam("UserName") String UserName, @MyParam("Password")String Password);
+    <select id="getAllUser" resultType="org.example.Bean.User"
+            parameterType="java.lang.Integer">
+        select * from user  where UserId > #{userId}
+    </select>
+    
+    <resultMap id="whyYouDoThis" type="org.example.Bean.User" isDisable="false">
+        <result property="userID" column="testUserID"/>
+        <result property="username" column="testUserName"/>
+    </resultMap>
+
+    <select id="checkUser" resultType="org.example.Bean.User">
+        select * from user u where Username=#{userId} and Password=#{password}
+    </select>
+</mapper>
+```
+```xml
+<configuration>
+    <dataSource>
+        <property name="driverClass" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="jdbcUrl"
+                  value="jdbc:mysql://localhost:3306/demo?serverTimezone=UTC&amp;useUnicode=true&amp;characterEncoding=utf-8&amp;useSSL=false&amp;allowPublicKeyRetrieval=true"/>
+        <property name="username" value="root"/>
+        <property name="password" value="root"/>
+    </dataSource>
+
+    <mappers>
+        <mapper resource="mapper/UserMapper.xml"/>
+    </mappers>
+
+    <myConfig>
+    </myConfig>
+</configuration>
+```
+如果你不想自动接管Mapper的生成,你也可以使用@Bean的方式注册一个
+```java
+@AutumnBean
+public DefaultSqlSession getMapper() throws PropertyVetoException, DocumentException {
+    InputStream inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
+    SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+    SqlSession sqlSession = sqlSessionFactory.openSession();
+    return (DefaultSqlSession) sqlSession;
+}
+
+@MyRequestMapping("/getall")
+public String getAll() throws Exception {
+  UserMapper userMapperBean=sqlSession.getMapper(UserMapper.class);
+  return userMapperBean.getAllUser(0).toString();
 }
 ```
 ### 配置类 @Bean
@@ -460,10 +547,10 @@ public class WebSocketController implements WebSocketBaseConfig {
 
 ### 配置文件
 ```html
-url=jdbc:mysql://localhost:3306/threeproject?serverTimezone=UTC&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
+url=jdbc:mysql://localhost:3306/demo?serverTimezone=UTC&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
 user = root
 password=root
-port=8080
+port=80
 cookieKeepTime=180000
 threadPoolNums=10
 htmlHome=HTML
@@ -475,11 +562,12 @@ crossOrigin=*
 redisHost=127.0.0.1
 redisPort=6379
 allow-circular-references=true
+MineBatis-configXML=minebatis-config.xml
 ```
-
 ### 项目依赖
-
 ```
+- c3p0 数据库连接池
+- jaxen,dom4j xml解析工具库
 - Jedis 
 - Spring-core Spring重写的Cglib,用于实现Aop
 - Lombok 
@@ -491,8 +579,7 @@ allow-circular-references=true
 
 ## 未来打算实现:
 
-- ~~解决代码耦合严重的问题,再下去就要臭不可闻了(修改了大量ioc容器代码,解除大量耦合和莫名其妙的代码,逻辑更加清晰了)(beandefinition重构容器)~~ 
-- ~~手写的mybaits增加 增删改的功能(已实现)~~
+- ~~解决代码耦合严重的问题,再下去就要臭不可闻了(修改了大量ioc容器代码,解除大量耦合和莫名其妙的代码,逻辑更加清晰了)(beandefinition重构容器)~~
 - 实现文件上传的功能 (半实现)
 - 加入类似于spring的事务,支持回滚
 - 实现自己写的http服务器与servlet或者其他成熟的web框架的切换(@bean+条件注解实现)(半实现)
@@ -505,6 +592,7 @@ allow-circular-references=true
 - 增加JVM关闭钩子,在关机的时候把session序列化到redis/mysql等保存,下次启动先恢复
 - request和response承担了过多的责任,考虑分出更多的类
 - 新版MineBatis即将加入
+- 手写的MineBatis增加增删改的功能
 
 ## 更长远的想法:
 - ~~加入beandefinition(已实现)~~
@@ -527,14 +615,16 @@ allow-circular-references=true
 
 ## 流程图:
 - 项目启动
-![Main_main.jpg](pics/AutumnFrameworkRunner_run.jpg)
-- Mapper工厂(旧版)
- ![MapperFactory.jpg](pics/MyContext_createBeanFactory.jpg)
+  ![Main_main.jpg](pics/AutumnFrameworkRunner_run.jpg)
 - Aop工厂
- ![AopFactory.jpg](pics/MyContext_createAopBeanInstance.jpg)
+  ![AopFactory.jpg](pics/MyContext_createAopBeanInstance.jpg)
 - Socket实现的简陋http服务器
- ![SocketServer.jpg](pics/SocketServer_init.jpg)
+  ![SocketServer.jpg](pics/SocketServer_init.jpg)
+- MineBatis 启动流程
+  ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
+### 2024/5/4
+- 把之前的Mapper工厂删了,换了新版本的Mapper生成器,现在可以注册Mapper接口了,不过只能注册xmlMapper,注解注册的方式日后添加
 ### 2024/5/02
 - 框架中的ioc容器只负责基本的依赖注入,现在用户可以编写自己的Starter干预BeanDefinition的生产过程,我们约定在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明Starter,容器在启动的时候解析xml中的内容去反射创建实例,检查是否实现了AutumnStarterRegisterer接口,如果实现了则调用postProcessBeanDefinitionRegistry方法,用户可以在这个方法中干预BeanDefinition的生成,例如Mapper的注入
 ### 2024/4/30

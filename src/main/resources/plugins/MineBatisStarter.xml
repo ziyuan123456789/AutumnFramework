@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans>
     <AutumnStarters>
-        <bean class="org.example.MineBatisStarter"/>
+        <bean class="org.example.FrameworkUtils.Orm.MineBatis.MineBatisStarter"/>
     </AutumnStarters>
 </beans>

@@ -9,8 +9,8 @@ import org.example.FrameworkUtils.AutumnMVC.Aop.AopProxyFactory;
 import org.example.FrameworkUtils.AutumnMVC.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnMVC.BeanLoader.ObjectFactory;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
-import org.example.FrameworkUtils.Orm.MineBatis.Jdbcinit;
-import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MyMapper;
+import org.example.FrameworkUtils.PropertiesReader.PropertiesReader;
+import org.example.mapper.UserMapper;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
@@ -57,9 +57,8 @@ public class MyContext {
 
     //xxx: 三级缓存：对象工厂,创建Jdk代理/CgLib代理/配置类Bean/普通Bean
     private final Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();
-    private final Jdbcinit jdbcinit = new Jdbcinit();
-    private final Properties properties = jdbcinit.initProperties();
-
+    private final PropertiesReader propertiesReader = new PropertiesReader();
+    private final Properties properties = propertiesReader.initProperties();
     private List<Class<?>> cycleSet=new ArrayList<>();
     private final Map<String,List<Class<?>>> beanDependencies=new HashMap<>();
     private int times=1;
@@ -267,14 +266,21 @@ public class MyContext {
     private void injectDependencies(Object bean, Field field, MyBeanDefinition mb) throws IllegalAccessException, NoSuchFieldException {
         Class<?> fieldType = field.getType();
         //xxx:接口,还是不是mapper,那一定是service
-        if (fieldType.isInterface() && fieldType.getAnnotation(MyMapper.class) == null) {
-            //xxx:进入查找实现类环节
-            injectInterfaceTypeDependency(bean, field, mb);
+        if (fieldType.isInterface()) {
+            Object dependency = getBean(fieldType.getName());
+            if (dependency == null) {
+                // 如果容器中没有实例，进入查找实现类或第三方组件处理环节
+                injectInterfaceTypeDependency(bean, field, mb);
+
+            } else {
+                // 如果容器中存在实例，直接注入
+                field.setAccessible(true);
+                field.set(bean, dependency);
+            }
         } else {
             //xxx:正常的Bean
             injectNormalDependency(bean, field);
         }
-
     }
 
     //xxx:这个是依照接口找实现类,还得处理条件注解,别提多辛苦了
@@ -344,41 +350,12 @@ public class MyContext {
 
         try {
             field.setAccessible(true);
-            Object convertedValue = convertStringToType(propertyValue, field.getType());
+            Object convertedValue = propertiesReader.convertStringToType(propertyValue, field.getType());
             field.set(instance, convertedValue);
         } catch (Exception e) {
             log.error("依赖注入失败：{}", e.getMessage());
         }
         }
-
-
-    //xxx:配置文件编码器
-    private Object convertStringToType(String value, Class<?> type) {
-        if (Integer.TYPE.equals(type) || Integer.class.equals(type)) {
-            return Integer.parseInt(value);
-        } else if (Float.TYPE.equals(type) || Float.class.equals(type)) {
-            return Float.parseFloat(value);
-        } else if (Double.TYPE.equals(type) || Double.class.equals(type)) {
-            return Double.parseDouble(value);
-        } else if (Long.TYPE.equals(type) || Long.class.equals(type)) {
-            return Long.parseLong(value);
-        } else if (Boolean.TYPE.equals(type) || Boolean.class.equals(type)) {
-            return Boolean.parseBoolean(value);
-        } else if (Byte.TYPE.equals(type) || Byte.class.equals(type)) {
-            return Byte.parseByte(value);
-        } else if (Short.TYPE.equals(type) || Short.class.equals(type)) {
-            return Short.parseShort(value);
-        } else if (Character.TYPE.equals(type) || Character.class.equals(type)) {
-            if (value.length() == 1) {
-                return value.charAt(0);
-            } else {
-                throw new IllegalArgumentException("Cannot convert String to Character: \"" + value + "\" is not a single character");
-            }
-        } else if (String.class.equals(type)) {
-            return value;
-        }
-        throw new IllegalArgumentException("不支持的类型: " + type);
-    }
 
 
     public void put(String key, Object value) {
@@ -391,6 +368,10 @@ public class MyContext {
 
     public Map<String, Object> getIocContainer() {
         return singletonObjects;
+    }
+
+    public Properties getProperties(){
+        return properties;
     }
 
 }

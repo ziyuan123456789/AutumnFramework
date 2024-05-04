@@ -70,7 +70,6 @@ public class AutumnFrameworkRunner {
         annotations.add(MyController.class);
         annotations.add(MyService.class);
         annotations.add(MyComponent.class);
-//        annotations.add(MyMapper.class);
         annotations.add(MyConfig.class);
         annotations.add(MyWebSocketConfig.class);
         Set<Class<?>> annotatedClasses = scanner.findAnnotatedClassesList(mainClass.getPackageName(), annotations);
@@ -158,7 +157,7 @@ public class AutumnFrameworkRunner {
         long endTime = System.currentTimeMillis();
         log.info("容器花费了：{} 毫秒实例化", endTime - startTime);
         //xxx:加载驱动
-        Class.forName("org.example.MineBatisStarter");
+        Class.forName("org.example.FrameworkUtils.Orm.MineBatis.MineBatisStarter");
 
 
     }

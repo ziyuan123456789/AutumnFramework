@@ -1,5 +1,6 @@
 package org.example;
 
+import com.mchange.v2.log.MLevel;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFrameworkRunner;
@@ -7,6 +8,10 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFramewor
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.List;
+import java.util.Properties;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Slf4j
 /*
@@ -15,6 +20,7 @@ import java.util.List;
  */
 @MyConfig
 public class Main {
+
     public static void main(String[] args) throws ClassNotFoundException {
         RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
         List<String> jvmArgs = runtimeMXBean.getInputArguments();
@@ -36,24 +42,17 @@ public class Main {
         AutumnFrameworkRunner autumnFrameworkRunner = new AutumnFrameworkRunner();
         autumnFrameworkRunner.run(Main.class);
 
-//        AutumnFrameworkRunner autumnFrameworkRunner=new AutumnFrameworkRunner();
-//        autumnFrameworkRunner.run(Main.class);
+
 //        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 //            MyContext myContext = MyContext.getInstance();
-//            SessionManager sessionManager = myContext.getBean(SessionManager.class);
+//            SessionManager sessionManager = (SessionManager) myContext.getBean(SessionManager.class.getName());
+//            log.warn("进行关机清理....请稍后");
 //            sessionManager.exitSave();
+//            log.warn("已成功停机");
 //        }));
 
     }
-//    @AutumnBean
-//    public String scheduled() {
-//        return "autumn";
-//    }
 
-//    @AutumnBean
-//    public String scheduled2() {
-//        return "autumn";
-//    }
 
 
 
