@@ -1,8 +1,7 @@
 package org.example.Config;
 
-import org.example.FrameworkUtils.AutumnMVC.Annotation.AutumnBean;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
-import org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutumnMvcCrossOriginConfig;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
+import org.example.FrameworkUtils.AutumnCore.AutoConfiguration.AutumnMvcCrossOriginConfig;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.CrossOriginBean;
 
 /**

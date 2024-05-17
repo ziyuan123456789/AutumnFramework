@@ -1,11 +1,11 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnMVC.BeanLoader.AnnotationScanner;
-import org.example.FrameworkUtils.AutumnMVC.Ioc.MyContext;
-import org.example.FrameworkUtils.AutumnMVC.Ioc.ResourceFinder;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
+import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ResourceFinder;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.WebSocketBaseConfig;

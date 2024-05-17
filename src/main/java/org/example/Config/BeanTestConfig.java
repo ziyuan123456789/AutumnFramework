@@ -3,13 +3,14 @@ package org.example.Config;
 import lombok.extern.slf4j.Slf4j;
 import org.dom4j.DocumentException;
 import org.example.Bean.Car;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.AutumnBean;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
+import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBean;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
 import org.example.FrameworkUtils.Orm.MineBatis.Io.Resources;
-import org.example.FrameworkUtils.Orm.MineBatis.session.DefaultSqlSession;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactory;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactoryBuilder;
+import org.example.controller.AutumnTestController;
 
 import java.beans.PropertyVetoException;
 import java.io.InputStream;
@@ -21,10 +22,14 @@ import java.io.InputStream;
 @MyConfig
 @Slf4j
 public class BeanTestConfig {
+
+    @MyAutoWired
+    AutumnTestController autumnTestController;
     @AutumnBean("BYD")
-    public Car giveMeBydCar(){
+    public Car giveMeBydCar() throws Exception {
         Car car=new Car();
         car.setName("BYD");
+        System.out.println(autumnTestController.getAll());
         return car;
     }
 
@@ -36,11 +41,10 @@ public class BeanTestConfig {
     }
 
     @AutumnBean
-    public DefaultSqlSession getMapper() throws PropertyVetoException, DocumentException {
+    public SqlSession getMapper() throws PropertyVetoException, DocumentException {
         InputStream inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-        SqlSession sqlSession = sqlSessionFactory.openSession();
-        return (DefaultSqlSession) sqlSession;
+        return sqlSessionFactory.openSession();
     }
 
 }

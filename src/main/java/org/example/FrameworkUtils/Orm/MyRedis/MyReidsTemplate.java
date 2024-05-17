@@ -1,7 +1,7 @@
 package org.example.FrameworkUtils.Orm.MyRedis;
 
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.Value;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import redis.clients.jedis.Jedis;
 
 /**

@@ -9,13 +9,15 @@
 - ~~cglib不支持java17以及之后的版本了,降低jdk版本~~
 - 编译结束后方法形参名称不再保留,虽然可以加入编译参数解决,但是为了泛用性选择了形参注解标注形参,mapper接口层同理
 - 目前仅支持调用字段的无参默认构造器注入,以后可能会修改
-- 框架中的ioc容器只负责基本的依赖注入,现在用户可以编写自己的Starter干预BeanDefinition的生产过程,我们约定在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明Starter,容器在启动的时候会调用Starter中的生产方法
-
+- 框架中的ioc容器只负责基本的依赖注入,现在用户可以编写自己的后置处理器干预BeanDefinition的生产过程,我们约定在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明后置处理器,容器在启动的时候会调用postProcessBeanDefinitionRegistry或postProcessBeanFactory
+- postProcessBeanDefinitionRegistry可以在正常的BeanDefinition注册后对其进行增删改查,创建新的BeanDefinition,或者修改已有的BeanDefinition.postProcessBeanFactory则仅可修改删除BeanDefinition,因此如果想实现Mybatis那样代理接口注入实现类的处理器,则需要声明为postProcessBeanDefinitionRegistry,同时可以使用PriorityOrdered与Ordered接口声明优先级
+- InstantiationAwareBeanPostProcessor与BeanPostProcessor接口加入,逐步替换原有Aop流程
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans>
     <AutumnStarters>
         <bean class="org.example.FrameworkUtils.Orm.MineBatis.MineBatisStarter"/>
+        <bean class="org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor"/>
     </AutumnStarters>
 </beans>
  ```
@@ -23,7 +25,7 @@
 - MineBatis的TypeHandler扫描也将在最近加入
 - 如果使用idea可以在xml加入如下内容以获得idea代码提示与跳转,用其他的ide就可以不加
 
-```xml
+```html
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
  ```
 
@@ -54,7 +56,7 @@
 - 简易的WebSocket加入,仿照Springboot写法可以处理协议升级与后续数据传递,此过程通过注解指定处理器
 - @Bean功能可以使用自定义名字了,使用@AutumnBean("beanName")与@MyAutowire("beanName")实现为同一个字段注入不同实例
 - @Bean功能可以自定义Init方法了,在依赖注入之后立刻调用
-- 用户可以自定义Starter,干预BeanDefinition的生产过程,例如Mapper的注入,框架在启动的时候会调用Starter中的生产方法
+- 用户可以自定义后置处理器,干预BeanDefinition的生产过程,例如Mapper的注入,框架在启动的时候会调用,现在只提供Xml读取的方式
 
 
 ## 代码示范
@@ -256,20 +258,42 @@ public class UrlFilter implements Filter {
     }
 }
 ```
-### 第三方Starter生产自己的Bean
+### 自定义后置处理器干预Bean定义生成
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans>
     <AutumnStarters>
         <bean class="org.example.FrameworkUtils.Orm.MineBatis.MineBatisStarter"/>
+        <bean class="org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor"/>
     </AutumnStarters>
 </beans>
 ```
+#### 利用这个后置处理器,我们可以自定义更改Bean名称,如果你喜欢你可以直接把所有的BeanDefinition都删了
+```java
+@Slf4j
+public class JokePostProcessor implements BeanFactoryPostProcessor {
+
+    @Override
+    public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
+        log.info("{} 从xml中加载，现在要干预BeanDefinition的生成", this.getClass().getSimpleName());
+        MyBeanDefinition bydBean = null;
+        if (registry.containsBeanDefinition("BYD")) {
+            bydBean = registry.getBeanDefinition("BYD");
+        }
+        if (bydBean != null) {
+            bydBean.setName("postProcessChange");
+            registry.removeBeanDefinition("BYD");
+            registry.registerBeanDefinition("postProcessChange", bydBean);
+        }
+    }
+}
+```
+#### 利用这个后置处理器,我们可以扫描Mapper把他们也纳入容器,同时生成代理类
 
 ```java
 @Slf4j
-public class MineBatisStarter implements AutumnStarterRegisterer {
+public class MineBatisStarter implements BeanFactoryPostProcessor {
     static {
         Properties p = new Properties(System.getProperties());
         p.put("com.mchange.v2.log.MLog", "com.mchange.v2.log.FallbackMLog");
@@ -280,7 +304,7 @@ public class MineBatisStarter implements AutumnStarterRegisterer {
     private final MyContext myContext = MyContext.getInstance();
 
     @Override
-    public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, Map<String, MyBeanDefinition> registry) throws Exception {
+    public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
         log.info("{}从xml中加载,现在要干预BeanDefinition的生成", this.getClass().getSimpleName());
         String minebatisXml = myContext.getProperties().getProperty("MineBatis-configXML");
         InputStream inputStream;
@@ -290,6 +314,7 @@ public class MineBatisStarter implements AutumnStarterRegisterer {
             inputStream = Resources.getResourceAsSteam(minebatisXml);
         }
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+        //xxx:确定工厂后生产session
         SqlSession sqlSession = sqlSessionFactory.openSession();
         Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
         for (Class<?> clazz : classSet) {
@@ -298,11 +323,10 @@ public class MineBatisStarter implements AutumnStarterRegisterer {
             myBeanDefinition.setBeanClass(clazz);
             myBeanDefinition.setStarter(true);
             myBeanDefinition.setStarterMethod(createFactoryMethod(clazz, sqlSession));
-            registry.put(clazz.getName(), myBeanDefinition);
+            registry.registerBeanDefinition(clazz.getName(), myBeanDefinition);
         }
+
     }
-
-
     public ObjectFactory<?> createFactoryMethod(Class<?> beanClass, SqlSession sqlSession) throws Exception {
         return () -> {
             try {
@@ -314,9 +338,6 @@ public class MineBatisStarter implements AutumnStarterRegisterer {
         };
     }
 }
-
-
-
 ```
 ### Mapper
 ```java
@@ -330,13 +351,13 @@ public interface UserMapper {
 <mapper namespace="org.example.mapper.UserMapper">
     <select id="getOneUser" resultMap="whyYouDoThis" parameterType="java.lang.Integer">
         SELECT UserID as testUserID,
-               Username as testUserName,
-               Role,
-               `Password`,
-               Salt,
-               Telephone,
-               regTime,
-               enabled
+        Username as testUserName,
+        Role,
+        `Password`,
+        Salt,
+        Telephone,
+        regTime,
+        enabled
         FROM `user`
         where UserId > #{userId}
     </select>
@@ -345,7 +366,7 @@ public interface UserMapper {
             parameterType="java.lang.Integer">
         select * from user  where UserId > #{userId}
     </select>
-    
+
     <resultMap id="whyYouDoThis" type="org.example.Bean.User" isDisable="false">
         <result property="userID" column="testUserID"/>
         <result property="username" column="testUserName"/>
@@ -377,17 +398,16 @@ public interface UserMapper {
 如果你不想自动接管Mapper的生成,你也可以使用@Bean的方式注册一个
 ```java
 @AutumnBean
-public DefaultSqlSession getMapper() throws PropertyVetoException, DocumentException {
+public SqlSession getMapper() throws PropertyVetoException, DocumentException {
     InputStream inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
     SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-    SqlSession sqlSession = sqlSessionFactory.openSession();
-    return (DefaultSqlSession) sqlSession;
+    return sqlSessionFactory.openSession();
 }
 
 @MyRequestMapping("/getall")
 public String getAll() throws Exception {
-  UserMapper userMapperBean=sqlSession.getMapper(UserMapper.class);
-  return userMapperBean.getAllUser(0).toString();
+    UserMapper userMapperBean=sqlSession.getMapper(UserMapper.class);
+    return userMapperBean.getAllUser(0).toString();
 }
 ```
 ### 配置类 @Bean
@@ -594,11 +614,14 @@ MineBatis-configXML=minebatis-config.xml
 - 新版MineBatis即将加入
 - 手写的MineBatis增加增删改的功能
 
+
 ## 更长远的想法:
 - ~~加入beandefinition(已实现)~~
 - 加入真正可用的aop(aop定义权限现在已经移交给用户,可以指定处理器和拦截方法了)
 - 加入websocket(实现中)
 - 支持https
+- 重写Aop模块
+- 真正增加对TomCat的支持,重写接口
 
 ## 人生目标:
 - 找到月薪3000的实习
@@ -626,7 +649,7 @@ MineBatis-configXML=minebatis-config.xml
 ### 2024/5/4
 - 把之前的Mapper工厂删了,换了新版本的Mapper生成器,现在可以注册Mapper接口了,不过只能注册xmlMapper,注解注册的方式日后添加
 ### 2024/5/02
-- 框架中的ioc容器只负责基本的依赖注入,现在用户可以编写自己的Starter干预BeanDefinition的生产过程,我们约定在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明Starter,容器在启动的时候解析xml中的内容去反射创建实例,检查是否实现了AutumnStarterRegisterer接口,如果实现了则调用postProcessBeanDefinitionRegistry方法,用户可以在这个方法中干预BeanDefinition的生成,例如Mapper的注入
+- 框架中的ioc容器只负责基本的依赖注入,现在用户可以编写自己后置处理器干预BeanDefinition的生产过程,我们约定在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明Starter,容器在启动的时候解析xml中的内容去反射创建实例,~~检查是否实现了AutumnStarterRegisterer接口,如果实现了则调用postProcessBeanDefinitionRegistry方法,用户可以在这个方法中干预BeanDefinition的生成,例如Mapper的注入~~
 ### 2024/4/30
 - 完善了@Bean功能,使用@AutumnBean("beanName")与@MyAutowire("beanName")实现为同一个字段注入不同实例
 - 使用MyBeanDefinition彻底重写了Ioc与Di部分

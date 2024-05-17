@@ -1,8 +1,8 @@
 package org.example.Config;
 
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConditional;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
-import org.example.FrameworkUtils.AutumnMVC.AutoConfiguration.AutumnMvcConfiguration;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
+import org.example.FrameworkUtils.AutumnCore.AutoConfiguration.AutumnMvcConfiguration;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 
 /**

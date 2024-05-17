@@ -2,8 +2,8 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyPostConstruct;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyPreDestroy;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyPostConstruct;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyPreDestroy;
 
 /**
  * @author ziyuan

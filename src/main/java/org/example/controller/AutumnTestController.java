@@ -4,14 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
 import org.example.Aop.UserAopProxyHandler;
 import org.example.Bean.Car;
-import org.example.Bean.User;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.EnableAop;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyController;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyRequestMapping;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyRequestParam;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.Value;
-import org.example.FrameworkUtils.Orm.MineBatis.session.DefaultSqlSession;
+import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAop;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestParam;
+import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
 import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
@@ -23,7 +21,6 @@ import org.example.mapper.UserMapper;
 import org.example.service.LoginService;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -52,11 +49,11 @@ public class AutumnTestController {
     @MyAutoWired
     MyReidsTemplate myReidsTemplate;
 
-    @MyAutoWired("BYD")
+    @MyAutoWired("postProcessChange")
     Car car;
 
     @MyAutoWired
-    DefaultSqlSession sqlSession;
+    SqlSession sqlSession;
 
     //xxx:测试request功能
     @MyRequestMapping("/request")
@@ -115,7 +112,7 @@ public class AutumnTestController {
     public String session(MyRequest myRequest) {
         String sessionId = myRequest.getSession().getSessionId();
         myRequest.getSession().setAttribute("name", sessionId);
-        return (String) "切换阅览器查看唯一标识符是否变化? 标识符如下:"+myRequest.getSession().getAttribute("name");
+        return "切换阅览器查看唯一标识符是否变化? 标识符如下:"+myRequest.getSession().getAttribute("name");
     }
 
     //xxx:测试WebSocket功能
@@ -140,8 +137,7 @@ public class AutumnTestController {
     //xxx:测试数据库功能
     @MyRequestMapping("/getall")
     public String getAll() throws Exception {
-        UserMapper userMapperBean=sqlSession.getMapper(UserMapper.class);
-        return userMapperBean.getAllUser(0).toString();
+        return userMapper.getAllUser(0).toString();
     }
 
 

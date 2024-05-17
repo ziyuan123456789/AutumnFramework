@@ -1,9 +1,9 @@
 package org.example.Interceptor;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyOrder;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.Filter;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyRequest;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyResponse;

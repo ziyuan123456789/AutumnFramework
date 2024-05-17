@@ -1,8 +1,8 @@
 package org.example.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyController;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.service.Test2Service;
 import org.example.service.TestService;
 

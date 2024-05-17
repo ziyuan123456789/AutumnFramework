@@ -1,15 +1,15 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ConditionCheck;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnMVC.Ioc.MyCondition;
-import org.example.FrameworkUtils.AutumnMVC.Ioc.MyContext;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Ioc.MyCondition;
+import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 @MyComponent
 @Slf4j
 public class SocketServerConditionCheck implements MyCondition {
     @Override
     public void init() {
-        log.info(this.getClass().getSimpleName()+"条件处理器中的初始化方法被执行");
+        log.info("{}条件处理器中的初始化方法被执行", this.getClass().getSimpleName());
     }
 
     @Override

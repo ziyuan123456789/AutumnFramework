@@ -1,8 +1,8 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.*;
-import org.example.FrameworkUtils.AutumnMVC.BeanLoader.AnnotationScanner;
+import org.example.FrameworkUtils.AutumnCore.Annotation.*;
+import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.DataStructure.Tuple;
 import org.example.FrameworkUtils.Exception.NoAvailableUrlMappingException;
@@ -13,7 +13,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.HtmlRespo
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.MySession;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Json.JsonFormatter;
-import org.example.FrameworkUtils.AutumnMVC.Ioc.MyContext;
+import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocket;
 
 import java.io.BufferedReader;

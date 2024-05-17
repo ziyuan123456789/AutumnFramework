@@ -2,8 +2,8 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.Session;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 

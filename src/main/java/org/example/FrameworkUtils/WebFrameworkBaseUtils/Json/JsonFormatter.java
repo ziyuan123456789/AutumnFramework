@@ -1,6 +1,6 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.Json;
 
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;

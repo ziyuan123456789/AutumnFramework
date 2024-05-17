@@ -1,6 +1,6 @@
 package org.example.Config;
 
-import org.example.FrameworkUtils.AutumnMVC.Annotation.MyConfig;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
 
 /**
  * @author ziyuan
