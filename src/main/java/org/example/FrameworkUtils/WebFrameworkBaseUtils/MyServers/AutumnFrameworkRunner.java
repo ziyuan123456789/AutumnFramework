@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBean;
 import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAop;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
@@ -83,6 +84,7 @@ public class AutumnFrameworkRunner {
         annotations.add(MyComponent.class);
         annotations.add(MyConfig.class);
         annotations.add(MyWebSocketConfig.class);
+        annotations.add(MyAspect.class);
         Set<Class<?>> annotatedClasses = scanner.findAnnotatedClassesList(mainClass.getPackageName(), annotations);
         List<Class<BeanFactoryPostProcessor>> starterRegisterer = xmlBeansLoader.loadStarterClasses("plugins");
         long startTime = System.currentTimeMillis();
@@ -94,7 +96,6 @@ public class AutumnFrameworkRunner {
                 MyBeanDefinition myConfigBeanDefinition = new MyBeanDefinition();
                 myConfigBeanDefinition.setName(clazz.getName());
                 myConfigBeanDefinition.setBeanClass(clazz);
-                myConfigBeanDefinition.setCglib(clazz.getAnnotation(EnableAop.class) != null);
                 registry.registerBeanDefinition(myConfigBeanDefinition.getName(), myConfigBeanDefinition);
 
                 Method[] methods = clazz.getDeclaredMethods();
@@ -109,17 +110,6 @@ public class AutumnFrameworkRunner {
                 MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
                 myBeanDefinition.setName(clazz.getName());
                 myBeanDefinition.setBeanClass(clazz);
-                EnableAop enableAop = clazz.getAnnotation(EnableAop.class);
-                if (enableAop != null) {
-                    String[] methods = enableAop.getMethod();
-                    Class<?> clazzFactory = enableAop.getClassFactory();
-                    if (clazzFactory == null || methods == null || methods.length == 0) {
-                        throw new IllegalArgumentException("检查Aop注解参数是否加全了");
-                    }
-                    myBeanDefinition.setCglib(true);
-                } else {
-                    myBeanDefinition.setCglib(false);
-                }
                 registry.registerBeanDefinition(myBeanDefinition.getName(), myBeanDefinition);
             }
         }
@@ -214,7 +204,7 @@ public class AutumnFrameworkRunner {
                 myBeanDefinition.setAfterMethod(returnTypeMethod);
             }
         }
-        myBeanDefinition.setCglib(returnType.getAnnotation(EnableAop.class) != null);
+
         if (method.getAnnotation(AutumnBean.class).value().isEmpty()) {
             myBeanDefinition.setName(returnType.getName());
         } else {

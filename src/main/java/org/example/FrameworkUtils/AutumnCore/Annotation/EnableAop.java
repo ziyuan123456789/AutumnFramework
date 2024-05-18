@@ -10,10 +10,8 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2023.11
  */
-@Target({ElementType.PARAMETER,ElementType.TYPE})
+@Target({ElementType.METHOD})
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 public @interface EnableAop {
-    String[] getMethod();
-    Class<?> getClassFactory();
 }

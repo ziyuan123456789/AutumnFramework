@@ -2,16 +2,32 @@ package org.example.Aop;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
+import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAop;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
-import org.example.FrameworkUtils.AutumnCore.Aop.AutunmnAopFactory;
+import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
+import org.example.controller.AutumnTestController;
 import org.springframework.cglib.proxy.MethodProxy;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
+/**
+ * @author wsh
+ */
 @Slf4j
 @MyAspect
-public class UserAopProxyHandler implements AutunmnAopFactory {
+public class UserAopProxyHandler implements AutumnAopFactory {
+    @Override
+    public boolean shouldNeedAop(Class clazz, MyContext myContext) {
+        return AutumnTestController.class.equals(clazz);
+    }
+
+    @Override
+    public boolean shouldIntercept(Method method, Class clazz, MyContext myContext) {
+        return method.getAnnotation(EnableAop.class) != null;
+    }
+
     @Override
     public void doBefore(Object obj, Method method, Object[] args) {
         log.warn("用户切面方法开始预处理,切面处理器是{}处理的方法为:{}", this.getClass().getName(), method.getName());
@@ -28,6 +44,7 @@ public class UserAopProxyHandler implements AutunmnAopFactory {
                 }
             }
         }
+//        throw new RuntimeException("AopCheck");
         return proxy.invokeSuper(obj, args);
     }
 

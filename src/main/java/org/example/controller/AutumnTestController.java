@@ -29,8 +29,6 @@ import java.util.Map;
  */
 @MyController
 @Slf4j
-//xxx:测试Aop切面是否正常工作
-@EnableAop(getMethod = {"myhtml", "login"}, getClassFactory = UserAopProxyHandler.class)
 public class AutumnTestController {
     //xxx:测试配置文件注入器
     @Value("url")
@@ -61,6 +59,7 @@ public class AutumnTestController {
         return request.getUrl() + request.getMethod() + request.getParameters();
     }
 
+
     //xxx:测试response与setCookie功能
     @MyRequestMapping("/response")
     public void responseTest(MyResponse myResponse) {
@@ -84,6 +83,7 @@ public class AutumnTestController {
     }
 
     //xxx:测试@Bean("BeanName")功能是否正常,同时看看Json解析器好不好用
+    @EnableAop()
     @MyRequestMapping("/map")
     public Map<String, Object> mapTest() {
         Map<String, Object> myMap = new HashMap<>();
@@ -101,6 +101,7 @@ public class AutumnTestController {
     }
 
     //xxx:测试View层功能,同时看看Aop拦截了没
+    @EnableAop()
     @MyRequestMapping("/html")
     public View myhtml() {
         return new View("AutumnFrameworkMainPage.html");

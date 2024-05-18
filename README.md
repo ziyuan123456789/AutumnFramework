@@ -9,7 +9,7 @@
 - ~~cglib不支持java17以及之后的版本了,降低jdk版本~~
 - 编译结束后方法形参名称不再保留,虽然可以加入编译参数解决,但是为了泛用性选择了形参注解标注形参,mapper接口层同理
 - 目前仅支持调用字段的无参默认构造器注入,以后可能会修改
-- 框架中的ioc容器只负责基本的依赖注入,现在用户可以编写自己的后置处理器干预BeanDefinition的生产过程,我们约定在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明后置处理器,容器在启动的时候会调用postProcessBeanDefinitionRegistry或postProcessBeanFactory
+- 框架中的ioc容器只负责基本的依赖注入,现在用户可以编写自己的后置处理器干预BeanDefinition的生产过程,我们`约定`在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明后置处理器,容器在启动的时候会调用postProcessBeanDefinitionRegistry或postProcessBeanFactory
 - postProcessBeanDefinitionRegistry可以在正常的BeanDefinition注册后对其进行增删改查,创建新的BeanDefinition,或者修改已有的BeanDefinition.postProcessBeanFactory则仅可修改删除BeanDefinition,因此如果想实现Mybatis那样代理接口注入实现类的处理器,则需要声明为postProcessBeanDefinitionRegistry,同时可以使用PriorityOrdered与Ordered接口声明优先级
 - InstantiationAwareBeanPostProcessor与BeanPostProcessor接口加入,逐步替换原有Aop流程
 ```xml
@@ -57,122 +57,125 @@
 - @Bean功能可以使用自定义名字了,使用@AutumnBean("beanName")与@MyAutowire("beanName")实现为同一个字段注入不同实例
 - @Bean功能可以自定义Init方法了,在依赖注入之后立刻调用
 - 用户可以自定义后置处理器,干预BeanDefinition的生产过程,例如Mapper的注入,框架在启动的时候会调用,现在只提供Xml读取的方式
-
+- Aop模块重写,实现了Aop处理器的复用,从现在开始@EnableAop注解降级为用户态注解,仅作为一个简单的标记,框架通过CgLibAop, InstantiationAwareBeanPostProcessor两个接口在Bean实例化之前替换实现类的方式完成代理类的替换,有关Aop的一切均开放给用户,拦不拦截,怎么拦截都是你说的算,只要你实现AutumnAopFactory接口并加入@MyAspect注解我们就会帮你代理
 
 ## 代码示范
 ### Controller
 ```java
 @MyController
 @Slf4j
-//xxx:测试Aop切面是否正常工作
-@EnableAop(getMethod = {"myhtml", "login"}, getClassFactory = UserAopProxyHandler.class)
 public class AutumnTestController {
-    //xxx:测试配置文件注入器
-    @Value("url")
-    private String sqlUrl;
+  //xxx:测试配置文件注入器
+  @Value("url")
+  private String sqlUrl;
 
-    //xxx:测试自身循环依赖
-    @MyAutoWired
-    private AutumnTestController autumnTestController;
+  //xxx:测试自身循环依赖
+  @MyAutoWired
+  private AutumnTestController autumnTestController;
 
-    @MyAutoWired
-    LoginService loginService;
+  @MyAutoWired
+  LoginService loginService;
 
-    @MyAutoWired
-    HardwareSettingMapper hardwareSettingMapper;
+  @MyAutoWired
+  UserMapper userMapper;
 
-    @MyAutoWired
-    MyReidsTemplate myReidsTemplate;
+  @MyAutoWired
+  MyReidsTemplate myReidsTemplate;
 
-    @MyAutoWired("BYD")
-    Car car;
+  @MyAutoWired("postProcessChange")
+  Car car;
 
-    //xxx:测试request功能
-    @MyRequestMapping("/request")
-    public String requestTest(MyRequest request) {
-        return request.getUrl() + request.getMethod() + request.getParameters();
+  @MyAutoWired
+  SqlSession sqlSession;
+
+  //xxx:测试request功能
+  @MyRequestMapping("/request")
+  public String requestTest(MyRequest request) {
+    return request.getUrl() + request.getMethod() + request.getParameters();
+  }
+
+
+  //xxx:测试response与setCookie功能
+  @MyRequestMapping("/response")
+  public void responseTest(MyResponse myResponse) {
+    Cookie cookie = new Cookie("newcookie", "session1");
+    myResponse.setCode(200)
+            .setCookie(cookie)
+            .setView(new View("AutumnFrameworkMainPage.html"))
+            .outputHtml();
+  }
+
+  //xxx:测试参数注入
+  @MyRequestMapping("/paramTest")
+  public String paramTest(@MyRequestParam("name") String name, @MyRequestParam("age") String age) {
+    return name + age;
+  }
+
+  //xxx:循环依赖测试
+  @MyRequestMapping("/cycletest")
+  public Map<String, Object> cycleTest() {
+    return autumnTestController.mapTest();
+  }
+
+  //xxx:测试@Bean("BeanName")功能是否正常,同时看看Json解析器好不好用
+  @EnableAop()
+  @MyRequestMapping("/map")
+  public Map<String, Object> mapTest() {
+    Map<String, Object> myMap = new HashMap<>();
+    myMap.put("url", sqlUrl);
+    log.info(car.toString());
+    return myMap;
+  }
+
+  //xxx:测试redis
+  @MyRequestMapping("/redis")
+  public String redis() {
+    myReidsTemplate.init();
+    myReidsTemplate.set("test", "test");
+    return myReidsTemplate.toString() + "\n" + myReidsTemplate.get("test");
+  }
+
+  //xxx:测试View层功能,同时看看Aop拦截了没
+  @EnableAop()
+  @MyRequestMapping("/html")
+  public View myhtml() {
+    return new View("AutumnFrameworkMainPage.html");
+  }
+
+
+  //xxx:测试session功能
+  @MyRequestMapping("/session")
+  public String session(MyRequest myRequest) {
+    String sessionId = myRequest.getSession().getSessionId();
+    myRequest.getSession().setAttribute("name", sessionId);
+    return "切换阅览器查看唯一标识符是否变化? 标识符如下:"+myRequest.getSession().getAttribute("name");
+  }
+
+  //xxx:测试WebSocket功能
+  @MyRequestMapping("/websocket")
+  public MyWebSocket websocketTest() {
+    return new MyWebSocket();
+  }
+
+  //xxx:测试数据库功能
+  @MyRequestMapping("/login")
+  public String login(@MyRequestParam("username") @CheckParameter String userId,
+                      @MyRequestParam("password") String password) {
+    if (loginService.checkLogin(userId, password)) {
+      return "登录成功";
+
+    } else {
+      return "登录失败";
     }
 
-    //xxx:测试response与setCookie功能
-    @MyRequestMapping("/response")
-    public void responseTest(MyResponse myResponse) {
-        Cookie cookie = new Cookie("newcookie", "session1");
-        myResponse.setCode(200)
-                .setCookie(cookie)
-                .setView(new View("AutumnFrameworkMainPage.html"))
-                .outputHtml();
-    }
+  }
 
-    //xxx:测试参数注入
-    @MyRequestMapping("/paramTest")
-    public String paramTest(@MyRequestParam("name") String name, @MyRequestParam("age") String age) {
-        return name + age;
-    }
-
-    //xxx:循环依赖测试
-    @MyRequestMapping("/cycletest")
-    public Map<String, Object> cycleTest() {
-        return autumnTestController.mapTest();
-    }
-
-    //xxx:测试@Bean("BeanName")功能是否正常,同时看看Json解析器好不好用
-    @MyRequestMapping("/map")
-    public Map<String, Object> mapTest() {
-        Map<String, Object> myMap = new HashMap<>();
-        myMap.put("url", sqlUrl);
-        log.info(car.toString());
-        return myMap;
-    }
-
-    //xxx:测试redis
-    @MyRequestMapping("/redis")
-    public String redis() {
-        myReidsTemplate.init();
-        myReidsTemplate.set("test", "test");
-        return myReidsTemplate.toString() + "\n" + myReidsTemplate.get("test");
-    }
-
-    //xxx:测试View层功能,同时看看Aop拦截了没
-    @MyRequestMapping("/html")
-    public View myhtml() {
-        return new View("AutumnFrameworkMainPage.html");
-    }
-
-
-    //xxx:测试session功能
-    @MyRequestMapping("/session")
-    public String session(MyRequest myRequest) {
-        String sessionId = myRequest.getSession().getSessionId();
-        myRequest.getSession().setAttribute("name", sessionId);
-        return (String) myRequest.getSession().getAttribute("name");
-    }
-
-    //xxx:测试WebSocket功能
-    @MyRequestMapping("/websocket")
-    public MyWebSocket websocketTest() {
-        return new MyWebSocket();
-    }
-
-    //xxx:测试数据库功能
-    @MyRequestMapping("/login")
-    public String login(@MyRequestParam("username") @CheckParameter String userId,
-                        @MyRequestParam("password") String password) {
-        if (loginService.checkLogin(userId, password)) {
-            return "登录成功";
-
-        } else {
-            return "登录失败";
-        }
-
-    }
-
-    //xxx:测试数据库功能
-    @MyRequestMapping("/getall")
-    public HardwareSetting getAll() {
-        return hardwareSettingMapper.getOneHardware(1);
-    }
+  //xxx:测试数据库功能
+  @MyRequestMapping("/getall")
+  public String getAll() throws Exception {
+    return userMapper.getAllUser(0).toString();
+  }
 }
-
 ```
 ### Service
 ```java
@@ -193,48 +196,51 @@ public class LoginServiceImpl implements LoginService {
 ```
 ### AOP
 ```java
-@MyController
-@Slf4j
-@EnableAop(getMethod = {"myhtml","login"}, getClassFactory = UserAopProxyFactory.class)
-public class AdminController {
-
-    @MyAutoWired
-    LoginService loginService;
-}
-```
-```java
 @Slf4j
 @MyAspect
-public class UserAopProxyHandler implements AutunmnAopFactory {
-    @Override
-    public void doBefore(Object obj, Method method, Object[] args) {
-        log.warn("用户切面方法开始预处理,切面处理器是{}处理的方法为:{}", this.getClass().getName(), method.getName());
-    }
+public class UserAopProxyHandler implements AutumnAopFactory {
+  @Override
+  public boolean shouldNeedAop(Class clazz, MyContext myContext) {
+    return AutumnTestController.class.equals(clazz);
+  }
 
-    @Override
-    public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-        Annotation[][] paramAnnotations = method.getParameterAnnotations();
-        for (int i = 0; i < paramAnnotations.length; i++) {
-            for (Annotation annotation : paramAnnotations[i]) {
-                if (annotation.annotationType().equals(CheckParameter.class)) {
-                    log.error("参数{}被拦截", args[i].getClass().getSimpleName());
-                    args[i] = "AopCheck";
-                }
-            }
+  @Override
+  public boolean shouldIntercept(Method method, Class clazz, MyContext myContext) {
+    return method.getAnnotation(EnableAop.class) != null;
+  }
+
+  @Override
+  public void doBefore(Object obj, Method method, Object[] args) {
+    log.warn("用户切面方法开始预处理,切面处理器是{}处理的方法为:{}", this.getClass().getName(), method.getName());
+  }
+
+  @Override
+  public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+    Annotation[][] paramAnnotations = method.getParameterAnnotations();
+    for (int i = 0; i < paramAnnotations.length; i++) {
+      for (Annotation annotation : paramAnnotations[i]) {
+        if (annotation.annotationType().equals(CheckParameter.class)) {
+          log.error("参数{}被拦截", args[i].getClass().getSimpleName());
+          args[i] = "AopCheck";
         }
-        return proxy.invokeSuper(obj, args);
+      }
     }
+//        throw new RuntimeException("AopCheck");
+    return proxy.invokeSuper(obj, args);
+  }
 
-    @Override
-    public void doAfter(Object obj, Method method, Object[] args) {
-        log.info("用户自定义逻辑执行结束");
-    }
+  @Override
+  public void doAfter(Object obj, Method method, Object[] args) {
+    log.info("用户自定义逻辑执行结束");
+  }
 
-    @Override
-    public void doThrowing(Object obj, Method method, Object[] args,Exception e) {
-        log.error("用户切面方法抛出异常",e);
-    }
+  @Override
+  public void doThrowing(Object obj, Method method, Object[] args,Exception e) {
+    log.error("用户切面方法抛出异常",e);
+  }
 }
+
+
 ```
 ### 拦截器
 ```java
@@ -336,6 +342,64 @@ public class MineBatisStarter implements BeanFactoryPostProcessor {
                 throw new BeanCreationException("创建MapperBean实例失败", e);
             }
         };
+    }
+}
+```
+### BeanPostProcessor
+```java
+@MyComponent
+@Slf4j
+public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, InstantiationAwareBeanPostProcessor {
+
+    MyContext myContext = MyContext.getInstance();
+    
+    private boolean shouldCreateProxy(List<AutumnAopFactory> factories, Class<?> beanClass) {
+        for (AutumnAopFactory factory : factories) {
+            if (factory.shouldNeedAop(beanClass, myContext)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public <T> T create(List<AutumnAopFactory> factories, Class<T> beanClass) {
+        Enhancer enhancer = new Enhancer();
+        enhancer.setSuperclass(beanClass);
+        enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
+            for (AutumnAopFactory aopFactory : factories) {
+                if (aopFactory.shouldIntercept(method, beanClass, myContext)) {
+                    try {
+                        aopFactory.doBefore(obj, method, args);
+                        Object result = aopFactory.intercept(obj, method, args, proxy);
+                        aopFactory.doAfter(obj, method, args);
+                        return result;
+                    } catch (Exception e) {
+                        aopFactory.doThrowing(obj, method, args, e);
+                        throw e;
+                    }
+                }
+            }
+
+            return proxy.invokeSuper(obj, args);
+        });
+        return (T) enhancer.create();
+    }
+
+    @Override
+    public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName) {
+        if (shouldCreateProxy(factories, beanClass)) {
+            return create(factories, beanClass);
+        }
+        return null;
+    }
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws Exception {
+        return null;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws Exception {
+        return null;
     }
 }
 ```
@@ -637,15 +701,16 @@ MineBatis-configXML=minebatis-config.xml
 - ~~@bean与依赖注入时机的问题:举个例子配置类a定义一个标注有@bean的方法,我的框架反射执行这个方法拿到object放入第一缓存.接着业务类b依赖这个bean,成功注入.但是有时候是业务类b先走到依赖注入这个环节,这时候因为@bean标注的是一个方法而不是一个类因此第一二三级缓存中没有这个元素,初始化失败.不知道spring是如何解决这个问题的,我目前的解决方法是初始化容器两次,勉勉强强解决了把(11/29已解决)~~
 
 ## 流程图:
+#### 试用的插件过期了,没法导出流程图了,这都是老的,没什么参考意义了
 - 项目启动
   ![Main_main.jpg](pics/AutumnFrameworkRunner_run.jpg)
-- Aop工厂
-  ![AopFactory.jpg](pics/MyContext_createAopBeanInstance.jpg)
 - Socket实现的简陋http服务器
   ![SocketServer.jpg](pics/SocketServer_init.jpg)
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
+### 2025/5/18
+- InstantiationAwareBeanPostProcessor,BeanPostProcessor接口加入,替换原有Aop流程,现在Aop处理器更为强大和可复用,我觉得Spring的Aspectj太过于复杂和难以实现,于是抛弃硬编码与解析器,直接把接口开放给用户,你代理与否,代理哪个方法我都不管,用户自己去实现就好
 ### 2024/5/4
 - 把之前的Mapper工厂删了,换了新版本的Mapper生成器,现在可以注册Mapper接口了,不过只能注册xmlMapper,注解注册的方式日后添加
 ### 2024/5/02

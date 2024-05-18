@@ -24,7 +24,7 @@ import java.util.Set;
 public class AnnotationScanner {
     private MyContext myContext=MyContext.getInstance();
 
-    public <A extends Annotation> List<Class<?>> findAnnotatedClasses(String basePackage, Class<A> annotationClass) {
+    public static  <A extends Annotation> List<Class<?>> findAnnotatedClasses(String basePackage, Class<A> annotationClass) {
         List<Class<?>> annotatedClasses = new ArrayList<>();
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder()
                 .setUrls(ClasspathHelper.forPackage(basePackage))

@@ -30,14 +30,14 @@ public class  AopProxyFactory {
             }
             for (String methodName : methods) {
                 if (methodName.equals(method.getName())) {
-                    AutunmnAopFactory autunmnAopFactory = ((AutunmnAopFactory) aopadvice.getDeclaredConstructor().newInstance());
+                    AutumnAopFactory autumnAopFactory = ((AutumnAopFactory) aopadvice.getDeclaredConstructor().newInstance());
                     Object o = null;
                     try {
-                        autunmnAopFactory.doBefore(obj, method, args);
-                        o = autunmnAopFactory.intercept(obj, method, args, proxy);
-                        autunmnAopFactory.doAfter(obj, method, args);
+                        autumnAopFactory.doBefore(obj, method, args);
+                        o = autumnAopFactory.intercept(obj, method, args, proxy);
+                        autumnAopFactory.doAfter(obj, method, args);
                     } catch (Exception e) {
-                        autunmnAopFactory.doThrowing(obj, method, args, e);
+                        autumnAopFactory.doThrowing(obj, method, args, e);
                     }
 
                     return o;

@@ -13,8 +13,6 @@ import java.lang.reflect.Method;
 public class MyBeanDefinition {
     private  String name;
 
-    private boolean isCglib;
-
     private Class<?> beanClass;
 
     private boolean isStarter = false;

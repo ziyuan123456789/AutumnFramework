@@ -2,10 +2,13 @@ package org.example.FrameworkUtils.AutumnCore.Ioc;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAop;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
+import org.example.FrameworkUtils.AutumnCore.Aop.CgLibAop;
 import org.example.FrameworkUtils.AutumnCore.Aop.AopProxyFactory;
+import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
@@ -46,12 +49,13 @@ public class MyContext {
         }
         return instance;
     }
+
     private final AopProxyFactory aopProxyFactory= new AopProxyFactory();
 
     private final Map<String, Object> sharedMap = new ConcurrentHashMap<>();
     private List<InstantiationAwareBeanPostProcessor> instantiationAwareProcessors = new ArrayList<>();
     private List<BeanPostProcessor> regularPostProcessors = new ArrayList<>();
-
+    private List<AutumnAopFactory> aopFactories = new LinkedList<>();
     //xxx:一级缓存存储成熟bean
     private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>();
 
@@ -90,11 +94,12 @@ public class MyContext {
                 ObjectFactory<?> singletonFactory = singletonFactories.get(beanName);
                 if (singletonFactory != null) {
                     try {
+                        //xxx:在对象实例化之前给最后一次机会,可替换实现类,例如Aop的实现
                         singletonObject = applyInstantiationAwareBeanPostProcessorsBeforeInstantiation(beanName, singletonFactory);
 //                        singletonObject = singletonFactory.getObject();
                         //xxx:生产对象后更新缓存
                         earlySingletonObjects.put(beanName, singletonObject);
-                        autowireBeanProperties(singletonObject, beanDefinitions.get(beanName));
+//                        autowireBeanProperties(singletonObject, beanDefinitions.get(beanName));
                         singletonFactories.remove(beanName);
                     } catch (Exception e) {
                         log.error(String.valueOf(e));
@@ -117,9 +122,15 @@ public class MyContext {
         sortedDefinitions.sort((def1, def2) -> {
             boolean isBP1 = BeanPostProcessor.class.isAssignableFrom(def1.getBeanClass()) || InstantiationAwareBeanPostProcessor.class.isAssignableFrom(def1.getBeanClass());
             boolean isBP2 = BeanPostProcessor.class.isAssignableFrom(def2.getBeanClass()) || InstantiationAwareBeanPostProcessor.class.isAssignableFrom(def2.getBeanClass());
+            boolean isAspect1 = def1.getBeanClass().isAnnotationPresent(MyAspect.class);
+            boolean isAspect2 = def2.getBeanClass().isAnnotationPresent(MyAspect.class);
             if (isBP1 && !isBP2) {
                 return -1;
             } else if (!isBP1 && isBP2) {
+                return 1;
+            } else if (!isBP1 && !isBP2 && isAspect1 && !isAspect2) {
+                return -1;
+            } else if (!isBP1 && !isBP2 && !isAspect1 && isAspect2) {
                 return 1;
             }
             return 0;
@@ -135,14 +146,19 @@ public class MyContext {
             } else if (bean instanceof BeanPostProcessor) {
                 regularPostProcessors.add((BeanPostProcessor) bean);
             }
+            else if (bean.getClass().getAnnotation(MyAspect.class) != null){
+                aopFactories.add((AutumnAopFactory) bean);
+            }
             if (!cycleSet.isEmpty()) {
                 beanDependencies.put(definition.getName(), new ArrayList<>(cycleSet));
             }
             times = 1;
         }
+        //xxx: 检查循环依赖
         DependencyChecker dependencyChecker = (DependencyChecker) getBean(DependencyChecker.class.getName());
         dependencyChecker.checkForCyclicDependencies(beanDependencies);
     }
+
 
 
     private Object initBean(MyBeanDefinition myBeanDefinition) throws NoSuchFieldException, IllegalAccessException {
@@ -199,10 +215,7 @@ public class MyContext {
         if (mb.isStarter()) {
             return () -> createStarterBeanInstance(mb);
         }
-        //xxx:aop工厂,利用cglib生产代理类
-        else if (mb.isCglib()) {
-            return () -> createAopBeanInstance(mb.getBeanClass());
-        } else if (mb.getDoMethod() != null) {
+        else if (mb.getDoMethod() != null) {
             return () -> createAutumnBeanInstance(mb);
         } else {
             return () -> createBeanInstance(mb.getBeanClass());
@@ -211,9 +224,19 @@ public class MyContext {
     }
 
     private Object applyInstantiationAwareBeanPostProcessorsBeforeInstantiation(String beanName, ObjectFactory<?> factory) throws Exception {
+        for (InstantiationAwareBeanPostProcessor processor : instantiationAwareProcessors) {
+            Object result = null;
+            if (processor instanceof CgLibAop) {
+                result = ((CgLibAop) processor).postProcessBeforeInstantiation(aopFactories, beanDefinitions.get(beanName).getBeanClass(), beanName);
+            } else {
+                result = processor.postProcessBeforeInstantiation(beanDefinitions.get(beanName).getBeanClass(), beanName);
+            }
+            if (result != null) {
+                return result;
+            }
+        }
         return factory.getObject();
     }
-
     private Object createStarterBeanInstance(MyBeanDefinition mb) {
         try {
             ObjectFactory<?> factory = mb.getStarterMethod();
@@ -234,22 +257,10 @@ public class MyContext {
     }
 
 
-    //xxx:Aop工厂
-    private Object createAopBeanInstance(Class<?> beanClass) {
-        String[] methods=beanClass.getAnnotation(EnableAop.class).getMethod();
-        Class<?> clazz = beanClass.getAnnotation(EnableAop.class).getClassFactory();
-        try{
-            return aopProxyFactory.create(clazz ,beanClass,methods);
-        }catch (Exception e){
-            throw new BeanCreationException("解析注解错误,保证Aop配置类可以被实例化\n创建CgLibBean实例失败", e);
-        }
-
-    }
-
     //xxx:普通bean工厂
     private Object createBeanInstance(Class<?> beanClass) {
         try {
-            //xxx:调用工厂生产一个朴实无华童叟无欺的小bean出来
+            //xxx:调用工厂生产一个朴实无华童叟无欺的bean出来
             return beanClass.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             throw new BeanCreationException("创建普通bean实例失败,请检查你是否存在一个有参构造器,有的话创建一个无参构造器", e);
