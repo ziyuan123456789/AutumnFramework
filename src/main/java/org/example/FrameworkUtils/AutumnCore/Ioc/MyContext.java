@@ -1,10 +1,10 @@
 package org.example.FrameworkUtils.AutumnCore.Ioc;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAop;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyPostConstruct;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.AutumnCore.Aop.CgLibAop;
 import org.example.FrameworkUtils.AutumnCore.Aop.AopProxyFactory;
@@ -13,6 +13,7 @@ import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.PropertiesReader.PropertiesReader;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
@@ -56,6 +57,7 @@ public class MyContext {
     private List<InstantiationAwareBeanPostProcessor> instantiationAwareProcessors = new ArrayList<>();
     private List<BeanPostProcessor> regularPostProcessors = new ArrayList<>();
     private List<AutumnAopFactory> aopFactories = new LinkedList<>();
+    private final List<Map<Method,Object>> afterMethods=new ArrayList<>();
     //xxx:一级缓存存储成熟bean
     private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>();
 
@@ -95,11 +97,9 @@ public class MyContext {
                 if (singletonFactory != null) {
                     try {
                         //xxx:在对象实例化之前给最后一次机会,可替换实现类,例如Aop的实现
-                        singletonObject = applyInstantiationAwareBeanPostProcessorsBeforeInstantiation(beanName, singletonFactory);
-//                        singletonObject = singletonFactory.getObject();
+                        singletonObject = doInstantiationAwareBeanPostProcessorBefore(beanName, singletonFactory);
                         //xxx:生产对象后更新缓存
                         earlySingletonObjects.put(beanName, singletonObject);
-//                        autowireBeanProperties(singletonObject, beanDefinitions.get(beanName));
                         singletonFactories.remove(beanName);
                     } catch (Exception e) {
                         log.error(String.valueOf(e));
@@ -117,7 +117,7 @@ public class MyContext {
         return singletonObject;
     }
 
-    public void initIocCache(Map<String, MyBeanDefinition> beanDefinitionMap) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
+    public void initIocCache(Map<String, MyBeanDefinition> beanDefinitionMap) throws Exception {
         List<MyBeanDefinition> sortedDefinitions = new ArrayList<>(beanDefinitionMap.values());
         sortedDefinitions.sort((def1, def2) -> {
             boolean isBP1 = BeanPostProcessor.class.isAssignableFrom(def1.getBeanClass()) || InstantiationAwareBeanPostProcessor.class.isAssignableFrom(def1.getBeanClass());
@@ -157,21 +157,77 @@ public class MyContext {
         //xxx: 检查循环依赖
         DependencyChecker dependencyChecker = (DependencyChecker) getBean(DependencyChecker.class.getName());
         dependencyChecker.checkForCyclicDependencies(beanDependencies);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.warn("进行关机清理....请稍后");
+            for (Map<Method, Object> afterMethod : afterMethods) {
+                for (Map.Entry<Method, Object> entry : afterMethod.entrySet()) {
+                    try {
+                        entry.getKey().invoke(entry.getValue());
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        log.error("调用销毁方法失败", e);
+                    }
+                }
+            }
+            log.warn("已成功停机");
+        }));
     }
 
 
 
-    private Object initBean(MyBeanDefinition myBeanDefinition) throws NoSuchFieldException, IllegalAccessException {
+    private Object initBean(MyBeanDefinition myBeanDefinition) throws Exception {
         Object bean = getBean(myBeanDefinition.getName());
         if (bean != null) {
             //xxx:对未成熟bean进行依赖注入
-            autowireBeanProperties(bean, myBeanDefinition);
+            boolean continueWithInstantiation = doInstantiationAwareBeanPostProcessorAfter(bean,myBeanDefinition.getName());
+            if (continueWithInstantiation) {
+                autowireBeanProperties(bean, myBeanDefinition);
+            }
+            bean = doBeanPostProcessorsBefore(bean, myBeanDefinition.getName());
+            Method initMethod = myBeanDefinition.getInitMethod();
+            if (initMethod != null) {
+                initMethod.invoke(bean);
+            }
+            Method  afterMethod=myBeanDefinition.getAfterMethod();
+            if (afterMethod != null) {
+                afterMethods.add(Map.of(afterMethod,bean));
+            }
+            bean = doBeanPostProcessorsAfter(bean, myBeanDefinition.getName());
         } else {
             log.error("Bean为空");
         }
         return bean;
+    }
 
+    private Object doBeanPostProcessorsAfter(Object bean, String beanName) throws Exception {
+        for (BeanPostProcessor processor : regularPostProcessors) {
+            Object result = processor.postProcessAfterInitialization(bean, beanName);
+            if (result == null) {
+                return bean;
+            }
+            bean = result;
+        }
+        return bean;
+    }
 
+    private Object doBeanPostProcessorsBefore(Object bean, String beanName) throws Exception {
+        for (BeanPostProcessor processor : regularPostProcessors) {
+            Object result = processor.postProcessBeforeInitialization(bean, beanName);
+            if (result == null) {
+                return bean;
+            }
+            //xxx 如果处理器返回null，继续使用当前bean
+            bean = result;
+        }
+        return bean;
+    }
+
+    private boolean doInstantiationAwareBeanPostProcessorAfter(Object bean, String beanName) throws Exception {
+        for (InstantiationAwareBeanPostProcessor processor : instantiationAwareProcessors) {
+            if (!processor.postProcessAfterInstantiation(bean, beanName)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     //xxx:遍历set去填充第三缓存
@@ -193,12 +249,7 @@ public class MyContext {
             autowireBeanProperties(configInstance, mb);
             //xxx:获取mb定义的生产方法
             Method beanMethod = mb.getDoMethod();
-            Object autumnBean = beanMethod.invoke(configInstance);
-            Method initMethod = mb.getInitMethod();
-            if (initMethod != null) {
-                initMethod.invoke(autumnBean);
-            }
-            return autumnBean;
+            return beanMethod.invoke(configInstance);
 
         } catch (Exception e) {
             log.error(String.valueOf(e));
@@ -221,7 +272,7 @@ public class MyContext {
 
     }
 
-    private Object applyInstantiationAwareBeanPostProcessorsBeforeInstantiation(String beanName, ObjectFactory<?> factory) throws Exception {
+    private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, ObjectFactory<?> factory) throws Exception {
         for (InstantiationAwareBeanPostProcessor processor : instantiationAwareProcessors) {
             Object result = null;
             if (processor instanceof CgLibAop) {
@@ -413,5 +464,6 @@ public class MyContext {
     public Properties getProperties(){
         return properties;
     }
+
 
 }

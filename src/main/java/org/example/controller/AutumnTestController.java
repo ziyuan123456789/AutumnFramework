@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
 import org.example.Aop.UserAopProxyHandler;
 import org.example.Bean.Car;
+import org.example.Config.Test;
 import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAop;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
@@ -53,6 +54,9 @@ public class AutumnTestController {
     @MyAutoWired
     SqlSession sqlSession;
 
+    @MyAutoWired
+    Test test;
+
     //xxx:测试request功能
     @MyRequestMapping("/request")
     public String requestTest(MyRequest request) {
@@ -89,6 +93,7 @@ public class AutumnTestController {
         Map<String, Object> myMap = new HashMap<>();
         myMap.put("url", sqlUrl);
         log.info(car.toString());
+        log.info(test.toString());
         return myMap;
     }
 

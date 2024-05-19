@@ -97,9 +97,9 @@ public class AutumnFrameworkRunner {
                 myConfigBeanDefinition.setName(clazz.getName());
                 myConfigBeanDefinition.setBeanClass(clazz);
                 registry.registerBeanDefinition(myConfigBeanDefinition.getName(), myConfigBeanDefinition);
-
                 Method[] methods = clazz.getDeclaredMethods();
                 for (Method method : methods) {
+                    getInitOrAfterMethod(myConfigBeanDefinition, method);
                     if (method.getAnnotation(AutumnBean.class) != null) {
                         //xxx: 当这个方法有bean注解则创建一个MyBeanDefinition
                         MyBeanDefinition myBeanDefinition = getMyBeanDefinition(clazz, method);
@@ -108,6 +108,10 @@ public class AutumnFrameworkRunner {
                 }
             } else {
                 MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
+                Method[] methods = clazz.getDeclaredMethods();
+                for (Method method : methods) {
+                    getInitOrAfterMethod(myBeanDefinition, method);
+                }
                 myBeanDefinition.setName(clazz.getName());
                 myBeanDefinition.setBeanClass(clazz);
                 registry.registerBeanDefinition(myBeanDefinition.getName(), myBeanDefinition);
@@ -144,6 +148,17 @@ public class AutumnFrameworkRunner {
         myContext.initIocCache(registry.getBeanDefinitionMap());
         long endTime = System.currentTimeMillis();
         log.info("容器花费了：{} 毫秒实例化", endTime - startTime);
+    }
+
+    private void getInitOrAfterMethod(MyBeanDefinition myBeanDefinition, Method method) {
+        if(method.getAnnotation(MyPostConstruct.class)!=null){
+            myBeanDefinition.setInitMethodName(method.getName());
+            myBeanDefinition.setInitMethod(method);
+        }
+        if(method.getAnnotation(MyPreDestroy.class)!=null){
+            myBeanDefinition.setAfterMethodName(method.getName());
+            myBeanDefinition.setAfterMethod(method);
+        }
     }
 
     private void invokePostProcessors(List<?> postProcessors, SimpleMyBeanDefinitionRegistry registry) throws Exception {
@@ -199,7 +214,7 @@ public class AutumnFrameworkRunner {
                 myBeanDefinition.setInitMethodName(returnTypeMethod.getName());
                 myBeanDefinition.setInitMethod(returnTypeMethod);
             }
-            if (method.isAnnotationPresent(MyPreDestroy.class)) {
+            if (returnTypeMethod.isAnnotationPresent(MyPreDestroy.class)) {
                 myBeanDefinition.setAfterMethodName(returnTypeMethod.getName());
                 myBeanDefinition.setAfterMethod(returnTypeMethod);
             }

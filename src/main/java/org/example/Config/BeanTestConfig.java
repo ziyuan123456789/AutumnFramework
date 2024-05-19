@@ -6,6 +6,7 @@ import org.example.Bean.Car;
 import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBean;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyPostConstruct;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.Orm.MineBatis.Io.Resources;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
@@ -25,8 +26,14 @@ import java.io.InputStream;
 @Slf4j
 public class BeanTestConfig {
 
+
     @MyAutoWired
     UserMapper userMapper;
+
+    @MyPostConstruct
+    public void init(){
+        log.warn(userMapper.getAllUser(1).toString());
+    }
     @AutumnBean("BYD")
     public Car giveMeBydCar() throws Exception {
         Car car=new Car();

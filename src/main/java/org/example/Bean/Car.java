@@ -16,12 +16,12 @@ public class Car {
 
     @MyPostConstruct
     public void init() {
-        log.warn("{}{} init", this.getClass().getSimpleName(), name);
+        log.warn("{}{} 孩子们,我复活了", this.getClass().getSimpleName(), name);
     }
 
     @MyPreDestroy
     public void destroy() {
-        log.warn("{}{} destroy", this.getClass().getSimpleName(), name);
+        log.warn("{}{} 孩子们,我的时间不多了", this.getClass().getSimpleName(), name);
     }
 
 }

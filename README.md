@@ -59,7 +59,7 @@
 - 用户可以自定义后置处理器,干预BeanDefinition的生产过程,例如Mapper的注入,框架在启动的时候会调用,现在只提供Xml读取的方式
 - Aop模块重写,实现了Aop处理器的复用,从现在开始@EnableAop注解降级为用户态注解,仅作为一个简单的标记,框架通过CgLibAop, InstantiationAwareBeanPostProcessor两个接口在Bean实例化之前替换实现类的方式完成代理类的替换,有关Aop的一切均开放给用户,拦不拦截,怎么拦截都是你说的算,只要你实现AutumnAopFactory接口并加入@MyAspect注解我们就会帮你代理
 
-## 代码示范
+## 代码示范 MVC章节
 ### Controller
 ```java
 @MyController
@@ -87,6 +87,9 @@ public class AutumnTestController {
 
   @MyAutoWired
   SqlSession sqlSession;
+
+  @MyAutoWired
+  Test test;
 
   //xxx:测试request功能
   @MyRequestMapping("/request")
@@ -124,6 +127,7 @@ public class AutumnTestController {
     Map<String, Object> myMap = new HashMap<>();
     myMap.put("url", sqlUrl);
     log.info(car.toString());
+    log.info(test.toString());
     return myMap;
   }
 
@@ -158,7 +162,7 @@ public class AutumnTestController {
   }
 
   //xxx:测试数据库功能
-  @MyRequestMapping("/login")
+  @MyRequestMapping("/Login")
   public String login(@MyRequestParam("username") @CheckParameter String userId,
                       @MyRequestParam("password") String password) {
     if (loginService.checkLogin(userId, password)) {
@@ -176,71 +180,6 @@ public class AutumnTestController {
     return userMapper.getAllUser(0).toString();
   }
 }
-```
-### Service
-```java
-public interface LoginService {
-    boolean checkLogin(String userid, String password);
-}
-
-@MyService
-public class LoginServiceImpl implements LoginService {
-    @MyAutoWired
-    UserMapper userMapper;
-
-    @Override
-    public boolean checkLogin(String userId, String password) {
-        return userMapper.checkUser(userId, password) != null;
-    }
-}
-```
-### AOP
-```java
-@Slf4j
-@MyAspect
-public class UserAopProxyHandler implements AutumnAopFactory {
-  @Override
-  public boolean shouldNeedAop(Class clazz, MyContext myContext) {
-    return AutumnTestController.class.equals(clazz);
-  }
-
-  @Override
-  public boolean shouldIntercept(Method method, Class clazz, MyContext myContext) {
-    return method.getAnnotation(EnableAop.class) != null;
-  }
-
-  @Override
-  public void doBefore(Object obj, Method method, Object[] args) {
-    log.warn("用户切面方法开始预处理,切面处理器是{}处理的方法为:{}", this.getClass().getName(), method.getName());
-  }
-
-  @Override
-  public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-    Annotation[][] paramAnnotations = method.getParameterAnnotations();
-    for (int i = 0; i < paramAnnotations.length; i++) {
-      for (Annotation annotation : paramAnnotations[i]) {
-        if (annotation.annotationType().equals(CheckParameter.class)) {
-          log.error("参数{}被拦截", args[i].getClass().getSimpleName());
-          args[i] = "AopCheck";
-        }
-      }
-    }
-//        throw new RuntimeException("AopCheck");
-    return proxy.invokeSuper(obj, args);
-  }
-
-  @Override
-  public void doAfter(Object obj, Method method, Object[] args) {
-    log.info("用户自定义逻辑执行结束");
-  }
-
-  @Override
-  public void doThrowing(Object obj, Method method, Object[] args,Exception e) {
-    log.error("用户切面方法抛出异常",e);
-  }
-}
-
-
 ```
 ### 拦截器
 ```java
@@ -261,145 +200,6 @@ public class UrlFilter implements Filter {
             log.info("一级过滤链放行");
             return false;
         }
-    }
-}
-```
-### 自定义后置处理器干预Bean定义生成
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<beans>
-    <AutumnStarters>
-        <bean class="org.example.FrameworkUtils.Orm.MineBatis.MineBatisStarter"/>
-        <bean class="org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor"/>
-    </AutumnStarters>
-</beans>
-```
-#### 利用这个后置处理器,我们可以自定义更改Bean名称,如果你喜欢你可以直接把所有的BeanDefinition都删了
-```java
-@Slf4j
-public class JokePostProcessor implements BeanFactoryPostProcessor {
-
-    @Override
-    public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
-        log.info("{} 从xml中加载，现在要干预BeanDefinition的生成", this.getClass().getSimpleName());
-        MyBeanDefinition bydBean = null;
-        if (registry.containsBeanDefinition("BYD")) {
-            bydBean = registry.getBeanDefinition("BYD");
-        }
-        if (bydBean != null) {
-            bydBean.setName("postProcessChange");
-            registry.removeBeanDefinition("BYD");
-            registry.registerBeanDefinition("postProcessChange", bydBean);
-        }
-    }
-}
-```
-#### 利用这个后置处理器,我们可以扫描Mapper把他们也纳入容器,同时生成代理类
-
-```java
-@Slf4j
-public class MineBatisStarter implements BeanFactoryPostProcessor {
-    static {
-        Properties p = new Properties(System.getProperties());
-        p.put("com.mchange.v2.log.MLog", "com.mchange.v2.log.FallbackMLog");
-        p.put("com.mchange.v2.log.FallbackMLog.DEFAULT_CUTOFF_LEVEL", "OFF");
-        System.setProperties(p);
-    }
-
-    private final MyContext myContext = MyContext.getInstance();
-
-    @Override
-    public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
-        log.info("{}从xml中加载,现在要干预BeanDefinition的生成", this.getClass().getSimpleName());
-        String minebatisXml = myContext.getProperties().getProperty("MineBatis-configXML");
-        InputStream inputStream;
-        if (minebatisXml == null || minebatisXml.isEmpty()) {
-            inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
-        } else {
-            inputStream = Resources.getResourceAsSteam(minebatisXml);
-        }
-        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-        //xxx:确定工厂后生产session
-        SqlSession sqlSession = sqlSessionFactory.openSession();
-        Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
-        for (Class<?> clazz : classSet) {
-            MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
-            myBeanDefinition.setName(clazz.getName());
-            myBeanDefinition.setBeanClass(clazz);
-            myBeanDefinition.setStarter(true);
-            myBeanDefinition.setStarterMethod(createFactoryMethod(clazz, sqlSession));
-            registry.registerBeanDefinition(clazz.getName(), myBeanDefinition);
-        }
-
-    }
-    public ObjectFactory<?> createFactoryMethod(Class<?> beanClass, SqlSession sqlSession) throws Exception {
-        return () -> {
-            try {
-                return sqlSession.getMapper(beanClass);
-            } catch (Exception e) {
-                log.error("创建MapperBean实例失败", e);
-                throw new BeanCreationException("创建MapperBean实例失败", e);
-            }
-        };
-    }
-}
-```
-### BeanPostProcessor
-```java
-@MyComponent
-@Slf4j
-public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, InstantiationAwareBeanPostProcessor {
-
-    MyContext myContext = MyContext.getInstance();
-    
-    private boolean shouldCreateProxy(List<AutumnAopFactory> factories, Class<?> beanClass) {
-        for (AutumnAopFactory factory : factories) {
-            if (factory.shouldNeedAop(beanClass, myContext)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    public <T> T create(List<AutumnAopFactory> factories, Class<T> beanClass) {
-        Enhancer enhancer = new Enhancer();
-        enhancer.setSuperclass(beanClass);
-        enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
-            for (AutumnAopFactory aopFactory : factories) {
-                if (aopFactory.shouldIntercept(method, beanClass, myContext)) {
-                    try {
-                        aopFactory.doBefore(obj, method, args);
-                        Object result = aopFactory.intercept(obj, method, args, proxy);
-                        aopFactory.doAfter(obj, method, args);
-                        return result;
-                    } catch (Exception e) {
-                        aopFactory.doThrowing(obj, method, args, e);
-                        throw e;
-                    }
-                }
-            }
-
-            return proxy.invokeSuper(obj, args);
-        });
-        return (T) enhancer.create();
-    }
-
-    @Override
-    public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName) {
-        if (shouldCreateProxy(factories, beanClass)) {
-            return create(factories, beanClass);
-        }
-        return null;
-    }
-    @Override
-    public Object postProcessBeforeInitialization(Object bean, String beanName) throws Exception {
-        return null;
-    }
-
-    @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName) throws Exception {
-        return null;
     }
 }
 ```
@@ -474,6 +274,274 @@ public String getAll() throws Exception {
     return userMapperBean.getAllUser(0).toString();
 }
 ```
+### Service
+```java
+public interface LoginService {
+    boolean checkLogin(String userid, String password);
+}
+
+@MyService
+public class LoginServiceImpl implements LoginService {
+    @MyAutoWired
+    UserMapper userMapper;
+
+    @Override
+    public boolean checkLogin(String userId, String password) {
+        return userMapper.checkUser(userId, password) != null;
+    }
+}
+```
+### WebSocket握手
+```java
+@MyRequestMapping("/websocketTest")
+public MyWebSocket websocketTest(){
+    //websocket初始化工作
+    return new MyWebSocket();
+}
+```
+### WebSocket处理器
+```java
+@MyWebSocketConfig("/websocketTest")
+@Slf4j
+public class WebSocketController implements WebSocketBaseConfig {
+
+    @Override
+    public void onOpen() {
+        log.warn("切换到WebSocket");
+    }
+
+    @Override
+    public void onClose() {
+        log.warn("用户离开");
+    }
+
+    @Override
+    public String onMsg(String text) {
+        log.info("接受的讯息为"+text);
+        return text;
+    }
+}
+```
+### 跨域配置
+```java
+@MyConfig
+public class CrossOriginConfig implements AutumnMvcCrossOriginConfig {
+
+    CrossOriginBean crossOrigin=new CrossOriginBean();
+
+    @Override
+    @AutunmnBean
+    public CrossOriginBean setAllowCrossOrigin() {
+        crossOrigin.setOrigins("*");
+        return crossOrigin;
+    }
+}
+
+```
+## 代码示范 AOP章节
+### AOP
+```java
+@Slf4j
+@MyAspect
+public class UserAopProxyHandler implements AutumnAopFactory {
+  @Override
+  public boolean shouldNeedAop(Class clazz, MyContext myContext) {
+    return AutumnTestController.class.equals(clazz);
+  }
+
+  @Override
+  public boolean shouldIntercept(Method method, Class clazz, MyContext myContext) {
+    return method.getAnnotation(EnableAop.class) != null;
+  }
+
+  @Override
+  public void doBefore(Object obj, Method method, Object[] args) {
+    log.warn("用户切面方法开始预处理,切面处理器是{}处理的方法为:{}", this.getClass().getName(), method.getName());
+  }
+
+  @Override
+  public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+    Annotation[][] paramAnnotations = method.getParameterAnnotations();
+    for (int i = 0; i < paramAnnotations.length; i++) {
+      for (Annotation annotation : paramAnnotations[i]) {
+        if (annotation.annotationType().equals(CheckParameter.class)) {
+          log.error("参数{}被拦截", args[i].getClass().getSimpleName());
+          args[i] = "AopCheck";
+        }
+      }
+    }
+//        throw new RuntimeException("AopCheck");
+    return proxy.invokeSuper(obj, args);
+  }
+
+  @Override
+  public void doAfter(Object obj, Method method, Object[] args) {
+    log.info("用户自定义逻辑执行结束");
+  }
+
+  @Override
+  public void doThrowing(Object obj, Method method, Object[] args,Exception e) {
+    log.error("用户切面方法抛出异常",e);
+  }
+}
+```
+
+## 代码示范 Bean生命周期以及拓展接口章节
+### 自定义后置处理器干预Bean定义生成
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans>
+    <AutumnStarters>
+        <bean class="org.example.FrameworkUtils.Orm.MineBatis.MineBatisStarter"/>
+        <bean class="org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor"/>
+    </AutumnStarters>
+</beans>
+```
+#### 利用这个后置处理器,我们可以自定义更改Bean名称,如果你喜欢你可以直接把所有的BeanDefinition都删了
+```java
+@Slf4j
+public class JokePostProcessor implements BeanFactoryPostProcessor {
+
+    @Override
+    public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
+        log.info("{} 从xml中加载，现在要干预BeanDefinition的生成", this.getClass().getSimpleName());
+        MyBeanDefinition bydBean = null;
+        if (registry.containsBeanDefinition("BYD")) {
+            bydBean = registry.getBeanDefinition("BYD");
+        }
+        if (bydBean != null) {
+            bydBean.setName("postProcessChange");
+            registry.removeBeanDefinition("BYD");
+            registry.registerBeanDefinition("postProcessChange", bydBean);
+        }
+    }
+}
+```
+#### 利用这个后置处理器,我们可以扫描Mapper把他们也纳入容器,同时生成代理类
+```java
+@Slf4j
+public class MineBatisStarter implements BeanFactoryPostProcessor {
+    static {
+        Properties p = new Properties(System.getProperties());
+        p.put("com.mchange.v2.log.MLog", "com.mchange.v2.log.FallbackMLog");
+        p.put("com.mchange.v2.log.FallbackMLog.DEFAULT_CUTOFF_LEVEL", "OFF");
+        System.setProperties(p);
+    }
+
+    private final MyContext myContext = MyContext.getInstance();
+
+    @Override
+    public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
+        log.info("{}从xml中加载,现在要干预BeanDefinition的生成", this.getClass().getSimpleName());
+        String minebatisXml = myContext.getProperties().getProperty("MineBatis-configXML");
+        InputStream inputStream;
+        if (minebatisXml == null || minebatisXml.isEmpty()) {
+            inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
+        } else {
+            inputStream = Resources.getResourceAsSteam(minebatisXml);
+        }
+        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+        //xxx:确定工厂后生产session
+        SqlSession sqlSession = sqlSessionFactory.openSession();
+        Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
+        for (Class<?> clazz : classSet) {
+            MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
+            myBeanDefinition.setName(clazz.getName());
+            myBeanDefinition.setBeanClass(clazz);
+            myBeanDefinition.setStarter(true);
+            myBeanDefinition.setStarterMethod(createFactoryMethod(clazz, sqlSession));
+            registry.registerBeanDefinition(clazz.getName(), myBeanDefinition);
+        }
+
+    }
+    public ObjectFactory<?> createFactoryMethod(Class<?> beanClass, SqlSession sqlSession) throws Exception {
+        return () -> {
+            try {
+                return sqlSession.getMapper(beanClass);
+            } catch (Exception e) {
+                log.error("创建MapperBean实例失败", e);
+                throw new BeanCreationException("创建MapperBean实例失败", e);
+            }
+        };
+    }
+}
+```
+### InstantiationAwareBeanPostProcessor 在Bean被反射创建前后提供拓展
+```java
+@MyComponent
+@Slf4j
+public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, InstantiationAwareBeanPostProcessor {
+
+    MyContext myContext = MyContext.getInstance();
+    
+    private boolean shouldCreateProxy(List<AutumnAopFactory> factories, Class<?> beanClass) {
+        for (AutumnAopFactory factory : factories) {
+            if (factory.shouldNeedAop(beanClass, myContext)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public <T> T create(List<AutumnAopFactory> factories, Class<T> beanClass) {
+        Enhancer enhancer = new Enhancer();
+        enhancer.setSuperclass(beanClass);
+        enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
+            for (AutumnAopFactory aopFactory : factories) {
+                if (aopFactory.shouldIntercept(method, beanClass, myContext)) {
+                    try {
+                        aopFactory.doBefore(obj, method, args);
+                        Object result = aopFactory.intercept(obj, method, args, proxy);
+                        aopFactory.doAfter(obj, method, args);
+                        return result;
+                    } catch (Exception e) {
+                        aopFactory.doThrowing(obj, method, args, e);
+                        throw e;
+                    }
+                }
+            }
+
+            return proxy.invokeSuper(obj, args);
+        });
+        return (T) enhancer.create();
+    }
+
+    @Override
+    public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName) {
+        if (shouldCreateProxy(factories, beanClass)) {
+            return create(factories, beanClass);
+        }
+        return null;
+    }
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws Exception {
+        return null;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws Exception {
+        return null;
+    }
+}
+```
+### BeanPostProcessor 在Bean创建完整前后提供拓展
+```java
+@MyComponent
+@Slf4j
+public class UserBeanPostProcessor implements BeanPostProcessor, Ordered {
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) {
+        log.info("before -- {}", beanName);
+        return bean;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName){
+        log.info("after -- {}", beanName);
+        return bean;
+    }
+}
+```
 ### 配置类 @Bean
 ```java
 @MyConfig
@@ -510,21 +578,6 @@ public class Car {
     }
 
 }
-```
-```java
-@MyConfig
-public class CrossOriginConfig implements AutumnMvcCrossOriginConfig {
-
-    CrossOriginBean crossOrigin=new CrossOriginBean();
-
-    @Override
-    @AutunmnBean
-    public CrossOriginBean setAllowCrossOrigin() {
-        crossOrigin.setOrigins("*");
-        return crossOrigin;
-    }
-}
-
 ```
 ### 条件注解
 ```java
@@ -597,38 +650,6 @@ public class MatchClassByInterface implements MyCondition {
 }
 ```
 
-### WebSocket握手
-```java
-@MyRequestMapping("/websocketTest")
-public MyWebSocket websocketTest(){
-    //websocket初始化工作
-    return new MyWebSocket();
-}
-```
-### WebSocket处理器
-```java
-@MyWebSocketConfig("/websocketTest")
-@Slf4j
-public class WebSocketController implements WebSocketBaseConfig {
-
-    @Override
-    public void onOpen() {
-        log.warn("切换到WebSocket");
-    }
-
-    @Override
-    public void onClose() {
-        log.warn("用户离开");
-    }
-
-    @Override
-    public String onMsg(String text) {
-        log.info("接受的讯息为"+text);
-        return text;
-    }
-}
-```
-
 ### 配置文件
 ```html
 url=jdbc:mysql://localhost:3306/demo?serverTimezone=UTC&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
@@ -673,7 +694,7 @@ MineBatis-configXML=minebatis-config.xml
 - ~~加入对Session的支持(已实现)~~
 - 加入对Token的支持
 - controller方法形参直接注入JavaBean
-- 增加JVM关闭钩子,在关机的时候把session序列化到redis/mysql等保存,下次启动先恢复
+- ~~增加JVM关闭钩子(以实现)~~
 - request和response承担了过多的责任,考虑分出更多的类
 - 新版MineBatis即将加入
 - 手写的MineBatis增加增删改的功能
@@ -710,6 +731,9 @@ MineBatis-configXML=minebatis-config.xml
 ## 更新记录:
 ### 2024/5/19
 - 修正了Aop的一些错误,现在用户可以正常的定义切点了,另外使用LinkedHashMap替换ConcurrentHashMap实现有顺序的Map,可按照既定顺序依次注入,保证切面处理类与后置处理器均被优先注入
+- 增加关机事件,在接受到CTRL-C信号的时候会调用所有的关机事件,调用所有注册的@MyPreDestroy方法
+- 现在只要是使用注解纳入容器的类均可以声明@MyPreDestroy方法与@MyPostConstruct方法
+- 现在支持更多的依赖注入情景,无论在@Config环节还是后置处理器环节,均可以注入成熟的对象并且支持复杂调用
 ### 2024/5/18
 - InstantiationAwareBeanPostProcessor,BeanPostProcessor接口加入,替换原有Aop流程,现在Aop处理器更为强大和可复用,我觉得Spring的Aspectj太过于复杂和难以实现,于是抛弃硬编码与解析器,直接把接口开放给用户,你代理与否,代理哪个方法我都不管,用户自己去实现就好
 ### 2024/5/4
