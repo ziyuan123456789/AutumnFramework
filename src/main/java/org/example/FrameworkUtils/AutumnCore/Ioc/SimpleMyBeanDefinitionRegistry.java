@@ -3,6 +3,7 @@ package org.example.FrameworkUtils.AutumnCore.Ioc;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -11,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2024.05
  */
 public class SimpleMyBeanDefinitionRegistry implements BeanDefinitionRegistry {
-    private final Map<String, MyBeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>();
+    private final Map<String, MyBeanDefinition> beanDefinitionMap = new LinkedHashMap<>();
 
     @Override
     public void registerBeanDefinition(String beanName, MyBeanDefinition beanDefinition) throws BeanCreationException {

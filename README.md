@@ -11,7 +11,7 @@
 - 目前仅支持调用字段的无参默认构造器注入,以后可能会修改
 - 框架中的ioc容器只负责基本的依赖注入,现在用户可以编写自己的后置处理器干预BeanDefinition的生产过程,我们`约定`在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明后置处理器,容器在启动的时候会调用postProcessBeanDefinitionRegistry或postProcessBeanFactory
 - postProcessBeanDefinitionRegistry可以在正常的BeanDefinition注册后对其进行增删改查,创建新的BeanDefinition,或者修改已有的BeanDefinition.postProcessBeanFactory则仅可修改删除BeanDefinition,因此如果想实现Mybatis那样代理接口注入实现类的处理器,则需要声明为postProcessBeanDefinitionRegistry,同时可以使用PriorityOrdered与Ordered接口声明优先级
-- InstantiationAwareBeanPostProcessor与BeanPostProcessor接口加入,逐步替换原有Aop流程
+- InstantiationAwareBeanPostProcessor与BeanPostProcessor接口加入,替换原有Aop流程
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans>
@@ -681,10 +681,9 @@ MineBatis-configXML=minebatis-config.xml
 
 ## 更长远的想法:
 - ~~加入beandefinition(已实现)~~
-- 加入真正可用的aop(aop定义权限现在已经移交给用户,可以指定处理器和拦截方法了)
+- ~~加入真正可用的aop(aop定义权限现在已经移交给用户,可以指定处理器和拦截方法了)(已实现)~~
 - 加入websocket(实现中)
 - 支持https
-- 重写Aop模块
 - 真正增加对TomCat的支持,重写接口
 
 ## 人生目标:
@@ -697,7 +696,7 @@ MineBatis-configXML=minebatis-config.xml
 - 远离情绪黑洞
 
 ## 尚未解决的难点:
-- aop指定被代理方法时候框架没办法判断重载,以后会进行完善
+- ~~aop指定被代理方法时候框架没办法判断重载,以后会进行完善(已解决)~~
 - ~~@bean与依赖注入时机的问题:举个例子配置类a定义一个标注有@bean的方法,我的框架反射执行这个方法拿到object放入第一缓存.接着业务类b依赖这个bean,成功注入.但是有时候是业务类b先走到依赖注入这个环节,这时候因为@bean标注的是一个方法而不是一个类因此第一二三级缓存中没有这个元素,初始化失败.不知道spring是如何解决这个问题的,我目前的解决方法是初始化容器两次,勉勉强强解决了把(11/29已解决)~~
 
 ## 流程图:
@@ -709,7 +708,9 @@ MineBatis-configXML=minebatis-config.xml
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
-### 2025/5/18
+### 2024/5/19
+- 修正了Aop的一些错误,现在用户可以正常的定义切点了,另外使用LinkedHashMap替换ConcurrentHashMap实现有顺序的Map,可按照既定顺序依次注入,保证切面处理类与后置处理器均被优先注入
+### 2024/5/18
 - InstantiationAwareBeanPostProcessor,BeanPostProcessor接口加入,替换原有Aop流程,现在Aop处理器更为强大和可复用,我觉得Spring的Aspectj太过于复杂和难以实现,于是抛弃硬编码与解析器,直接把接口开放给用户,你代理与否,代理哪个方法我都不管,用户自己去实现就好
 ### 2024/5/4
 - 把之前的Mapper工厂删了,换了新版本的Mapper生成器,现在可以注册Mapper接口了,不过只能注册xmlMapper,注解注册的方式日后添加

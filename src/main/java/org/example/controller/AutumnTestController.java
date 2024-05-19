@@ -123,7 +123,7 @@ public class AutumnTestController {
     }
 
     //xxx:测试数据库功能
-    @MyRequestMapping("/login")
+    @MyRequestMapping("/Login")
     public String login(@MyRequestParam("username") @CheckParameter String userId,
                         @MyRequestParam("password") String password) {
         if (loginService.checkLogin(userId, password)) {

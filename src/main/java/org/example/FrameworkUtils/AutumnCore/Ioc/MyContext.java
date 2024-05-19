@@ -162,8 +162,6 @@ public class MyContext {
 
 
     private Object initBean(MyBeanDefinition myBeanDefinition) throws NoSuchFieldException, IllegalAccessException {
-        //xxx:这时候第三级缓存已经存满了factory
-        //xxx:从第三缓存删掉自己,拿到工厂把自己生出来,放入第二缓存
         Object bean = getBean(myBeanDefinition.getName());
         if (bean != null) {
             //xxx:对未成熟bean进行依赖注入

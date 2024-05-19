@@ -20,6 +20,7 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
     MyContext myContext = MyContext.getInstance();
 
     private boolean shouldCreateProxy(List<AutumnAopFactory> factories, Class<?> beanClass) {
+
         for (AutumnAopFactory factory : factories) {
             if (factory.shouldNeedAop(beanClass, myContext)) {
                 return true;

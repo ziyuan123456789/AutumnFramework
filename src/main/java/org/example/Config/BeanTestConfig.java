@@ -31,8 +31,6 @@ public class BeanTestConfig {
     public Car giveMeBydCar() throws Exception {
         Car car=new Car();
         car.setName("BYD");
-        System.out.println(userMapper.getAllUser(1));
-//        System.out.println(autumnTestController.getAll());
         return car;
     }
 
