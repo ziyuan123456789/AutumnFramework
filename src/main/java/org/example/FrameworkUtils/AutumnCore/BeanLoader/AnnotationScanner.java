@@ -22,7 +22,7 @@ import java.util.Set;
 @MyComponent
 @Slf4j
 public class AnnotationScanner {
-    private MyContext myContext=MyContext.getInstance();
+    private static  MyContext myContext=MyContext.getInstance();
 
     public static  <A extends Annotation> List<Class<?>> findAnnotatedClasses(String basePackage, Class<A> annotationClass) {
         List<Class<?>> annotatedClasses = new ArrayList<>();
@@ -51,7 +51,7 @@ public class AnnotationScanner {
         return annotatedClasses;
     }
 
-    public Class<?> initFilterChain() throws ClassNotFoundException {
+    public static  Class<?> initFilterChain() throws ClassNotFoundException {
         Map<String, Object> iocContainer = myContext.getIocContainer();
         for (Map.Entry<String, Object> entry : iocContainer.entrySet()) {
             try {

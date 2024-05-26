@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 @MyComponent
-public class HtmlResponse {
+public class SocketServerHtmlResponse {
     @MyAutoWired
     ResourceFinder resourceFinder;
     @MyAutoWired

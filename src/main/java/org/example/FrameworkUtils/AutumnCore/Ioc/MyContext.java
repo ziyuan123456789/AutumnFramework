@@ -4,16 +4,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyPostConstruct;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
-import org.example.FrameworkUtils.AutumnCore.Aop.CgLibAop;
-import org.example.FrameworkUtils.AutumnCore.Aop.AopProxyFactory;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
+import org.example.FrameworkUtils.AutumnCore.Aop.CgLibAop;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.PropertiesReader.PropertiesReader;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
@@ -50,8 +47,6 @@ public class MyContext {
         }
         return instance;
     }
-
-    private final AopProxyFactory aopProxyFactory= new AopProxyFactory();
 
     private final Map<String, Object> sharedMap = new ConcurrentHashMap<>();
     private List<InstantiationAwareBeanPostProcessor> instantiationAwareProcessors = new ArrayList<>();
@@ -300,7 +295,7 @@ public class MyContext {
             return beanInstance;
 
         } catch (Exception e) {
-            log.error("创建Bean实例失败: " + mb.getName(), e);
+            log.error("创建Bean实例失败: {}", mb.getName(), e);
             throw new BeanCreationException("创建Bean实例失败: " + mb.getName(), e);
         }
     }

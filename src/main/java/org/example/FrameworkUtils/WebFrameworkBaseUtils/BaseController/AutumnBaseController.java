@@ -1,4 +1,4 @@
-package org.example.FrameworkUtils.AutumnCore.BaseController;
+package org.example.FrameworkUtils.WebFrameworkBaseUtils.BaseController;
 
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
@@ -8,7 +8,6 @@ import org.example.FrameworkUtils.AutumnCore.AutoConfiguration.AutumnMvcConfigur
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyRequest;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -31,17 +30,18 @@ public class AutumnBaseController {
     MyContext myContext=MyContext.getInstance();
 
     @MyRequestMapping("/favicon.ico")
-    public Icon getIcon(MyRequest myRequest) {
+    public Icon getIcon() {
         return new Icon("myicon.ico");
     }
 
     @MyRequestMapping("/")
-    public View getMainPage(MyRequest myRequest) {
+    public View getMainPage() {
+        System.out.println("woao");
         return autumnMvcConfiguration.getMainPage();
     }
 
     @MyRequestMapping("/404")
-    public View notFoundPage(MyRequest myRequest) {
+    public View notFoundPage() {
         return autumnMvcConfiguration.get404Page();
     }
 

@@ -3,7 +3,7 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.HtmlResponse;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.SocketServerHtmlResponse;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -14,65 +14,67 @@ import java.util.Date;
  * @since 2023.12
  */
 @Slf4j
-public class MyResponse {
+public class MyResponse implements AutumnResponse {
     private final Socket socket;
     private Cookie cookie;
-    private HtmlResponse htmlResponse;
-    private int httpCode=200;
-    private String responseText="";
+    private SocketServerHtmlResponse socketServerHtmlResponse;
+    private int httpCode = 200;
+    private String responseText = "";
     private View view;
 
-    public Socket getSocket() {
-        return socket;
-    }
-
-    public MyResponse(HtmlResponse htmlResponse, Socket socket) {
-        this.htmlResponse = htmlResponse;
+    public MyResponse(SocketServerHtmlResponse socketServerHtmlResponse, Socket socket) {
+        this.socketServerHtmlResponse = socketServerHtmlResponse;
         this.socket = socket;
-
     }
+
+    @Override
     public MyResponse setView(View view) {
         this.view = view;
         return this;
     }
 
+    @Override
     public MyResponse setCookie(Cookie cookie) {
         this.cookie = cookie;
         return this;
     }
 
+    @Override
     public MyResponse setCode(int code) {
         this.httpCode = code;
         return this;
     }
 
-
+    @Override
     public MyResponse setResponseText(String responseText) {
         this.responseText = responseText;
         return this;
     }
 
-    public void outputMessage()  {
-        try{
-            htmlResponse.outPutMessageWriter(socket, httpCode, responseText,cookie);
-        }catch (IOException e){
+    @Override
+    public void outputMessage() {
+        try {
+            socketServerHtmlResponse.outPutMessageWriter(socket, httpCode, responseText, cookie);
+        } catch (IOException e) {
             log.error("htmlResponse输出失败");
         }
     }
 
-    public void outputErrorMessage()  {
-        try{
-            htmlResponse.outPutErrorMessageWriter(socket, httpCode, responseText,new Date().toString(), null);
-        }catch (IOException e){
-            log.error("htmlResponse输出失败");
-        }
-    }
-    public void outputHtml()  {
-        try{
-            htmlResponse.outPutHtmlWriter(socket,view.getHtmlName(),cookie);
-        }catch (IOException e){
+    @Override
+    public void outputErrorMessage() {
+        try {
+            socketServerHtmlResponse.outPutErrorMessageWriter(socket, httpCode, responseText, new Date().toString(), null);
+        } catch (IOException e) {
             log.error("htmlResponse输出失败");
         }
     }
 
+    @Override
+    public void outputHtml() {
+        try {
+            socketServerHtmlResponse.outPutHtmlWriter(socket, view.getHtmlName(), cookie);
+        } catch (IOException e) {
+            log.error("htmlResponse输出失败");
+        }
+    }
 }

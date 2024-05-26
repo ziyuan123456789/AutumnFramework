@@ -9,7 +9,7 @@ import org.example.FrameworkUtils.Exception.NoAvailableUrlMappingException;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ConditionCheck.SocketServerConditionCheck;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.HtmlResponse;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.SocketServerHtmlResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.MySession;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Json.JsonFormatter;
@@ -47,7 +47,7 @@ public class SocketServer implements MyServer {
     private final MyContext myContext = MyContext.getInstance();
     private final SessionManager sessionmanager = (SessionManager) myContext.getBean(SessionManager.class.getName());
     @MyAutoWired
-    HtmlResponse htmlResponse;
+    SocketServerHtmlResponse socketServerHtmlResponse;
     @MyAutoWired
     AnnotationScanner annotationScanner;
     @MyAutoWired
@@ -64,8 +64,8 @@ public class SocketServer implements MyServer {
         Map<String, String> sharedMap = (Map<String, String>) myContext.get("urlmapping");
         try {
             serverSocket = new ServerSocket(port);
-            log.info("服务于" + port + "端口启动");
-            log.info("http://localhost:" + port + "/");
+            log.info("服务于{}端口启动", port);
+            log.info("http://localhost:{}/", port);
             while (!serverSocket.isClosed()) {
                 final Socket clientSocket = serverSocket.accept();
                 InputStream is = clientSocket.getInputStream();
@@ -103,7 +103,7 @@ public class SocketServer implements MyServer {
 
                 }
                 if (contentLength == -1) {
-                    htmlResponse.outPutMessageWriter(clientSocket, 500, "POST方法你不带长度?", null);
+                    socketServerHtmlResponse.outPutMessageWriter(clientSocket, 500, "POST方法你不带长度?", null);
                 }
                 char[] bodyChars = new char[contentLength];
                 int charsRead = reader.read(bodyChars);
@@ -133,19 +133,19 @@ public class SocketServer implements MyServer {
                     ***************************
                     APPLICATION FAILED TO START
                     ***************************
-                                        
+                    
                     Description:
-                                        
+                    
                     网络服务启动失败,端口被占用.
-                                        
-                                        """);
+                    
+                    """);
         }catch (Exception e){
             serverSocket.close();
             log.error(e.toString());
         }
     }
 
-    private Tuple<Object, Class<?>> invokeMethod(String classurl, String methodName, MyRequest myRequest, MyResponse myResponse) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private Tuple<Object, Class<?>> invokeMethod(String classurl, String methodName, AutumnRequest myRequest, MyResponse myResponse) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<?> clazz = Class.forName(classurl);
         Object instance = myContext.getBean(clazz.getName());
         Method domethod=null;
@@ -162,13 +162,13 @@ public class SocketServer implements MyServer {
                         log.info(parameter.getClass()+"是一个Javabean");
                     }
                     MyRequestParam myRequestParam = parameter.getAnnotation(MyRequestParam.class);
-                    if (parameter.getType().equals(MyRequest.class)) {
+                    if (parameter.getType().equals(AutumnRequest.class)) {
                         objectList.add(myRequest);
                     }
                     if (parameter.getType().equals(MyMultipartFile.class)) {
-                        objectList.add(myRequest.getMyMultipartFile());
+//                        objectList.add(myRequest.getMyMultipartFile());
                     }
-                    if(parameter.getType().equals(MyResponse.class)){
+                    if(parameter.getType().equals(AutumnResponse.class)){
                         objectList.add(myResponse);
                     }
                     if (myRequestParam != null) {
@@ -181,7 +181,7 @@ public class SocketServer implements MyServer {
         }
         return new Tuple<>(domethod.invoke(instance, objectList.toArray()), domethod.getReturnType());
     }
-    private Object useUrlGetParam(String paramName, MyRequest myRequest){
+    private Object useUrlGetParam(String paramName, AutumnRequest myRequest){
         Map<String,String> param= myRequest.getParameters();
         return param.get(paramName);
     }
@@ -203,19 +203,20 @@ public class SocketServer implements MyServer {
                 int lastIndex = str.lastIndexOf(".");
                 String classurl = str.substring(0, lastIndex);
                 Filter filter = (Filter) myContext.getBean(annotationScanner.initFilterChain().getName());
-                MyResponse myResponse =new MyResponse(htmlResponse, clientSocket);
-                if (!filter.doChain(myRequest, myResponse)) {
+                MyResponse myResponse =new MyResponse(socketServerHtmlResponse, clientSocket);
+                AutumnRequest autumnRequest = new SocketRequestAdapter(myRequest);
+                if (!filter.doChain(autumnRequest, myResponse)) {
                     String methodName = str.substring(lastIndex + 1);
                     try {
-                        Tuple<Object, Class<?>> result = invokeMethod(classurl, methodName, myRequest, myResponse);
+                        Tuple<Object, Class<?>> result = invokeMethod(classurl, methodName, autumnRequest, myResponse);
                         if (result.second.equals(void.class)) {
-                            htmlResponse.outPutMessageWriter(clientSocket, 200, "", null);
+                            socketServerHtmlResponse.outPutMessageWriter(clientSocket, 200, "", null);
                             return;
                         }
                         if (result.first != null) {
-                            handleSocketOutputByType(clientSocket, result.first, myRequest);
+                            handleSocketOutputByType(clientSocket, result.first, autumnRequest);
                         } else {
-                            htmlResponse.outPutMessageWriter(clientSocket, 200, "", null);
+                            socketServerHtmlResponse.outPutMessageWriter(clientSocket, 200, "", null);
                         }
 
                     } catch (InvocationTargetException | ClassNotFoundException | NoSuchMethodException |
@@ -224,7 +225,7 @@ public class SocketServer implements MyServer {
                         Throwable cause = e.getCause();
                         log.warn("异常来自" + methodName);
                         cause.printStackTrace(System.err);
-                        htmlResponse.outPutErrorMessageWriter(clientSocket, 500, e.getCause().toString(),new Date().toString(), null);
+                        socketServerHtmlResponse.outPutErrorMessageWriter(clientSocket, 500, e.getCause().toString(),new Date().toString(), null);
                     }
                 }
             }
@@ -234,7 +235,7 @@ public class SocketServer implements MyServer {
         if (urlmark) {
             log.warn(baseurl);
             log.warn("404");
-            htmlResponse.redirectLocationWriter(clientSocket, "/404");
+            socketServerHtmlResponse.redirectLocationWriter(clientSocket, "/404");
         }
 
     }
@@ -255,7 +256,7 @@ public class SocketServer implements MyServer {
     }
 
     //xxx:依照方法的返回值来确定选择哪种返回器
-    private void handleSocketOutputByType(Socket clientSocket, Object result, MyRequest myRequest) {
+    private void handleSocketOutputByType(Socket clientSocket, Object result, AutumnRequest myRequest) {
         Cookie cookie = myRequest.getCookieByName("userSession");
         if (cookie != null) {
             cookie = null;
@@ -269,17 +270,17 @@ public class SocketServer implements MyServer {
 
         try (Socket socket = clientSocket) {
             if (result instanceof View) {
-                htmlResponse.outPutHtmlWriter(socket, ((View) result).getHtmlName(), cookie);
+                socketServerHtmlResponse.outPutHtmlWriter(socket, ((View) result).getHtmlName(), cookie);
             } else if (result instanceof Icon) {
-                htmlResponse.outPutIconWriter(socket, ((Icon) result).getIconName(), cookie);
+                socketServerHtmlResponse.outPutIconWriter(socket, ((Icon) result).getIconName(), cookie);
             } else if (result instanceof Map) {
-                htmlResponse.outPutMessageWriter(socket, 200, jsonFormatter.toJson(result), cookie);
+                socketServerHtmlResponse.outPutMessageWriter(socket, 200, jsonFormatter.toJson(result), cookie);
             } else if (isPrimitiveOrWrapper(result.getClass())) {
-                htmlResponse.outPutMessageWriter(socket, 200, result.toString(), cookie);
+                socketServerHtmlResponse.outPutMessageWriter(socket, 200, result.toString(), cookie);
             } else if (result instanceof MyWebSocket) {
-                htmlResponse.outPutSocketWriter(socket, myRequest.getBody(), myRequest.getUrl());
+                socketServerHtmlResponse.outPutSocketWriter(socket, myRequest.getBody(), myRequest.getUrl());
             } else {
-                htmlResponse.outPutMessageWriter(socket, 200, jsonFormatter.toJson(result), cookie);
+                socketServerHtmlResponse.outPutMessageWriter(socket, 200, jsonFormatter.toJson(result), cookie);
             }
         } catch (IOException e) {
 

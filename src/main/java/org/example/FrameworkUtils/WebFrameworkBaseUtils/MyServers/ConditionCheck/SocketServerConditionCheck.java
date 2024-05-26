@@ -14,7 +14,13 @@ public class SocketServerConditionCheck implements MyCondition {
 
     @Override
     public boolean matches(MyContext myContext, Class<?> clazz) {
-        return true;
+        return  true;
+//        try {
+//            Class.forName("org.apache.catalina.startup.Tomcat");
+//            return false;
+//        } catch (ClassNotFoundException e) {
+//            return true;
+//        }
     }
 
     @Override

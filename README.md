@@ -5,13 +5,13 @@
 ![License](https://img.shields.io/npm/l/mithril.svg)
 
 ## 注意事项:
-- `仅仅是一个玩具级别的Demo,无论是Web服务层还是Bean容器也好,都是非常简陋的实现,仅仅模仿SpringBoot的表层实现与基本特性,不具备任何实际使用价值仅供学习参考,另外这个项目诞生自一年前写的一个单例容器,当时并没有对Spring底层有所了解,大多数实现方式也并非Spring的官方实现方式,但感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
-- ~~cglib不支持java17以及之后的版本了,降低jdk版本~~
-- 编译结束后方法形参名称不再保留,虽然可以加入编译参数解决,但是为了泛用性选择了形参注解标注形参,mapper接口层同理
-- 目前仅支持调用字段的无参默认构造器注入,以后可能会修改
+
+- 现在框架可以选择依赖的环境,有我写的SocketServer和TomCat两种,默认是SocketServer,如果你想用内嵌的TomCat请自行找到切换的开关
+- `仅仅是一个玩具级别的Demo,无论是Web服务层还是Bean容器也好,都是非常简陋的实现,仅仅模仿SpringBoot的表层实现与基本特性,不具备任何实际使用价值仅供学习参考.感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
+- 编译结束后方法形参名称可能不保留,为了泛用性选择了形参注解标注形参
+- 目前仅支持调用字段的无参默认构造器注入
 - 框架中的ioc容器只负责基本的依赖注入,现在用户可以编写自己的后置处理器干预BeanDefinition的生产过程,我们`约定`在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明后置处理器,容器在启动的时候会调用postProcessBeanDefinitionRegistry或postProcessBeanFactory
 - postProcessBeanDefinitionRegistry可以在正常的BeanDefinition注册后对其进行增删改查,创建新的BeanDefinition,或者修改已有的BeanDefinition.postProcessBeanFactory则仅可修改删除BeanDefinition,因此如果想实现Mybatis那样代理接口注入实现类的处理器,则需要声明为postProcessBeanDefinitionRegistry,同时可以使用PriorityOrdered与Ordered接口声明优先级
-- InstantiationAwareBeanPostProcessor与BeanPostProcessor接口加入,替换原有Aop流程
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans>
@@ -28,9 +28,9 @@
 ```html
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
  ```
-
 ## 打个广告:
-- 大四没事干,~~找了个java实习一个月2000~~,大连的hr有没有想联系我的 邮箱:3139196862@qq.com
+
+- ~~大四没事干,~~找了个java实习一个月2000~~,大连的hr有没有想联系我的 邮箱:~~ 已经找到工作了
 
 ## 项目描述:
 不依赖TomCat,Servlet等技术实现的网络服务框架,参照了Mybatis,SpringMvc等设计思想从0手写了一个基于注解的仿SpringBoot框架
@@ -41,7 +41,7 @@
 - 由三级缓存组成的ioc容器,解决循环依赖的问题
 - 非常弱的依赖注入实现,可以实现@autowired标注的字段的自动注入,以及@value注入配置文件,还可以注入接口的实现类,基本上和springboot写法一样了
 - cglib实现的aop,稍微解决了代理类注解擦除的问题,可以正常依赖注入
-- Mybaits的简易实现,使用jdk动态代理接口,实现参数映射以及实体类映射
+- Mybatis的简易实现,使用jdk动态代理接口,实现参数映射以及实体类映射
 - 加入了责任链模式的过滤器,~~使用@order声明顺序~~
 - 实现@Bean功能,添加配置类,配置框架行为
 - 用户重写autumnMvcConfig接口覆盖默认实现类,实现自定义首页面,icon等
@@ -58,7 +58,7 @@
 - @Bean功能可以自定义Init方法了,在依赖注入之后立刻调用
 - 用户可以自定义后置处理器,干预BeanDefinition的生产过程,例如Mapper的注入,框架在启动的时候会调用,现在只提供Xml读取的方式
 - Aop模块重写,实现了Aop处理器的复用,从现在开始@EnableAop注解降级为用户态注解,仅作为一个简单的标记,框架通过CgLibAop, InstantiationAwareBeanPostProcessor两个接口在Bean实例化之前替换实现类的方式完成代理类的替换,有关Aop的一切均开放给用户,拦不拦截,怎么拦截都是你说的算,只要你实现AutumnAopFactory接口并加入@MyAspect注解我们就会帮你代理
-
+- 运行时环境判定,可以选择用SocketServer启动或者拉起内嵌的TomCat,如果你喜欢Netty可以自行写适配器,转化为标准的AutumnRequest/Response接口实现
 ## 代码示范 MVC章节
 ### Controller
 ```java
@@ -93,14 +93,14 @@ public class AutumnTestController {
 
   //xxx:测试request功能
   @MyRequestMapping("/request")
-  public String requestTest(MyRequest request) {
+  public String requestTest(AutumnRequest request) {
     return request.getUrl() + request.getMethod() + request.getParameters();
   }
 
 
   //xxx:测试response与setCookie功能
   @MyRequestMapping("/response")
-  public void responseTest(MyResponse myResponse) {
+  public void responseTest(AutumnResponse myResponse) {
     Cookie cookie = new Cookie("newcookie", "session1");
     myResponse.setCode(200)
             .setCookie(cookie)
@@ -121,7 +121,6 @@ public class AutumnTestController {
   }
 
   //xxx:测试@Bean("BeanName")功能是否正常,同时看看Json解析器好不好用
-  @EnableAop()
   @MyRequestMapping("/map")
   public Map<String, Object> mapTest() {
     Map<String, Object> myMap = new HashMap<>();
@@ -139,8 +138,7 @@ public class AutumnTestController {
     return myReidsTemplate.toString() + "\n" + myReidsTemplate.get("test");
   }
 
-  //xxx:测试View层功能,同时看看Aop拦截了没
-  @EnableAop()
+  //xxx:测试View层功能
   @MyRequestMapping("/html")
   public View myhtml() {
     return new View("AutumnFrameworkMainPage.html");
@@ -149,7 +147,7 @@ public class AutumnTestController {
 
   //xxx:测试session功能
   @MyRequestMapping("/session")
-  public String session(MyRequest myRequest) {
+  public String session(AutumnRequest myRequest) {
     String sessionId = myRequest.getSession().getSessionId();
     myRequest.getSession().setAttribute("name", sessionId);
     return "切换阅览器查看唯一标识符是否变化? 标识符如下:"+myRequest.getSession().getAttribute("name");
@@ -162,6 +160,7 @@ public class AutumnTestController {
   }
 
   //xxx:测试数据库功能
+  @EnableAop
   @MyRequestMapping("/Login")
   public String login(@MyRequestParam("username") @CheckParameter String userId,
                       @MyRequestParam("password") String password) {
@@ -176,9 +175,10 @@ public class AutumnTestController {
 
   //xxx:测试数据库功能
   @MyRequestMapping("/getall")
-  public String getAll() throws Exception {
+  public String getAll() {
     return userMapper.getAllUser(0).toString();
   }
+  
 }
 ```
 ### 拦截器
@@ -187,20 +187,20 @@ public class AutumnTestController {
 @MyComponent
 @MyOrder(1)
 public class UrlFilter implements Filter {
-    @MyAutoWired
-    IndexFilter indexFilter;
+  @MyAutoWired
+  IndexFilter indexFilter;
 
-    @Override
-    public boolean doChain(MyRequest myRequest, MyResponse myResponse) {
-        if ("GET".equals(myRequest.getMethod())) {
-            log.info("一级过滤链拦截,开始第一步鉴权");
+  @Override
+  public boolean doChain(AutumnRequest autumnRequest, AutumnResponse autumnResponse) {
+    if ("GET".equals(autumnRequest.getMethod())) {
+      log.info("一级过滤链拦截,开始第一步鉴权");
 //            myResponse.setCode(400).setResponseText("鉴权失败").outputErrorMessage();
-            return indexFilter.doChain(myRequest, myResponse);
-        } else {
-            log.info("一级过滤链放行");
-            return false;
-        }
+      return indexFilter.doChain(autumnRequest, autumnResponse);
+    } else {
+      log.info("一级过滤链放行");
+      return false;
     }
+  }
 }
 ```
 ### Mapper
@@ -291,7 +291,7 @@ public class LoginServiceImpl implements LoginService {
     }
 }
 ```
-### WebSocket握手
+### WebSocket握手 目前仅支持SocketServer运行环境
 ```java
 @MyRequestMapping("/websocketTest")
 public MyWebSocket websocketTest(){
@@ -336,8 +336,37 @@ public class CrossOriginConfig implements AutumnMvcCrossOriginConfig {
         return crossOrigin;
     }
 }
+```
+### 运行时环境判定 如果你喜欢可以自行加入Netty的适配器
+```java
+@MyConfig
+@MyConditional(TomCatConditionCheck.class)
+@Slf4j
+@Import(DispatcherServlet.class)
+public class TomCatContainer implements MyServer {
+    @Value("port")
+    int port;
+
+    @Override
+    public void init() throws Exception {
+        log.info("切换到TomCat容器");
+        Tomcat tomcat = new Tomcat();
+        Connector connector = new Connector();
+        connector.setPort(port);
+        connector.setURIEncoding("UTF-8");
+        tomcat.getService().addConnector(connector);
+        Context context = tomcat.addContext("/", null);
+        DispatcherServlet servlet = (DispatcherServlet) MyContext.getInstance().getBean(DispatcherServlet.class.getName());
+        Tomcat.addServlet(context, "dispatcherServlet", servlet);
+        context.addServletMappingDecoded("/", "dispatcherServlet");
+        tomcat.start();
+        tomcat.getServer().await();
+
+    }
+}
 
 ```
+
 ## 代码示范 AOP章节
 ### AOP
 ```java
@@ -671,10 +700,11 @@ MineBatis-configXML=minebatis-config.xml
 ```
 ### 项目依赖
 ```
+- TomCat 内嵌了一个TomCat,如果你不希望用我写的SocketHttpServer只需要把条件处理器的逻辑改了即可启动TomCat接管网络服务,记得注册DispatcherServlet
 - c3p0 数据库连接池
 - jaxen,dom4j xml解析工具库
 - Jedis 
-- Spring-core Spring重写的Cglib,用于实现Aop
+- Spring-core(Cglib) Spring重写的Cglib,用于实现Aop
 - Lombok 
 - Reflections 注解扫描库
 - Mysql-connector-java 
@@ -683,42 +713,32 @@ MineBatis-configXML=minebatis-config.xml
 ```
 
 ## 未来打算实现:
-
-- ~~解决代码耦合严重的问题,再下去就要臭不可闻了(修改了大量ioc容器代码,解除大量耦合和莫名其妙的代码,逻辑更加清晰了)(beandefinition重构容器)~~
 - 实现文件上传的功能 (半实现)
 - 加入类似于spring的事务,支持回滚
 - 实现自己写的http服务器与servlet或者其他成熟的web框架的切换(@bean+条件注解实现)(半实现)
-- ~~修正icon获取不到的问题 (已经解决)~~
-- ~~实现json输出的功能(已经实现)~~
-- ~~加入对Cookie的支持(已实现)~~
-- ~~加入对Session的支持(已实现)~~
 - 加入对Token的支持
 - controller方法形参直接注入JavaBean
-- ~~增加JVM关闭钩子(以实现)~~
 - request和response承担了过多的责任,考虑分出更多的类
 - 新版MineBatis即将加入
 - 手写的MineBatis增加增删改的功能
 
-
 ## 更长远的想法:
-- ~~加入beandefinition(已实现)~~
-- ~~加入真正可用的aop(aop定义权限现在已经移交给用户,可以指定处理器和拦截方法了)(已实现)~~
 - 加入websocket(实现中)
 - 支持https
 - 真正增加对TomCat的支持,重写接口
 
 ## 人生目标:
-- 找到月薪3000的实习
 - ~~找个美女对象(即将实现)(已经黄了)~~
 
 ## 人生忠告:
 - 技术没什么意义,多发展一下自己在生活中的兴趣爱好,人格的均衡发展才是硬道理
 - 远离infp女生
 - 远离情绪黑洞
+-
+
+## 一些思考:
 
 ## 尚未解决的难点:
-- ~~aop指定被代理方法时候框架没办法判断重载,以后会进行完善(已解决)~~
-- ~~@bean与依赖注入时机的问题:举个例子配置类a定义一个标注有@bean的方法,我的框架反射执行这个方法拿到object放入第一缓存.接着业务类b依赖这个bean,成功注入.但是有时候是业务类b先走到依赖注入这个环节,这时候因为@bean标注的是一个方法而不是一个类因此第一二三级缓存中没有这个元素,初始化失败.不知道spring是如何解决这个问题的,我目前的解决方法是初始化容器两次,勉勉强强解决了把(11/29已解决)~~
 
 ## 流程图:
 #### 试用的插件过期了,没法导出流程图了,这都是老的,没什么参考意义了
@@ -729,6 +749,9 @@ MineBatis-configXML=minebatis-config.xml
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
+### 2024/5/26
+- 重写了Web模块,现在controller需要注入接口而并非实现类,但保证了api的一致性
+- 现在用户可自己选择运行环境,可以选择使用SocketServer或者TomCat,并且预留了拓展机制,你可以自己写适配器适配Netty等其他容器
 ### 2024/5/19
 - 修正了Aop的一些错误,现在用户可以正常的定义切点了,另外使用LinkedHashMap替换ConcurrentHashMap实现有顺序的Map,可按照既定顺序依次注入,保证切面处理类与后置处理器均被优先注入
 - 增加关机事件,在接受到CTRL-C信号的时候会调用所有的关机事件,调用所有注册的@MyPreDestroy方法

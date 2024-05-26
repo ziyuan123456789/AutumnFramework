@@ -187,7 +187,9 @@ public class MyRequest {
     }
 
 
-
+    public Cookie[] getCookies() {
+        return cookie;
+    }
 }
 
 

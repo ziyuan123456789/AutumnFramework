@@ -2,7 +2,6 @@ package org.example.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
-import org.example.Aop.UserAopProxyHandler;
 import org.example.Bean.Car;
 import org.example.Config.Test;
 import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAop;
@@ -14,7 +13,8 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
 import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyRequest;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocket;
@@ -59,14 +59,14 @@ public class AutumnTestController {
 
     //xxx:测试request功能
     @MyRequestMapping("/request")
-    public String requestTest(MyRequest request) {
+    public String requestTest(AutumnRequest request) {
         return request.getUrl() + request.getMethod() + request.getParameters();
     }
 
 
     //xxx:测试response与setCookie功能
     @MyRequestMapping("/response")
-    public void responseTest(MyResponse myResponse) {
+    public void responseTest(AutumnResponse myResponse) {
         Cookie cookie = new Cookie("newcookie", "session1");
         myResponse.setCode(200)
                 .setCookie(cookie)
@@ -87,7 +87,6 @@ public class AutumnTestController {
     }
 
     //xxx:测试@Bean("BeanName")功能是否正常,同时看看Json解析器好不好用
-    @EnableAop()
     @MyRequestMapping("/map")
     public Map<String, Object> mapTest() {
         Map<String, Object> myMap = new HashMap<>();
@@ -105,8 +104,7 @@ public class AutumnTestController {
         return myReidsTemplate.toString() + "\n" + myReidsTemplate.get("test");
     }
 
-    //xxx:测试View层功能,同时看看Aop拦截了没
-    @EnableAop()
+    //xxx:测试View层功能
     @MyRequestMapping("/html")
     public View myhtml() {
         return new View("AutumnFrameworkMainPage.html");
@@ -115,7 +113,7 @@ public class AutumnTestController {
 
     //xxx:测试session功能
     @MyRequestMapping("/session")
-    public String session(MyRequest myRequest) {
+    public String session(AutumnRequest myRequest) {
         String sessionId = myRequest.getSession().getSessionId();
         myRequest.getSession().setAttribute("name", sessionId);
         return "切换阅览器查看唯一标识符是否变化? 标识符如下:"+myRequest.getSession().getAttribute("name");
@@ -128,6 +126,7 @@ public class AutumnTestController {
     }
 
     //xxx:测试数据库功能
+    @EnableAop
     @MyRequestMapping("/Login")
     public String login(@MyRequestParam("username") @CheckParameter String userId,
                         @MyRequestParam("password") String password) {
@@ -142,7 +141,7 @@ public class AutumnTestController {
 
     //xxx:测试数据库功能
     @MyRequestMapping("/getall")
-    public String getAll() throws Exception {
+    public String getAll() {
         return userMapper.getAllUser(0).toString();
     }
 

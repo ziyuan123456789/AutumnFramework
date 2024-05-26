@@ -19,8 +19,8 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) throws ClassNotFoundException {
-        RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
-        List<String> jvmArgs = runtimeMXBean.getInputArguments();
+        RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
+        List<String> jvmArgs = runtimeBean.getInputArguments();
 
         for (String arg : jvmArgs) {
             log.warn(arg);

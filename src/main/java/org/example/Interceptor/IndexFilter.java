@@ -2,8 +2,9 @@ package org.example.Interceptor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.Filter;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyRequest;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyResponse;
 
 /**
@@ -15,7 +16,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyResponse;
 public class IndexFilter implements Filter {
 
     @Override
-    public boolean doChain(MyRequest myRequest, MyResponse myResponse) {
+    public boolean doChain(AutumnRequest autumnRequest, AutumnResponse autumnResponse) {
         return false;
     }
 }
