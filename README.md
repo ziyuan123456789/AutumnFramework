@@ -68,7 +68,8 @@
 - 用户可以自定义后置处理器,干预BeanDefinition的生产过程,例如Mapper的注入,框架在启动的时候会调用,现在只提供Xml读取的方式
 - Aop模块重写,实现了Aop处理器的复用,从现在开始@EnableAop注解降级为用户态注解,仅作为一个简单的标记,框架通过CgLibAop, InstantiationAwareBeanPostProcessor两个接口在Bean实例化之前替换实现类的方式完成代理类的替换,有关Aop的一切均开放给用户,拦不拦截,怎么拦截都是你说的算,只要你实现AutumnAopFactory接口并加入@MyAspect注解我们就会帮你代理
 - 运行时环境判定,可以选择用SocketServer启动或者拉起内嵌的TomCat,如果你喜欢Netty可以自行写适配器,转化为标准的AutumnRequest/Response接口实现
-- ## 好玩的示范 通过修改AST抽象语法树实现一个编译期的注解处理器,这下真的就是全自动了,你只需要在主类上加入@EnableAutumnFramework,然后一行代码也不用写,留一个空的main方法程序就会开始执行,就像Lombok一样简单
+
+## 好玩的示范 通过修改AST抽象语法树实现一个编译期的注解处理器,这下真的就是全自动了,你只需要在主类上加入@EnableAutumnFramework,然后一行代码也不用写,留一个空的main方法程序就会开始执行,就像Lombok一样简单
 
 ```java
 
