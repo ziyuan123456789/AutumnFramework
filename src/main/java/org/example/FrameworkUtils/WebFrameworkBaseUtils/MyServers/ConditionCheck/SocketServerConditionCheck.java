@@ -14,7 +14,7 @@ public class SocketServerConditionCheck implements MyCondition {
 
     @Override
     public boolean matches(MyContext myContext, Class<?> clazz) {
-        return  true;
+        return  false;
 //        try {
 //            Class.forName("org.apache.catalina.startup.Tomcat");
 //            return false;

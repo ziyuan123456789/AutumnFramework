@@ -1,5 +1,6 @@
 package org.example.Aop;
 
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
 import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAop;
@@ -21,11 +22,7 @@ import java.lang.reflect.Method;
 public class UserAopProxyHandler implements AutumnAopFactory {
     @Override
     public boolean shouldNeedAop(Class clazz, MyContext myContext) {
-        if(clazz.getAnnotation(MyService.class) != null){
-            return true;
-        }else{
-            return false;
-        }
+        return clazz.getAnnotation(MyService.class) != null;
     }
 
     @Override

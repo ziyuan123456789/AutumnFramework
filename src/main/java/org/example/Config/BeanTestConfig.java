@@ -32,7 +32,12 @@ public class BeanTestConfig {
 
     @MyPostConstruct
     public void init(){
-        log.warn(userMapper.getAllUser(1).toString());
+        try{
+            log.warn(userMapper.getAllUser(1).toString());
+        }catch (Exception e){
+            log.warn("sql执行失败了,但没关系,继续运行");
+        }
+
     }
     @AutumnBean("BYD")
     public Car giveMeBydCar() throws Exception {

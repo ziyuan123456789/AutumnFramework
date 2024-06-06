@@ -15,7 +15,7 @@ public class TomCatConditionCheck  implements MyCondition  {
 
     @Override
     public boolean matches(MyContext myContext, Class<?> clazz) {
-        return false;
+        return true;
 //        try {
 //            Class.forName("org.apache.catalina.startup.Tomcat");
 //            log.info("TomCat启动!");

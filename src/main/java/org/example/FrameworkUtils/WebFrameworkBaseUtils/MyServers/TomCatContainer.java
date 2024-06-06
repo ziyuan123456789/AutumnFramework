@@ -12,11 +12,15 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ConditionCheck.TomCatConditionCheck;
 
+import java.util.WeakHashMap;
 
+
+/**
+ * @author wsh
+ */
 @MyConfig
 @MyConditional(TomCatConditionCheck.class)
 @Slf4j
-@Import(DispatcherServlet.class)
 public class TomCatContainer implements MyServer {
     @Value("port")
     int port;
@@ -32,6 +36,7 @@ public class TomCatContainer implements MyServer {
         Context context = tomcat.addContext("/", null);
         DispatcherServlet servlet = (DispatcherServlet) MyContext.getInstance().getBean(DispatcherServlet.class.getName());
         Tomcat.addServlet(context, "dispatcherServlet", servlet);
+        //xxx:进行简单路由操作,所有请求都交给dispatcherServlet处理
         context.addServletMappingDecoded("/", "dispatcherServlet");
         log.info("服务于{}端口启动", port);
         log.info("http://localhost:{}/", port);

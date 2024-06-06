@@ -25,6 +25,8 @@ import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
 
 import java.lang.annotation.Annotation;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +47,23 @@ public class AutumnFrameworkRunner {
     public void postProcessBeanFactory() {
     }
     public void run(Class<?> mainClass) throws ClassNotFoundException {
+        RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
+        List<String> jvmArgs = runtimeBean.getInputArguments();
+
+        for (String arg : jvmArgs) {
+            log.warn(arg);
+        }
+        log.info("""
+
+                                _                         __  ____      _______\s
+                     /\\        | |                       |  \\/  \\ \\    / / ____|
+                    /  \\  _   _| |_ _   _ _ __ ___  _ __ | \\  / |\\ \\  / / |    \s
+                   / /\\ \\| | | | __| | | | '_ ` _ \\| '_ \\| |\\/| | \\ \\/ /| |    \s
+                  / ____ \\ |_| | |_| |_| | | | | | | | | | |  | |  \\  / | |____\s
+                 /_/    \\_\\__,_|\\__|\\__,_|_| |_| |_|_| |_|_|  |_|   \\/   \\_____|
+                                                                               \s
+                                                                                \
+                """);
         myContext.put("packageUrl", mainClass.getPackageName());
         try {
             componentScan(mainClass, myContext);

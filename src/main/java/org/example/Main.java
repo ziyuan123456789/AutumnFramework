@@ -1,52 +1,26 @@
 package org.example;
 
 import lombok.extern.slf4j.Slf4j;
+import org.AutumnAP.EnableAutumnFramework;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFrameworkRunner;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
-import java.util.List;
 
-@Slf4j
 /*
   @author ziyuan
  * @since 2023.10
  */
 @MyConfig
+@Slf4j
+//@EnableAutumnFramework
 public class Main {
-
     public static void main(String[] args) throws ClassNotFoundException {
-        RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
-        List<String> jvmArgs = runtimeBean.getInputArguments();
-
-        for (String arg : jvmArgs) {
-            log.warn(arg);
-        }
-        log.info("""
-
-                                _                         __  ____      _______\s
-                     /\\        | |                       |  \\/  \\ \\    / / ____|
-                    /  \\  _   _| |_ _   _ _ __ ___  _ __ | \\  / |\\ \\  / / |    \s
-                   / /\\ \\| | | | __| | | | '_ ` _ \\| '_ \\| |\\/| | \\ \\/ /| |    \s
-                  / ____ \\ |_| | |_| |_| | | | | | | | | | |  | |  \\  / | |____\s
-                 /_/    \\_\\__,_|\\__|\\__,_|_| |_| |_|_| |_|_|  |_|   \\/   \\_____|
-                                                                               \s
-                                                                                \
-                """);
-        AutumnFrameworkRunner autumnFrameworkRunner = new AutumnFrameworkRunner();
-        autumnFrameworkRunner.run(Main.class);
+        //xxx:解除EnableAutumnFramework的注解并删掉下面的代码,一样可以运行,但是import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFrameworkRunner;要保留
+        //xxx:我的技术力有限,整不明白怎么在编译期导包
+        AutumnFrameworkRunner runner = new AutumnFrameworkRunner();
+        runner.run(Main.class);
 
 
     }
-
-
-
-
-
-
-
 
 }

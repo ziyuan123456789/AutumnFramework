@@ -5,7 +5,6 @@
 ![License](https://img.shields.io/npm/l/mithril.svg)
 
 ## 注意事项:
-
 - 现在框架可以选择依赖的环境,有我写的SocketServer和TomCat两种,默认是SocketServer,如果你想用内嵌的TomCat请自行找到切换的开关
 - `仅仅是一个玩具级别的Demo,无论是Web服务层还是Bean容器也好,都是非常简陋的实现,仅仅模仿SpringBoot的表层实现与基本特性,不具备任何实际使用价值仅供学习参考.感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
 - 编译结束后方法形参名称可能不保留,为了泛用性选择了形参注解标注形参
@@ -28,9 +27,19 @@
 ```html
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
  ```
+
+- 项目使用JDK17运行,16之后注解处理器的写法开始改变,而且有非常多的坑,这也是研究了两三天才完成了这个简易的注解处理器在编译期修改AST的功能,如果你想要在编译期修改AST,请参考我的代码,我已经把所有的坑都踩过了
+- IDEA给javac又套了一层,会出现class org.AutumnAP.FrameworkAnnotationProcessor (in unnamed module @0x6eb1a122) cannot
+  access class com.sun.tools.javac.api.BasicJavacTask (in module jdk.compiler) because module jdk.compiler does not
+  export com.sun.tools.javac.api to unnamed module @0x6eb1a122的问题,加入javac编译参数-Djps.track.ap.dependencies=false貌似可以解决
+- 想使用注解处理器先执行`mvn install:install-file -Dfile=src/main/resources/libs/AutumnAnP.jar -DgroupId=org.AutumnAP -DartifactId=AutumnAnP -Dversion=1.0-SNAPSHOT -Dpackaging=jar `再执行`mvn clean install`
 ## 打个广告:
 
 - ~~大四没事干,~~找了个java实习一个月2000~~,大连的hr有没有想联系我的 邮箱:~~ 已经找到工作了
+
+## 整点好玩的:
+
+- 现在框架加入了一个`编译期`注解@EnableAutumnFramework,你只需要在主类上加入它然后一行代码也不用写,留一个空的main方法程序就会开始执行
 
 ## 项目描述:
 不依赖TomCat,Servlet等技术实现的网络服务框架,参照了Mybatis,SpringMvc等设计思想从0手写了一个基于注解的仿SpringBoot框架
@@ -59,6 +68,33 @@
 - 用户可以自定义后置处理器,干预BeanDefinition的生产过程,例如Mapper的注入,框架在启动的时候会调用,现在只提供Xml读取的方式
 - Aop模块重写,实现了Aop处理器的复用,从现在开始@EnableAop注解降级为用户态注解,仅作为一个简单的标记,框架通过CgLibAop, InstantiationAwareBeanPostProcessor两个接口在Bean实例化之前替换实现类的方式完成代理类的替换,有关Aop的一切均开放给用户,拦不拦截,怎么拦截都是你说的算,只要你实现AutumnAopFactory接口并加入@MyAspect注解我们就会帮你代理
 - 运行时环境判定,可以选择用SocketServer启动或者拉起内嵌的TomCat,如果你喜欢Netty可以自行写适配器,转化为标准的AutumnRequest/Response接口实现
+- ## 好玩的示范 通过修改AST抽象语法树实现一个编译期的注解处理器,这下真的就是全自动了,你只需要在主类上加入@EnableAutumnFramework,然后一行代码也不用写,留一个空的main方法程序就会开始执行,就像Lombok一样简单
+
+```java
+
+@MyConfig
+@Slf4j
+@EnableAutumnFramework
+public class Main {
+  public static void main(String[] args) throws ClassNotFoundException {
+  }
+
+}
+```
+
+- 如果你遇到了问题请回退到
+
+```java
+
+@MyConfig
+@Slf4j
+public class Main {
+  public static void main(String[] args) throws ClassNotFoundException {
+    AutumnFrameworkRunner autumnFrameworkRunner = new AutumnFrameworkRunner();
+    autumnFrameworkRunner.run(Main.class);
+  }
+}
+```
 ## 代码示范 MVC章节
 ### Controller
 ```java
@@ -749,6 +785,9 @@ MineBatis-configXML=minebatis-config.xml
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
+### 2024/6/6
+- 加入了编译期的注解处理器,现在可以依靠注解@EnableAutumnFramework实现全自动启动,就像Lombok一样
+- java17整这个真的很蛋疼,网上都没什么可参考的资料,另外没想到是idea又给javac包裹了一层,整了好几天才在idea的外网论坛上看到类似的讨论
 ### 2024/5/26
 - 重写了Web模块,现在controller需要注入接口而并非实现类,但保证了api的一致性
 - 现在用户可自己选择运行环境,可以选择使用SocketServer或者TomCat,并且预留了拓展机制,你可以自己写适配器适配Netty等其他容器
