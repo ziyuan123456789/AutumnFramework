@@ -9,13 +9,14 @@
     <version>1.0-SNAPSHOT</version>
 
     <dependencies>
-
-        <dependency>
-            <groupId>org.AutumnAP</groupId>
-            <artifactId>AutumnAnP</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
+        <!--如果遇到问题 注释下面的依赖-->
+        <!--        执行mvn install:install-file -Dfile=src/main/resources/libs/AutumnAnP.jar -DgroupId=org.AutumnAP -DartifactId=AutumnAnP -Dversion=1.0-SNAPSHOT -Dpackaging=jar 安装依赖-->
+<!--        <dependency>-->
+<!--            <groupId>org.AutumnAP</groupId>-->
+<!--            <artifactId>AutumnAnP</artifactId>-->
+<!--            <version>1.0-SNAPSHOT</version>-->
+<!--            <scope>compile</scope>-->
+<!--        </dependency>-->
 
 
         <!--mine batis部分依赖-->
@@ -125,18 +126,17 @@
                     </compilerArgs>
                     <annotationProcessorPaths>
 
-                        <!-- 保留 Lombok 配置 -->
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                             <version>1.18.32</version>
                         </path>
-                        <!-- 添加本地 JAR 文件作为注解处理器 -->
-                        <path>
-                            <groupId>org.AutumnAP</groupId>
-                            <artifactId>AutumnAnP</artifactId>
-                            <version>1.0-SNAPSHOT</version>
-                        </path>
+                        <!--遇到问题注释下面的依赖-->
+<!--                        <path>-->
+<!--                            <groupId>org.AutumnAP</groupId>-->
+<!--                            <artifactId>AutumnAnP</artifactId>-->
+<!--                            <version>1.0-SNAPSHOT</version>-->
+<!--                        </path>-->
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
