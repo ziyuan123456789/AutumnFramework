@@ -1,19 +1,24 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Annotation.*;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestParam;
+import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.DataStructure.Tuple;
 import org.example.FrameworkUtils.Exception.NoAvailableUrlMappingException;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.Json.JsonFormatter;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ConditionCheck.SocketServerConditionCheck;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.SocketServerHtmlResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.MySession;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Json.JsonFormatter;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocket;
 
 import java.io.BufferedReader;
@@ -41,11 +46,11 @@ import java.util.concurrent.Executors;
 @Slf4j
 @MyComponent
 @MyConditional(SocketServerConditionCheck.class)
-public class SocketServer implements MyServer {
+public class SocketServer implements MyServer, BeanFactoryAware {
     private ExecutorService threadPool;
     private ServerSocket serverSocket;
-    private final MyContext myContext = MyContext.getInstance();
-    private final SessionManager sessionmanager = (SessionManager) myContext.getBean(SessionManager.class.getName());
+    private AutumnBeanFactory beanFactory;
+    private  SessionManager sessionmanager ;
     @MyAutoWired
     SocketServerHtmlResponse socketServerHtmlResponse;
     @MyAutoWired
@@ -61,7 +66,7 @@ public class SocketServer implements MyServer {
     @Override
     public void init() throws Exception {
         threadPool = Executors.newFixedThreadPool(threadNums);
-        Map<String, String> sharedMap = (Map<String, String>) myContext.get("urlmapping");
+        Map<String, String> sharedMap = (Map<String, String>) beanFactory.get("urlmapping");
         try {
             serverSocket = new ServerSocket(port);
             log.info("服务于{}端口启动", port);
@@ -147,7 +152,7 @@ public class SocketServer implements MyServer {
 
     private Tuple<Object, Class<?>> invokeMethod(String classurl, String methodName, AutumnRequest myRequest, MyResponse myResponse) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<?> clazz = Class.forName(classurl);
-        Object instance = myContext.getBean(clazz.getName());
+        Object instance = beanFactory.getBean(clazz.getName());
         Method domethod=null;
         List<Object> objectList = new ArrayList<>();
         if (classurl.contains("$$")) {
@@ -188,7 +193,7 @@ public class SocketServer implements MyServer {
 
     private void processRequest(Socket clientSocket, Map sharedMap,String payload,String body,Integer lenth,String contentType,String boundary) throws IOException, ClassNotFoundException {
         boolean urlmark = true;
-        MyRequest myRequest = new MyRequest(payload,body,lenth);
+        MyRequest myRequest = new MyRequest(payload, body, lenth, beanFactory);
         if("multipart/form-data".equals(contentType)){
             myRequest.setContentType("multipart/form-data");
             myRequest.setBoundary(boundary);
@@ -202,7 +207,7 @@ public class SocketServer implements MyServer {
                 str = (String) sharedMap.get(str);
                 int lastIndex = str.lastIndexOf(".");
                 String classurl = str.substring(0, lastIndex);
-                Filter filter = (Filter) myContext.getBean(annotationScanner.initFilterChain().getName());
+                Filter filter = (Filter) beanFactory.getBean(annotationScanner.initFilterChain().getName());
                 MyResponse myResponse =new MyResponse(socketServerHtmlResponse, clientSocket);
                 AutumnRequest autumnRequest = new SocketRequestAdapter(myRequest);
                 if (!filter.doChain(autumnRequest, myResponse)) {
@@ -322,5 +327,9 @@ public class SocketServer implements MyServer {
     }
 
 
-
+    @Override
+    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
+        this.sessionmanager= (SessionManager) beanFactory.getBean(SessionManager.class.getName());
+    }
 }

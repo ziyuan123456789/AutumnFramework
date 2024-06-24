@@ -13,6 +13,7 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.XMLBeansLoader;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryPostProcessor;
@@ -27,6 +28,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketCon
 import java.lang.annotation.Annotation;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,12 +43,23 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @MyComponent
 public class AutumnFrameworkRunner {
-    MyContext myContext = MyContext.getInstance();
+    AutumnBeanFactory beanFactory ;
     AnnotationScanner scanner = new AnnotationScanner();
 
     public void postProcessBeanFactory() {
     }
-    public void run(Class<?> mainClass) throws ClassNotFoundException {
+
+    public void run(Class<?> mainClass) {
+        try {
+            Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
+            Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
+            getInstanceMethod.setAccessible(true);
+            beanFactory = (AutumnBeanFactory) getInstanceMethod.invoke(null);
+        } catch(Exception e){
+            log.error(String.valueOf(e));
+            throw new RuntimeException(e);
+        }
+
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         List<String> jvmArgs = runtimeBean.getInputArguments();
 
@@ -64,34 +77,34 @@ public class AutumnFrameworkRunner {
                                                                                \s
                                                                                 \
                 """);
-        myContext.put("packageUrl", mainClass.getPackageName());
+        beanFactory.put("packageUrl", mainClass.getPackageName());
         try {
-            componentScan(mainClass, myContext);
+            componentScan(mainClass, beanFactory);
         } catch (Exception e) {
             log.error(String.valueOf(e));
             throw new RuntimeException(e);
         }
         Map<String, String> urlMap = new ConcurrentHashMap<>();
-        Map<String, Object> iocContainer = myContext.getIocContainer();
+        Map<String, Object> iocContainer = beanFactory.getIocContainer();
         for (String clazz : iocContainer.keySet()) {
             try{
-                Class temp=Class.forName(clazz);
+                Class<?> temp = Class.forName(clazz);
                 if (temp.getName().contains("$$EnhancerByCGLIB")) {
                     processClassForMapping(temp.getSuperclass(),urlMap);
                 } else {
                     processClassForMapping(temp,urlMap);
                 }
-            }catch (Exception e){
+            } catch (Exception ignored) {
 
             }
 
         }
-        myContext.put("urlmapping", urlMap);
-        ServerRunner server = (ServerRunner) myContext.getBean(ServerRunner.class.getName());
+        beanFactory.put("urlmapping", urlMap);
+        ServerRunner server = (ServerRunner) beanFactory.getBean(ServerRunner.class.getName());
         server.run();
     }
 
-    private void componentScan(Class<?> mainClass, MyContext myContext) throws Exception {
+    private void componentScan(Class<?> mainClass, AutumnBeanFactory myContext) throws Exception {
         XMLBeansLoader xmlBeansLoader = new XMLBeansLoader();
         SimpleMyBeanDefinitionRegistry registry = new SimpleMyBeanDefinitionRegistry();
         List<Class<? extends Annotation>> annotations = new ArrayList<>();
@@ -160,8 +173,8 @@ public class AutumnFrameworkRunner {
 
             }
         }
-
-        myContext.initIocCache(registry.getBeanDefinitionMap());
+        MyContext myContext1 = (MyContext) myContext;
+        myContext1.initIocCache(registry.getBeanDefinitionMap());
         long endTime = System.currentTimeMillis();
         log.info("容器花费了：{} 毫秒实例化", endTime - startTime);
     }

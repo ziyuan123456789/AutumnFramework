@@ -5,6 +5,8 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.example.FrameworkUtils.DataStructure.Tuple;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Json.JsonFormatter;
@@ -37,8 +39,8 @@ import java.util.concurrent.Executors;
 @WebServlet("/*")
 @Slf4j
 @MyComponent
-public class DispatcherServlet extends HttpServlet {
-    private MyContext myContext = MyContext.getInstance();
+public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
+    private AutumnBeanFactory myContext;
     @MyAutoWired
     private TomCatHtmlResponse tomCatHtmlResponse;
     @MyAutoWired
@@ -70,7 +72,7 @@ public class DispatcherServlet extends HttpServlet {
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
             AutumnRequest autumnRequest = new HttpServletRequestAdapter(req);
-            AutumnResponse autumnResponse = new ServletResponseAdapter(resp);
+            AutumnResponse autumnResponse = new ServletResponseAdapter(resp,(TomCatHtmlResponse) myContext.getBean(TomCatHtmlResponse.class.getName()));
             String url = autumnRequest.getUrl();
             String baseUrl = extractPath(url);
             String methodFullName = handlerMap.get(baseUrl);
@@ -250,6 +252,10 @@ public class DispatcherServlet extends HttpServlet {
     }
 
 
+    @Override
+    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+        this.myContext = beanFactory;
+    }
 }
 
 

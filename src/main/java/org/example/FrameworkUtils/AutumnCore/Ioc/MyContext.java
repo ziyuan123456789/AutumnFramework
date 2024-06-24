@@ -31,13 +31,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author wsh
  */
 @Slf4j
-public class MyContext {
+public class MyContext implements AutumnBeanFactory {
     private static volatile MyContext instance;
 
     private MyContext() {
     }
 
-    public static MyContext getInstance() {
+    private static MyContext getInstance() {
         if (instance == null) {
             synchronized (MyContext.class) {
                 if (instance == null) {
@@ -68,7 +68,7 @@ public class MyContext {
 
     private int times=1;
 
-
+    @Override
     public Object getBean(String beanName) {
         try {
             if (times != 1) {
@@ -175,6 +175,9 @@ public class MyContext {
             //xxx:对未成熟bean进行依赖注入
             boolean continueWithInstantiation = doInstantiationAwareBeanPostProcessorAfter(bean,myBeanDefinition.getName());
             if (continueWithInstantiation) {
+                if (bean instanceof BeanFactoryAware) {
+                    ((BeanFactoryAware) bean).setBeanFactory(MyContext.getInstance());
+                }
                 autowireBeanProperties(bean, myBeanDefinition);
             }
             bean = doBeanPostProcessorsBefore(bean, myBeanDefinition.getName());
@@ -192,6 +195,7 @@ public class MyContext {
         }
         return bean;
     }
+
 
     private Object doBeanPostProcessorsAfter(Object bean, String beanName) throws Exception {
         for (BeanPostProcessor processor : regularPostProcessors) {
@@ -240,6 +244,9 @@ public class MyContext {
     private Object createAutumnBeanInstance(MyBeanDefinition mb) {
         try {
             Object configInstance = getBean(mb.getConfigurationClass().getName());
+            if (configInstance instanceof BeanFactoryAware) {
+                ((BeanFactoryAware) configInstance).setBeanFactory(MyContext.getInstance());
+            }
             //xxx:对配置类进行依赖注入,得到成熟的bean
             autowireBeanProperties(configInstance, mb);
             //xxx:获取mb定义的生产方法
@@ -443,19 +450,27 @@ public class MyContext {
         }
         }
 
-
+    @Override
     public void put(String key, Object value) {
         sharedMap.put(key, value);
     }
 
+    @Override
     public Object get(String key) {
         return sharedMap.get(key);
     }
 
+    @Override
+    public <T> T get(Class<T> clazz) throws Exception {
+        return null;
+    }
+
+    @Override
     public Map<String, Object> getIocContainer() {
         return singletonObjects;
     }
 
+    @Override
     public Properties getProperties(){
         return properties;
     }

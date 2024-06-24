@@ -4,7 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ResourceFinder;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
@@ -30,13 +31,15 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 @MyComponent
-public class SocketServerHtmlResponse {
+public class SocketServerHtmlResponse implements BeanFactoryAware {
     @MyAutoWired
     ResourceFinder resourceFinder;
     @MyAutoWired
     CrossOriginBean crossOriginBean;
     @MyAutoWired
     AnnotationScanner annotationScanner;
+
+    private AutumnBeanFactory beanFactory;
 
 
 
@@ -215,7 +218,7 @@ public class SocketServerHtmlResponse {
 
 
     public void outPutSocketWriter(Socket clientSocket, String requestHeaders, String url) throws IOException {
-        MyContext myContext = MyContext.getInstance();
+
         WebSocketBaseConfig webSocketMaster = null;
         Pattern pattern = Pattern.compile("Sec-WebSocket-Key: (.+)");
         Matcher matcher = pattern.matcher(requestHeaders);
@@ -240,13 +243,13 @@ public class SocketServerHtmlResponse {
 
 
             out.write(responseHeader.toString().getBytes(StandardCharsets.UTF_8));
-            for (Map.Entry<String, Object> entry : myContext.getIocContainer().entrySet()) {
+            for (Map.Entry<String, Object> entry : beanFactory.getIocContainer().entrySet()) {
                 try{
                     Class<?> clazz = Class.forName(entry.getKey());
                     if (clazz.isAnnotationPresent(MyWebSocketConfig.class)) {
                         MyWebSocketConfig annotation = clazz.getAnnotation(MyWebSocketConfig.class);
                         if (url.equals(annotation.value())) {
-                            webSocketMaster = (WebSocketBaseConfig) myContext.getBean(entry.getKey());
+                            webSocketMaster = (WebSocketBaseConfig) beanFactory.getBean(entry.getKey());
                             break;
                         }
                     }
@@ -353,5 +356,10 @@ public class SocketServerHtmlResponse {
         System.arraycopy(messageBytes, 0, frame, frame.length - messageLength, messageLength);
 
         return frame;
+    }
+
+    @Override
+    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
     }
 }

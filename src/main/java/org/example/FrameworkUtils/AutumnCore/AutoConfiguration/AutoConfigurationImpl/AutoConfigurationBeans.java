@@ -3,7 +3,8 @@ package org.example.FrameworkUtils.AutumnCore.AutoConfiguration.AutoConfiguratio
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBean;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
@@ -12,14 +13,16 @@ import org.reflections.scanners.SubTypesScanner;
  */
 @MyConfig
 @Slf4j
-public class AutoConfigurationBeans {
-    private final MyContext myContext=MyContext.getInstance();
-    String packageName = (String) myContext.get("packageUrl");
-
+public class AutoConfigurationBeans implements BeanFactoryAware {
+    private AutumnBeanFactory myContext;
 
     @AutumnBean
     public Reflections getReflection() {
-        return new Reflections(packageName,new SubTypesScanner(false));
+        return new Reflections((String) myContext.get("packageUrl"), new SubTypesScanner(false));
     }
 
+    @Override
+    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+        this.myContext = beanFactory;
+    }
 }

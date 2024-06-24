@@ -1,7 +1,6 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.TomCatHtmlResponse;
@@ -17,14 +16,16 @@ import java.util.Date;
  */
 @Slf4j
 public class ServletResponseAdapter implements AutumnResponse {
-    private  TomCatHtmlResponse tomCatHtmlResponse= (TomCatHtmlResponse) MyContext.getInstance().getBean(TomCatHtmlResponse.class.getName());
+    private final TomCatHtmlResponse tomCatHtmlResponse;
     private final HttpServletResponse response;
     private int httpCode = HttpServletResponse.SC_OK;
     private String responseText = "";
     private View view;
 
-    public ServletResponseAdapter(HttpServletResponse response) {
+    public ServletResponseAdapter(HttpServletResponse response, TomCatHtmlResponse tomCatHtmlResponse) {
         this.response = response;
+        this.tomCatHtmlResponse = tomCatHtmlResponse;
+
     }
 
     @Override

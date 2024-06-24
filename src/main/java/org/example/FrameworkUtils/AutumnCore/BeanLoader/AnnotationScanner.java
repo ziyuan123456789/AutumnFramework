@@ -3,6 +3,8 @@ package org.example.FrameworkUtils.AutumnCore.BeanLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
@@ -21,8 +23,8 @@ import java.util.Set;
  */
 @MyComponent
 @Slf4j
-public class AnnotationScanner {
-    private static  MyContext myContext=MyContext.getInstance();
+public class AnnotationScanner implements BeanFactoryAware {
+    private static  AutumnBeanFactory beanFactory;
 
     public static  <A extends Annotation> List<Class<?>> findAnnotatedClasses(String basePackage, Class<A> annotationClass) {
         List<Class<?>> annotatedClasses = new ArrayList<>();
@@ -52,7 +54,7 @@ public class AnnotationScanner {
     }
 
     public static  Class<?> initFilterChain() throws ClassNotFoundException {
-        Map<String, Object> iocContainer = myContext.getIocContainer();
+        Map<String, Object> iocContainer = beanFactory.getIocContainer();
         for (Map.Entry<String, Object> entry : iocContainer.entrySet()) {
             try {
                 Class<?> clazz = Class.forName(entry.getKey());
@@ -68,5 +70,10 @@ public class AnnotationScanner {
 
         }
         return null;
+    }
+
+    @Override
+    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+        AnnotationScanner.beanFactory =beanFactory;
     }
 }

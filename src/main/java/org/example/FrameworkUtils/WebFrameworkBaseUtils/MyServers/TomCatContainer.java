@@ -5,14 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.Context;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Tomcat;
-import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ConditionCheck.TomCatConditionCheck;
-
-import java.util.WeakHashMap;
 
 
 /**
@@ -21,9 +19,10 @@ import java.util.WeakHashMap;
 @MyConfig
 @MyConditional(TomCatConditionCheck.class)
 @Slf4j
-public class TomCatContainer implements MyServer {
+public class TomCatContainer implements MyServer, BeanFactoryAware {
     @Value("port")
     int port;
+    private AutumnBeanFactory beanFactory;
 
     @Override
     public void init() throws Exception {
@@ -34,7 +33,7 @@ public class TomCatContainer implements MyServer {
         connector.setURIEncoding("UTF-8");
         tomcat.getService().addConnector(connector);
         Context context = tomcat.addContext("/", null);
-        DispatcherServlet servlet = (DispatcherServlet) MyContext.getInstance().getBean(DispatcherServlet.class.getName());
+        DispatcherServlet servlet = (DispatcherServlet) beanFactory.getBean(DispatcherServlet.class.getName());
         Tomcat.addServlet(context, "dispatcherServlet", servlet);
         //xxx:进行简单路由操作,所有请求都交给dispatcherServlet处理
         context.addServletMappingDecoded("/", "dispatcherServlet");
@@ -43,5 +42,10 @@ public class TomCatContainer implements MyServer {
         tomcat.start();
         tomcat.getServer().await();
 
+    }
+
+    @Override
+    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
     }
 }

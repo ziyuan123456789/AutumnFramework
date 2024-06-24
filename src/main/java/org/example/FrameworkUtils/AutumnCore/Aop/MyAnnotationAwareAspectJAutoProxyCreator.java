@@ -2,8 +2,9 @@ package org.example.FrameworkUtils.AutumnCore.Aop;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.InstantiationAwareBeanPostProcessor;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.MethodInterceptor;
 
@@ -15,14 +16,14 @@ import java.util.List;
  */
 @MyComponent
 @Slf4j
-public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, InstantiationAwareBeanPostProcessor {
+public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, InstantiationAwareBeanPostProcessor, BeanFactoryAware {
 
-    MyContext myContext = MyContext.getInstance();
+    AutumnBeanFactory beanFactory;
 
     private boolean shouldCreateProxy(List<AutumnAopFactory> factories, Class<?> beanClass) {
 
         for (AutumnAopFactory factory : factories) {
-            if (factory.shouldNeedAop(beanClass, myContext)) {
+            if (factory.shouldNeedAop(beanClass, beanFactory)) {
                 return true;
             }
         }
@@ -34,7 +35,7 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
         enhancer.setSuperclass(beanClass);
         enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
             for (AutumnAopFactory aopFactory : factories) {
-                if (aopFactory.shouldIntercept(method, beanClass, myContext)) {
+                if (aopFactory.shouldIntercept(method, beanClass, beanFactory)) {
                     try {
                         aopFactory.doBefore(obj, method, args);
                         Object result = aopFactory.intercept(obj, method, args, proxy);
@@ -67,5 +68,10 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws Exception {
         return null;
+    }
+
+    @Override
+    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
     }
 }

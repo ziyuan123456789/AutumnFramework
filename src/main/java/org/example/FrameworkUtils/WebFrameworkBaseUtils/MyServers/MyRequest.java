@@ -1,10 +1,11 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.MySession;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.SessionManager;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,10 +29,11 @@ public class MyRequest {
     private String contentType;
     private String boundary;
     private final Cookie[] cookie;
-    private final MyContext myContext = MyContext.getInstance();
+    private MyContext myContext;
     private final SessionManager sessionManager = (SessionManager) myContext.getBean(SessionManager.class.getName());
 
-    public MyRequest(String payload, String body, Integer contentLength) {
+    public MyRequest(String payload, String body, Integer contentLength, AutumnBeanFactory myContext) {
+        this.myContext = (MyContext) myContext;
         this.payload = payload;
         this.body = body;
         parseRequest(payload);
@@ -42,12 +44,12 @@ public class MyRequest {
             this.contentLength = contentLength;
         }
     }
-    //xxx:文件上传专用
-    public MyRequest(String payload, String body, Integer contentLength, String contentType, String boundary) {
-        this(payload, body, contentLength);
-        this.contentType = contentType;
-        this.boundary = boundary;
-    }
+//    //xxx:文件上传专用
+//    public MyRequest(String payload, String body, Integer contentLength, String contentType, String boundary) {
+//        this(payload, body, contentLength);
+//        this.contentType = contentType;
+//        this.boundary = boundary;
+//    }
 
     //xxx:解析HTTP方法与Url
     private void parseRequest(String payload) {

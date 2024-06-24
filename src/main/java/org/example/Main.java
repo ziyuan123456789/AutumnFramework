@@ -1,7 +1,5 @@
 package org.example;
 
-import lombok.extern.slf4j.Slf4j;
-import org.AutumnAP.EnableAutumnFramework;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFrameworkRunner;
 
@@ -13,9 +11,10 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFramewor
 @MyConfig
 //@EnableAutumnFramework
 public class Main {
-    public static void main(String[] args) throws ClassNotFoundException {
+    public static void main(String[] args) {
       AutumnFrameworkRunner autumnFrameworkRunner=new AutumnFrameworkRunner();
       autumnFrameworkRunner.run(Main.class);
     }
+
 
 }

@@ -1,14 +1,11 @@
 package org.example.Aop;
 
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
-import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAop;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
-import org.example.controller.AutumnTestController;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
 import org.springframework.cglib.proxy.MethodProxy;
 
 import java.lang.annotation.Annotation;
@@ -21,12 +18,12 @@ import java.lang.reflect.Method;
 @MyAspect
 public class UserAopProxyHandler implements AutumnAopFactory {
     @Override
-    public boolean shouldNeedAop(Class clazz, MyContext myContext) {
+    public boolean shouldNeedAop(Class clazz, AutumnBeanFactory myContext) {
         return clazz.getAnnotation(MyService.class) != null;
     }
 
     @Override
-    public boolean shouldIntercept(Method method, Class clazz, MyContext myContext) {
+    public boolean shouldIntercept(Method method, Class clazz, AutumnBeanFactory myContext) {
         return  true;
     }
 

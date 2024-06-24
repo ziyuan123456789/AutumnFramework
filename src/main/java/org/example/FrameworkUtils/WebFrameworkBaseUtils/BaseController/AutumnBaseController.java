@@ -5,7 +5,8 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.AutumnCore.AutoConfiguration.AutumnMvcConfiguration;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 
@@ -20,14 +21,14 @@ import java.util.Map;
  * @since 2023.11
  */
 @MyController
-public class AutumnBaseController {
+public class AutumnBaseController implements BeanFactoryAware {
 
     @Value("baseHtml")
     String baseHtml;
 
     @MyAutoWired
-    AutumnMvcConfiguration autumnMvcConfiguration;
-    MyContext myContext=MyContext.getInstance();
+    private AutumnMvcConfiguration autumnMvcConfiguration;
+    private AutumnBeanFactory beanFactory;
 
     @MyRequestMapping("/favicon.ico")
     public Icon getIcon() {
@@ -52,7 +53,7 @@ public class AutumnBaseController {
 
     @MyRequestMapping("/urlMapping")
     public Map<String, Object> urlMapping() {
-        Map<String,String> urlToMethodMap=(Map<String, String>) myContext.get("urlmapping");
+        Map<String, String> urlToMethodMap = (Map<String, String>) beanFactory.get("urlmapping");
         Map<String, Object> openApiMap = new HashMap<>();
         for (Map.Entry<String, String> entry : urlToMethodMap.entrySet()) {
             int lastIndex = entry.getValue().lastIndexOf(".");
@@ -86,4 +87,8 @@ public class AutumnBaseController {
     }
 
 
+    @Override
+    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
+    }
 }

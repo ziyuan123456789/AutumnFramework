@@ -5,9 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Orm.MineBatis.Io.Resources;
@@ -16,6 +16,7 @@ import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactory;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactoryBuilder;
 
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.Properties;
 import java.util.Set;
 
@@ -32,7 +33,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
         System.setProperties(p);
     }
 
-    private final MyContext myContext = MyContext.getInstance();
+    private AutumnBeanFactory beanFactory;
 
     @Override
     public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
@@ -55,7 +56,16 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
     @Override
     public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner,BeanDefinitionRegistry registry) throws Exception {
         log.info("{}从xml中加载,现在要干预BeanDefinition的生成,优先级为PriorityOrdered,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
-        String minebatisXml = myContext.getProperties().getProperty("MineBatis-configXML");
+        try {
+            Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
+            Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
+            getInstanceMethod.setAccessible(true);
+            beanFactory = (AutumnBeanFactory) getInstanceMethod.invoke(null);
+        } catch (Exception e) {
+            log.error(String.valueOf(e));
+            throw new RuntimeException(e);
+        }
+        String minebatisXml = beanFactory.getProperties().getProperty("MineBatis-configXML");
         InputStream inputStream;
         if (minebatisXml == null || minebatisXml.isEmpty()) {
             inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
@@ -63,6 +73,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
             inputStream = Resources.getResourceAsSteam(minebatisXml);
         }
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+        inputStream.close();
         //xxx:确定工厂后生产session
         SqlSession sqlSession = sqlSessionFactory.openSession();
         Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
