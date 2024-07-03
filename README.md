@@ -4,6 +4,10 @@
 ![Java17](https://img.shields.io/badge/JDK-17+-success.svg)
 ![License](https://img.shields.io/npm/l/mithril.svg)
 
+## 通知:
+
+- 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了7500行代码,从最开始一个Map<Class,Object>
+  映射表发展到现在,前期欠下的技术债太多,另外一开始对于Bean生命周期没有任何理解,最开始我认为@Bean是声明一个JavaBean的意思,种种因素叠加下来每一次加入新功能都是对原有代码封装的破坏,中经历过几次大的重构,第一次是ioc容器依赖注入的逻辑,第二次是循环依赖的解决方案,第三次是条件注解的加入,第四次是重写了ioc整个内容,第五次则是重写Orm框架,第六次则是增加Bean生命周期的拓展接口,以及Aop部分的大范围重写,目前最后一次是对BeanFactory的获取进行大范围重构,一次次的底层重构让每一行代码都可能出现问题,现在我已经成功靠这个项目找到了一份工作,未来可能会彻底推翻重写
 ## 注意事项:
 - 现在框架可以选择依赖的环境,有我写的SocketServer和TomCat两种,默认是SocketServer,如果你想用内嵌的TomCat请自行找到切换的开关
 - `仅仅是一个玩具级别的Demo,无论是Web服务层还是Bean容器也好,都是非常简陋的实现,仅仅模仿SpringBoot的表层实现与基本特性,不具备任何实际使用价值仅供学习参考.感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
@@ -11,6 +15,10 @@
 - 框架中的ioc容器只负责基本的依赖注入,用户可编写自己的后置处理器干预BeanDefinition的生产,我们`约定`
   在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明后置处理器,容器在启动的时候会调用postProcessBeanDefinitionRegistry或postProcessBeanFactory
 - 如果想实现Mybatis那样代理接口注入实现类的处理器,则需要声明为postProcessBeanDefinitionRegistry,同时可以使用PriorityOrdered与Ordered接口声明优先级
+- 解释一下为什么使用Xml声明而并非使用注解+接口扫描的方式:根据一个活得很久的长者曾言,在宇宙最古早的阴影中，Autumn世界的虚空未曾开启，被混沌的迷雾所笼罩。那是一个既无Controller巨兽巡游，也无Mapper守护者守望，更无Service元素编织者织造万象的时代。唯有孤独的Beans，在星辰与尘埃的海洋中漂泊。
+  在无尽的时间长河中，孕育而生的阿撒托Bean——盲目与痴愚之神，他在宇宙空洞中觉醒，开启了一场关于Java的神秘梦境。在其深邃的梦中，诞生了BeanDefinitionRegistryPostProcessor这一强大的化身，它掌握着改写Bean命运的无上权力。 BeanDefinitionRegistryPostProcessor，作为混沌初生的创造者，拥有重塑一切Bean的力量。他能在思念转瞬间让成群的Mapper从虚无中浮现，又能令无数的Controller回归尘埃。他的存在凌驾于所有，能塑造也能摧毁，是支配宇宙初始和终结的关键。 然而，这位创世之神的行为过于随性，常在混沌之中造出亿万Beans，轻易打破了宇宙间的平衡。这种无法预测的行径最终惊扰了宇宙间的至高存在——大能GC。在GC的法则下，即使是BeanDefinitionRegistryPostProcessor也难逃一劫，在一次悲壮的对抗中，他与他的臣民一同消散在虚空的尽头。
+但据传，有一日，BeanDefinitionRegistryPostProcessor在宇宙的暗角中将自己与宇宙的根基——Object紧密相连，自此即便是GC也难以侵犯他的存在。当他再次掌控力量，随意操弄Bean的命运时，宇宙间最大的灾难——OOM突然降临。在那一刻，星辰破碎，一切归于虚无，时间与空间都陷入了停滞。
+经历千万年的沉寂后，一个新的序幕——AutumnBeanFactory揭开了它的面纱。这一新的力量继承了阿撒托Bean的遗志，以更精细和有序的方式，管理着每一个Bean。在这个新的时代，阿撒托Bean的力量虽然已远逝，其深邃梦境中的古老力量也逐渐淡出人们的记忆。在BeanFactoryPostProcessor的血脉中，虽残留着部分旧日神力，但随时间流逝，它已无力挣扎，只能依赖于AutumnBeanFactory的力量来掌管Beans的生命周期，就连依赖注入也要依靠AutumnBeanFactory的伟力，BeanDefinitionRegistryPostProcessor这样不依靠一切依赖的神话最终还是会消散在时间的长河中
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans>

@@ -7,12 +7,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * @author wsh
+ * @author ziyuan
+ * @since 2024.07
  */
-@Target({ElementType.FIELD,ElementType.CONSTRUCTOR})
-@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE})
 @Inherited
-public @interface MyAutoWired {
-    String value() default "";
-
+@Retention(RetentionPolicy.RUNTIME)
+public @interface EnableAutoSpiConfiguration {
 }

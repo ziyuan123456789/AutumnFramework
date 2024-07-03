@@ -13,9 +13,8 @@ public class InstantiationAwareBeanPostProcessorTest implements InstantiationAwa
 
     @Override
     public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) {
-       if(beanClass == Test.class){
-           return new Test();
-       }
+
+
         return null;
     }
 

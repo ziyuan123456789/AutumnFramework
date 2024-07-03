@@ -40,7 +40,6 @@ public class MapperJdkProxyFactory implements SqlSession {
     private static Map<Class<?>, TypeHandler> handlerMap = new HashMap<>();
 
     static {
-        //xxx:进行处理器的注册,但是我觉得纯属扯淡,整出那么多类来,我觉得应该交给编译器来做,期待更聪明的编译器,比如接入gpt4
         handlerMap.put(int.class, new IntHandler());
         handlerMap.put(String.class, new StringHandler());
         handlerMap.put(Integer.class, new IntegerHandler());

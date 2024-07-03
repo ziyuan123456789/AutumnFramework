@@ -6,6 +6,7 @@ import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 import org.example.FrameworkUtils.Orm.MineBatis.Io.Resources;
+import org.xml.sax.SAXException;
 
 
 import java.beans.PropertyVetoException;
@@ -25,8 +26,16 @@ public class XmlConfigBuilder {
     }
 
 
-    public Configuration parseMineBatisXmlConfig(InputStream inputStream) throws DocumentException, PropertyVetoException {
+    public Configuration parseMineBatisXmlConfig(InputStream inputStream) throws DocumentException, PropertyVetoException, SAXException {
         SAXReader saxReader = new SAXReader();
+        // 禁止加载外部 DTD
+        saxReader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        // 禁用所有外部实体
+        saxReader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        saxReader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        // 禁用 DOCTYPE 声明处理
+        saxReader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+
         Document document = saxReader.read(inputStream);
         Element rootElement = document.getRootElement();
         List<Element> propertyNodes = rootElement.selectNodes("//property");

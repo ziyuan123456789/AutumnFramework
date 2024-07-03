@@ -2,6 +2,7 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBean;
+import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAutoSpiConfiguration;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
@@ -11,6 +12,7 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyPreDestroy;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
+import org.example.FrameworkUtils.AutumnCore.BeanLoader.AutumnFactoriesLoader;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.XMLBeansLoader;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
@@ -18,6 +20,7 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryPostProcessor;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanPostProcessor;
+import org.example.FrameworkUtils.AutumnCore.Ioc.FactoryBean;
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.Ordered;
 import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
@@ -28,7 +31,6 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketCon
 import java.lang.annotation.Annotation;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,11 +48,13 @@ public class AutumnFrameworkRunner {
     AutumnBeanFactory beanFactory ;
     AnnotationScanner scanner = new AnnotationScanner();
 
+    //xxx:模板方法,以后会拓展
     public void postProcessBeanFactory() {
     }
 
     public void run(Class<?> mainClass) {
         try {
+            //xxx:保证容器已经存在
             Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
             Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
             getInstanceMethod.setAccessible(true);
@@ -68,15 +72,15 @@ public class AutumnFrameworkRunner {
         }
         log.info("""
 
-                                _                         __  ____      _______\s
-                     /\\        | |                       |  \\/  \\ \\    / / ____|
-                    /  \\  _   _| |_ _   _ _ __ ___  _ __ | \\  / |\\ \\  / / |    \s
-                   / /\\ \\| | | | __| | | | '_ ` _ \\| '_ \\| |\\/| | \\ \\/ /| |    \s
-                  / ____ \\ |_| | |_| |_| | | | | | | | | | |  | |  \\  / | |____\s
-                 /_/    \\_\\__,_|\\__|\\__,_|_| |_| |_|_| |_|_|  |_|   \\/   \\_____|
-                                                                               \s
-                                                                                \
-                """);
+                \033[35m                                _                         __  ____      _______\s
+                \033[36m                     /\\        | |                       |  \\/  \\ \\    / / ____|
+                \033[32m                    /  \\  _   _| |_ _   _ _ __ ___  _ __ | \\  / |\\ \\  / / |    \s
+                \033[34m                   / /\\ \\| | | | __| | | | '_ ` _ \\| '_ \\| |\\/| | \\ \\/ /| |    \s
+                \033[33m                  / ____ \\ |_| | |_| |_| | | | | | | | | | |  | |  \\  / | |____\s
+                \033[31m                 /_/    \\_\\__,_|\\__|\\__,_|_| |_| |_|_| |_|_|  |_|   \\/   \\_____|\033[0m"""
+        );
+
+        //xxx:保存主类的包名,也就是默认扫描的包
         beanFactory.put("packageUrl", mainClass.getPackageName());
         try {
             componentScan(mainClass, beanFactory);
@@ -115,13 +119,17 @@ public class AutumnFrameworkRunner {
         annotations.add(MyWebSocketConfig.class);
         annotations.add(MyAspect.class);
         Set<Class<?>> annotatedClasses = scanner.findAnnotatedClassesList(mainClass.getPackageName(), annotations);
+        if (mainClass.getAnnotation(EnableAutoSpiConfiguration.class) != null) {
+            //xxx:启动自动装配
+            AutumnFactoriesLoader.loadFactories();
+        }
         List<Class<BeanFactoryPostProcessor>> starterRegisterer = xmlBeansLoader.loadStarterClasses("plugins");
         long startTime = System.currentTimeMillis();
         log.info("IOC容器开始初始化");
 
         for (Class<?> clazz : annotatedClasses) {
             MyConfig myConfig = clazz.getAnnotation(MyConfig.class);
-            if (myConfig != null) {
+            if (myConfig != null || FactoryBean.class.isAssignableFrom(clazz)) {
                 MyBeanDefinition myConfigBeanDefinition = new MyBeanDefinition();
                 myConfigBeanDefinition.setName(clazz.getName());
                 myConfigBeanDefinition.setBeanClass(clazz);
@@ -133,6 +141,16 @@ public class AutumnFrameworkRunner {
                         //xxx: 当这个方法有bean注解则创建一个MyBeanDefinition
                         MyBeanDefinition myBeanDefinition = getMyBeanDefinition(clazz, method);
                         registry.registerBeanDefinition(myBeanDefinition.getName(), myBeanDefinition);
+                    }
+
+                }
+                if (FactoryBean.class.isAssignableFrom(clazz)) {
+                    try {
+                        Method getObjectMethod = clazz.getMethod("getObject");
+                        MyBeanDefinition myBeanDefinition = getMyBeanDefinition(clazz, getObjectMethod);
+                        registry.registerBeanDefinition(myBeanDefinition.getName(), myBeanDefinition);
+                    } catch (NoSuchMethodException e) {
+                        System.err.println("FactoryBean实现中没有找到getObject方法: " + clazz.getName());
                     }
                 }
             } else {
@@ -248,14 +266,22 @@ public class AutumnFrameworkRunner {
                 myBeanDefinition.setAfterMethod(returnTypeMethod);
             }
         }
-
-        if (method.getAnnotation(AutumnBean.class).value().isEmpty()) {
+        AutumnBean annotation = method.getAnnotation(AutumnBean.class);
+        if (annotation == null && FactoryBean.class.isAssignableFrom(clazz) ) {
             myBeanDefinition.setName(returnType.getName());
+            myBeanDefinition.setBeanClass(returnType);
+            return myBeanDefinition;
+
         } else {
-            myBeanDefinition.setName(method.getAnnotation(AutumnBean.class).value());
+            if (method.getAnnotation(AutumnBean.class).value().isEmpty()) {
+                myBeanDefinition.setName(returnType.getName());
+            } else {
+                myBeanDefinition.setName(method.getAnnotation(AutumnBean.class).value());
+            }
+            myBeanDefinition.setBeanClass(returnType);
+            return myBeanDefinition;
         }
-        myBeanDefinition.setBeanClass(returnType);
-        return myBeanDefinition;
+
     }
 
     private void processClassForMapping(Class<?> clazz, Map<String, String> urlMap) {

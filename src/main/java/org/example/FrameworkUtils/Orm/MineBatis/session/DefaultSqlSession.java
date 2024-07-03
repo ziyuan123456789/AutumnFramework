@@ -1,6 +1,8 @@
 package org.example.FrameworkUtils.Orm.MineBatis.session;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.Orm.MineBatis.configuration.Configuration;
 import org.example.FrameworkUtils.Orm.MineBatis.configuration.MappedStatement;
 import org.example.FrameworkUtils.Orm.MineBatis.executor.Executor;
@@ -23,11 +25,15 @@ import java.util.List;
 //xxx:如何水代码行数?
 public class DefaultSqlSession implements SqlSession {
     private final Configuration configuration;
+    @Getter
     private final Executor executor;
+    @Getter
+    private TypeHandlerRegistry typeHandlerRegistry;
 
     public DefaultSqlSession(Configuration configuration, TypeHandlerRegistry typeHandlerRegistry) {
         this.configuration = configuration;
         executor=new SimpleExecutor(typeHandlerRegistry);
+        this.typeHandlerRegistry=typeHandlerRegistry;
     }
 
     @Override

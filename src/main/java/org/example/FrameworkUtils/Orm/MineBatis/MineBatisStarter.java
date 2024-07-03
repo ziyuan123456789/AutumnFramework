@@ -2,6 +2,7 @@ package org.example.FrameworkUtils.Orm.MineBatis;
 
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
@@ -11,12 +12,14 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProce
 import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Orm.MineBatis.Io.Resources;
+import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.TypeHandler;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactory;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactoryBuilder;
 
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
 
@@ -44,7 +47,8 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
     public ObjectFactory<?> createFactoryMethod(Class<?> beanClass, SqlSession sqlSession) {
         return () -> {
             try {
-                return sqlSession.getMapper(beanClass);
+                SqlSession sqlSession1= (SqlSession) beanFactory.getBean(SqlSession.class.getName());
+                return sqlSession1.getMapper(beanClass);
             } catch (Exception e) {
                 log.error("创建MapperBean实例失败", e);
                 throw new BeanCreationException("创建MapperBean实例失败", e);
@@ -66,6 +70,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
             throw new RuntimeException(e);
         }
         String minebatisXml = beanFactory.getProperties().getProperty("MineBatis-configXML");
+
         InputStream inputStream;
         if (minebatisXml == null || minebatisXml.isEmpty()) {
             inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
@@ -74,7 +79,6 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
         }
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
         inputStream.close();
-        //xxx:确定工厂后生产session
         SqlSession sqlSession = sqlSessionFactory.openSession();
         Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
         for (Class<?> clazz : classSet) {
@@ -85,5 +89,11 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
             myBeanDefinition.setStarterMethod(createFactoryMethod(clazz, sqlSession));
             registry.registerBeanDefinition(clazz.getName(), myBeanDefinition);
         }
+        AnnotationScanner.findAnnotatedClasses((String) beanFactory.get("packageUrl"), TypeHandler.class).forEach(typeHandler -> {
+            MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
+            myBeanDefinition.setName(typeHandler.getName());
+            myBeanDefinition.setBeanClass(typeHandler);
+            registry.registerBeanDefinition(typeHandler.getName(), myBeanDefinition);
+        });
     }
 }

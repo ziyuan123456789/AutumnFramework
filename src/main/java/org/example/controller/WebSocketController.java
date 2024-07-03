@@ -1,8 +1,10 @@
 package org.example.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.WebSocketBaseConfig;
+import org.example.mapper.UserMapper;
 
 /**
  * @author ziyuan
@@ -11,6 +13,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.WebSocketBaseC
 @MyWebSocketConfig("/websocket")
 @Slf4j
 public class WebSocketController implements WebSocketBaseConfig {
+
 
     @Override
     public void onOpen() {

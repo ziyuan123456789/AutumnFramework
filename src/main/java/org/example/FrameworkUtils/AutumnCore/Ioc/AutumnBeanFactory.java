@@ -1,5 +1,7 @@
 package org.example.FrameworkUtils.AutumnCore.Ioc;
 
+import java.lang.annotation.Annotation;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -19,4 +21,10 @@ public interface AutumnBeanFactory {
     Map<String, Object> getIocContainer();
 
     Properties getProperties();
+
+    List<Object> getBeansByAnnotation(Class<? extends Annotation> annotationClass);
+
+    void addBean(String name, Object bean);
+
+    <T> List<T> getBeansOfType(Class<T> type);
 }

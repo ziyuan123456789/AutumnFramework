@@ -1,6 +1,7 @@
 package org.example.FrameworkUtils.AutumnCore.BeanLoader;
 
 import lombok.Data;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnCommander;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -16,6 +17,8 @@ public class MyBeanDefinition {
     private Class<?> beanClass;
 
     private boolean isStarter = false;
+
+    private AutumnCommander commander;
 
     private ObjectFactory<?> starterMethod;
     //xxx:是谁成产了这个@bean

@@ -1,6 +1,7 @@
 package org.example.FrameworkUtils.AutumnCore.Ioc;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.Bean.factorybeantest;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
@@ -14,10 +15,13 @@ import org.example.FrameworkUtils.PropertiesReader.PropertiesReader;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -311,7 +315,17 @@ public class MyContext implements AutumnBeanFactory {
     //xxx:普通bean工厂
     private Object createBeanInstance(Class<?> beanClass) {
         try {
-            //xxx:调用工厂生产一个朴实无华童叟无欺的bean出来
+            Constructor<?>[] constructors = beanClass.getDeclaredConstructors();
+            for (Constructor<?> constructor : constructors) {
+                if (constructor.isAnnotationPresent(MyAutoWired.class)) {
+                    Object[] parameters = Arrays.stream(constructor.getParameters())
+                            .map(param -> getBean(param.getType().getName()))
+                            .toArray(Object[]::new);
+                    return constructor.newInstance(parameters);
+
+                }
+            }
+
             return beanClass.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             throw new BeanCreationException("创建普通bean实例失败,请检查你是否存在一个有参构造器,有的话创建一个无参构造器", e);
@@ -347,6 +361,7 @@ public class MyContext implements AutumnBeanFactory {
 
         }
         //xxx:依赖注入后更新缓存,这个bean从第二缓存移除,进入一级缓存,提前暴露期转为成熟的AutumnBean
+
         mb.setInstance(bean);
         singletonObjects.put(bean.getClass().getName(), bean);
         earlySingletonObjects.remove(bean.getClass().getName());
@@ -473,6 +488,38 @@ public class MyContext implements AutumnBeanFactory {
     @Override
     public Properties getProperties(){
         return properties;
+    }
+
+    @Override
+    public List<Object> getBeansByAnnotation(Class<? extends Annotation> annotationClass) {
+        List<Object> beansWithAnnotation = new ArrayList<>();
+        for (Object bean : singletonObjects.values()) {
+            Class<?> beanClass = bean.getClass();
+            // 检查是否为 CGLIB 代理类
+            if (beanClass.getName().contains("$$")) {
+                beanClass = beanClass.getSuperclass();
+            }
+            if (beanClass.isAnnotationPresent(annotationClass)) {
+                beansWithAnnotation.add(bean);
+            }
+        }
+        return beansWithAnnotation;
+    }
+
+    @Override
+    public void addBean(String name, Object bean) {
+        singletonObjects.put(name, bean);
+    }
+
+    @Override
+    public <T> List<T> getBeansOfType(Class<T> type) {
+        List<T> beans = new ArrayList<>();
+        for (Object bean : singletonObjects.values()) {
+            if (type.isInstance(bean)) {
+                beans.add(type.cast(bean));
+            }
+        }
+        return beans;
     }
 
 

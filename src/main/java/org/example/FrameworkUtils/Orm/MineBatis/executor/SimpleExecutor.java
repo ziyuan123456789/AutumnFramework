@@ -1,5 +1,6 @@
 package org.example.FrameworkUtils.Orm.MineBatis.executor;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.Orm.MineBatis.GenericTokenParser;
 import org.example.FrameworkUtils.Orm.MineBatis.ParameterMapping;

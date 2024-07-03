@@ -15,7 +15,6 @@ import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocket;
 import org.example.mapper.UserMapper;
@@ -57,9 +56,11 @@ public class AutumnTestController {
     @MyAutoWired
     Test test;
 
+
     //xxx:测试request功能
     @MyRequestMapping("/request")
     public String requestTest(AutumnRequest request) {
+
         return request.getUrl() + request.getMethod() + request.getParameters();
     }
 
