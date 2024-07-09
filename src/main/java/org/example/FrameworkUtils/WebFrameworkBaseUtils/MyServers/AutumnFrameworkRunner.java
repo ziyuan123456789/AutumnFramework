@@ -2,7 +2,7 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBean;
-import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAutoSpiConfiguration;
+import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAutoConfiguration;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
@@ -119,11 +119,29 @@ public class AutumnFrameworkRunner {
         annotations.add(MyWebSocketConfig.class);
         annotations.add(MyAspect.class);
         Set<Class<?>> annotatedClasses = scanner.findAnnotatedClassesList(mainClass.getPackageName(), annotations);
-        if (mainClass.getAnnotation(EnableAutoSpiConfiguration.class) != null) {
+        List<Class<BeanFactoryPostProcessor>> beanFactoryPostProcessorsClassList = new ArrayList<>();
+        if (mainClass.getAnnotation(EnableAutoConfiguration.class) != null) {
             //xxx:启动自动装配
-            AutumnFactoriesLoader.loadFactories();
+            Map<String, List<String>> autoonfigurations = AutumnFactoriesLoader.parseConfigurations();
+            List<String> beanDefinitionRegistryPostProcessors = autoonfigurations.get("BeanDefinitionRegistryPostProcessor");
+            List<String> beanFactoryPostProcessors = autoonfigurations.get("BeanFactoryPostProcessor");
+            for (String s : autoonfigurations.get("Beans")) {
+                annotatedClasses.add(Class.forName(s));
+            }
+            beanFactoryPostProcessors.addAll(beanDefinitionRegistryPostProcessors);
+            beanFactoryPostProcessors.forEach(className -> {
+                try {
+                    Class<?> clazz = Class.forName(className);
+                    if (BeanFactoryPostProcessor.class.isAssignableFrom(clazz)) {
+                        beanFactoryPostProcessorsClassList.add((Class<BeanFactoryPostProcessor>) clazz);
+                    }
+                } catch (ClassNotFoundException e) {
+                    System.err.println("Class not found: " + className);
+                }
+            });
+
         }
-        List<Class<BeanFactoryPostProcessor>> starterRegisterer = xmlBeansLoader.loadStarterClasses("plugins");
+//        List<Class<BeanFactoryPostProcessor>> starterRegisterer = xmlBeansLoader.loadStarterClasses("plugins");
         long startTime = System.currentTimeMillis();
         log.info("IOC容器开始初始化");
 
@@ -169,7 +187,7 @@ public class AutumnFrameworkRunner {
         List<BeanDefinitionRegistryPostProcessor> registryPostProcessors = new ArrayList<>();
         List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
 
-        for (Class<BeanFactoryPostProcessor> postProcessorClass : starterRegisterer) {
+        for (Class<BeanFactoryPostProcessor> postProcessorClass : beanFactoryPostProcessorsClassList) {
             //xxx:  构造器创建一个实例
             BeanFactoryPostProcessor postProcessor = postProcessorClass.getDeclaredConstructor().newInstance();
             if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {

@@ -13,5 +13,5 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
-public @interface EnableAutoSpiConfiguration {
+public @interface EnableAutoConfiguration {
 }

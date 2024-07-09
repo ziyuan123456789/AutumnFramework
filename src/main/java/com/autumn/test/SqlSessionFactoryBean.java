@@ -1,7 +1,6 @@
-package org.example.Bean;
+package com.autumn.test;
 
 import lombok.Data;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.FactoryBean;
@@ -17,8 +16,7 @@ import java.io.InputStream;
  * @since 2024.07
  */
 @Data
-@MyComponent
-public class factorybeantest implements FactoryBean<SqlSession>, BeanFactoryAware {
+public class SqlSessionFactoryBean implements FactoryBean<SqlSession>, BeanFactoryAware {
     private AutumnBeanFactory beanFactory;
 
     @Override
@@ -38,7 +36,7 @@ public class factorybeantest implements FactoryBean<SqlSession>, BeanFactoryAwar
 
     @Override
     public Class<?> getObjectType() {
-        return this.getClass();
+        return SqlSession.class;
     }
 
     @Override

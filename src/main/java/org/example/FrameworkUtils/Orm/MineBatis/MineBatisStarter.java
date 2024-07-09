@@ -2,7 +2,6 @@ package org.example.FrameworkUtils.Orm.MineBatis;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
@@ -19,7 +18,6 @@ import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactoryBuilder
 
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
 
@@ -59,7 +57,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
 
     @Override
     public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner,BeanDefinitionRegistry registry) throws Exception {
-        log.info("{}从xml中加载,现在要干预BeanDefinition的生成,优先级为PriorityOrdered,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
+        log.info("{}从xml中加载或自动装配机制加载,现在要干预BeanDefinition的生成,优先级为PriorityOrdered,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
         try {
             Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
             Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");

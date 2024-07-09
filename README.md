@@ -5,20 +5,16 @@
 ![License](https://img.shields.io/npm/l/mithril.svg)
 
 ## 通知:
-
 - 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了7500行代码,从最开始一个Map<Class,Object>
-  映射表发展到现在,前期欠下的技术债太多,另外一开始对于Bean生命周期没有任何理解,最开始我认为@Bean是声明一个JavaBean的意思,种种因素叠加下来每一次加入新功能都是对原有代码封装的破坏,中经历过几次大的重构,第一次是ioc容器依赖注入的逻辑,第二次是循环依赖的解决方案,第三次是条件注解的加入,第四次是重写了ioc整个内容,第五次则是重写Orm框架,第六次则是增加Bean生命周期的拓展接口,以及Aop部分的大范围重写,目前最后一次是对BeanFactory的获取进行大范围重构,一次次的底层重构让每一行代码都可能出现问题,现在我已经成功靠这个项目找到了一份工作,未来可能会彻底推翻重写
+  映射表发展到现在,前期欠下的技术债太多,另外一开始对于Bean生命周期没有任何理解,最开始我认为@Bean是声明一个JavaBean的意思,种种因素叠加下来每一次加入新功能都是对原有代码封装的破坏,一次次的底层重构让每一行代码都可能出现问题,现在我已经成功靠这个项目找到了一份工作,未来可能会彻底推翻重写
 ## 注意事项:
 - 现在框架可以选择依赖的环境,有我写的SocketServer和TomCat两种,默认是SocketServer,如果你想用内嵌的TomCat请自行找到切换的开关
 - `仅仅是一个玩具级别的Demo,无论是Web服务层还是Bean容器也好,都是非常简陋的实现,仅仅模仿SpringBoot的表层实现与基本特性,不具备任何实际使用价值仅供学习参考.感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
-- 目前仅支持调用字段的无参默认构造器注入
-- 框架中的ioc容器只负责基本的依赖注入,用户可编写自己的后置处理器干预BeanDefinition的生产,我们`约定`
-  在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明后置处理器,容器在启动的时候会调用postProcessBeanDefinitionRegistry或postProcessBeanFactory
-- 如果想实现Mybatis那样代理接口注入实现类的处理器,则需要声明为postProcessBeanDefinitionRegistry,同时可以使用PriorityOrdered与Ordered接口声明优先级
-- 解释一下为什么使用Xml声明而并非使用注解+接口扫描的方式:根据一个活得很久的长者曾言,在宇宙最古早的阴影中，Autumn世界的虚空未曾开启，被混沌的迷雾所笼罩。那是一个既无Controller巨兽巡游，也无Mapper守护者守望，更无Service元素编织者织造万象的时代。唯有孤独的Beans，在星辰与尘埃的海洋中漂泊。
-  在无尽的时间长河中，孕育而生的阿撒托Bean——盲目与痴愚之神，他在宇宙空洞中觉醒，开启了一场关于Java的神秘梦境。在其深邃的梦中，诞生了BeanDefinitionRegistryPostProcessor这一强大的化身，它掌握着改写Bean命运的无上权力。 BeanDefinitionRegistryPostProcessor，作为混沌初生的创造者，拥有重塑一切Bean的力量。他能在思念转瞬间让成群的Mapper从虚无中浮现，又能令无数的Controller回归尘埃。他的存在凌驾于所有，能塑造也能摧毁，是支配宇宙初始和终结的关键。 然而，这位创世之神的行为过于随性，常在混沌之中造出亿万Beans，轻易打破了宇宙间的平衡。这种无法预测的行径最终惊扰了宇宙间的至高存在——大能GC。在GC的法则下，即使是BeanDefinitionRegistryPostProcessor也难逃一劫，在一次悲壮的对抗中，他与他的臣民一同消散在虚空的尽头。
-但据传，有一日，BeanDefinitionRegistryPostProcessor在宇宙的暗角中将自己与宇宙的根基——Object紧密相连，自此即便是GC也难以侵犯他的存在。当他再次掌控力量，随意操弄Bean的命运时，宇宙间最大的灾难——OOM突然降临。在那一刻，星辰破碎，一切归于虚无，时间与空间都陷入了停滞。
-经历千万年的沉寂后，一个新的序幕——AutumnBeanFactory揭开了它的面纱。这一新的力量继承了阿撒托Bean的遗志，以更精细和有序的方式，管理着每一个Bean。在这个新的时代，阿撒托Bean的力量虽然已远逝，其深邃梦境中的古老力量也逐渐淡出人们的记忆。在BeanFactoryPostProcessor的血脉中，虽残留着部分旧日神力，但随时间流逝，它已无力挣扎，只能依赖于AutumnBeanFactory的力量来掌管Beans的生命周期，就连依赖注入也要依靠AutumnBeanFactory的伟力，BeanDefinitionRegistryPostProcessor这样不依靠一切依赖的神话最终还是会消散在时间的长河中
+- 目前仅支持调用字段的无参默认构创建实例,原则上来说构造器注入也实现了,但问题太多难以维护
+- 框架中的ioc容器仅负责基本的依赖注入,用户可编写自己的后置处理器干预BeanDefinition的生产,我们`约定`
+  在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明后置处理器,容器在启动的时候会自动调用
+- 如果你希望使用自动装配机制则需要在主类上加入`@EnableAutoConfiguration`注解来告知框架进行自动装配,框架会开始扫描所有Jar包下的META-INF
+- 如果想实现Mybatis那样`扫描自定义注解`扫描为组件,则需要声明为postProcessBeanDefinitionRegistry,同时可以使用PriorityOrdered与Ordered接口声明优先级,xml注册方式如下
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans>
@@ -29,7 +25,7 @@
 </beans>
  ```
 - MineBatis目前只可以进行查询,不能增删改,马上就会加上这些功能.另外现在只可以注册XmlMapper,注解注册的方式日后添加
-- 如果使用idea可以在xml加入如下内容以获得idea代码提示与跳转,用其他的ide就可以不加
+- 如果使用idea可以在xml加入如下内容以获得idea代码提示与跳转,但我`建议不加`因为会去外网下载这个DTD,会让框架启动很慢,这个问题当时排查了非常久
 
 ```html
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -43,7 +39,7 @@
 
 
 ## 实验性内容:
-- 现在框架加入了一个`编译期`注解@EnableAutumnFramework,你只需要在主类上加入它然后一行代码也不用写,留一个空的main方法程序就会开始执行,想试试的改下pom文件开启
+- 现在框架加入了一个`编译期`注解`@EnableAutumnFramework`,你只需要在主类上加入它然后一行代码也不用写,留一个空的main方法程序就会开始执行,想试试的改下pom文件开启
 
 ## 项目描述:
 不依赖TomCat,Servlet等技术实现的网络服务框架,参照了Mybatis,SpringMvc等设计思想从0手写了一个基于注解的仿SpringBoot框架
@@ -82,17 +78,17 @@
 @MyConfig
 @Slf4j
 @EnableAutumnFramework
+@EnableAutoConfiguration
 public class Main {
   public static void main(String[] args)  {
   }
-
 }
 ```
 
 - 如果你遇到了问题请回退到
 
 ```java
-
+@EnableAutoConfiguration
 @MyConfig
 @Slf4j
 public class Main {
@@ -697,6 +693,39 @@ public class UserBeanPostProcessor implements BeanPostProcessor, Ordered {
     }
 }
 ```
+
+### FactoryBean 用于创建复杂的Bean
+```java
+@Data
+public class SqlSessionFactoryBean implements FactoryBean<SqlSession>, BeanFactoryAware {
+    private AutumnBeanFactory beanFactory;
+
+    @Override
+    public SqlSession getObject() throws Exception {
+        String minebatisXml = beanFactory.getProperties().getProperty("MineBatis-configXML");
+        InputStream inputStream;
+        if (minebatisXml == null || minebatisXml.isEmpty()) {
+            inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
+        } else {
+            inputStream = Resources.getResourceAsSteam(minebatisXml);
+        }
+        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+        inputStream.close();
+        return sqlSessionFactory.openSession();
+
+    }
+
+    @Override
+    public Class<?> getObjectType() {
+        return SqlSession.class;
+    }
+
+    @Override
+    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
+    }
+}
+```
 ### 配置类 @Bean
 ```java
 @MyConfig
@@ -847,6 +876,7 @@ MineBatis-configXML=minebatis-config.xml
 - request和response承担了过多的责任,考虑分出更多的类
 - 新版MineBatis即将加入
 - 手写的MineBatis增加增删改的功能
+- 加入生命周期监听器
 
 ## 更长远的想法:
 - 加入websocket(实现中)
@@ -862,7 +892,11 @@ MineBatis-configXML=minebatis-config.xml
 - 远离情绪黑洞
 -
 
-## 一些思考:
+## 有趣的解释:
+- 解释一下为什么使用Xml声明而并非使用注解+接口扫描的方式:根据一个活得很久的长者曾言,在宇宙最古早的阴影中，Autumn世界的虚空未曾开启，被混沌的迷雾所笼罩。那是一个既无Controller巨兽巡游，也无Mapper守护者守望，更无Service元素编织者织造万象的时代。唯有孤独的Beans，在星辰与尘埃的海洋中漂泊。
+  在无尽的时间长河中，孕育而生的阿撒托Bean——盲目与痴愚之神，他在宇宙空洞中觉醒，开启了一场关于Java的神秘梦境。在其深邃的梦中，诞生了BeanDefinitionRegistryPostProcessor这一强大的化身，它掌握着改写Bean命运的无上权力。 BeanDefinitionRegistryPostProcessor，作为混沌初生的创造者，拥有重塑一切Bean的力量。他能在思念转瞬间让成群的Mapper从虚无中浮现，又能令无数的Controller回归尘埃。他的存在凌驾于所有，能塑造也能摧毁，是支配宇宙初始和终结的关键。 然而，这位创世之神的行为过于随性，常在混沌之中造出亿万Beans，轻易打破了宇宙间的平衡。这种无法预测的行径最终惊扰了宇宙间的至高存在——大能GC。在GC的法则下，即使是BeanDefinitionRegistryPostProcessor也难逃一劫，在一次悲壮的对抗中，他与他的臣民一同消散在虚空的尽头。
+  但据传，有一日，BeanDefinitionRegistryPostProcessor在宇宙的暗角中将自己与宇宙的根基——Object紧密相连，自此即便是GC也难以侵犯他的存在。当他再次掌控力量，随意操弄Bean的命运时，宇宙间最大的灾难——OOM突然降临。在那一刻，星辰破碎，一切归于虚无，时间与空间都陷入了停滞。
+  经历千万年的沉寂后，一个新的序幕——AutumnBeanFactory揭开了它的面纱。这一新的力量继承了阿撒托Bean的遗志，以更精细和有序的方式，管理着每一个Bean。在这个新的时代，阿撒托Bean的力量虽然已远逝，其深邃梦境中的古老力量也逐渐淡出人们的记忆。在BeanFactoryPostProcessor的血脉中，虽残留着部分旧日神力，但随时间流逝，它已无力挣扎，只能依赖于AutumnBeanFactory的力量来掌管Beans的生命周期，就连依赖注入也要依靠AutumnBeanFactory的伟力，BeanDefinitionRegistryPostProcessor这样不依靠一切依赖的神话最终还是会消散在时间的长河中
 
 ## 尚未解决的难点:
 
@@ -875,9 +909,11 @@ MineBatis-configXML=minebatis-config.xml
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
+### 2024/7/9
+- 增加了部分自动装配机制,我打算命名为AutumnSpi机制,会扫描项目和Jar包下METE-INF中autumn文件夹中的AutoConfiguration.imports文件,把其中的全类名注册为容器中的组件
+- FactoryBean<T>加入,用于实现复杂的对象创建,同时利用这个机制把第三方组件注册的Bean的时机从Bean定义后置处理器后移,这样可以方便的进行依赖注入了
 
 ### 2024/6/24
-
 - 取消原有暴露单例容器的做法,添加aware接口,如果你在容器中需要感知环境那么就实现BeanFactoryAware接口,容器会自动注入BeanFactory.当然了如果你不想这样,你完全可以反射去调用原来的getInstance方法
 ### 2024/6/6
 - 加入了编译期的注解处理器,现在可以依靠注解@EnableAutumnFramework实现全自动启动,就像Lombok一样

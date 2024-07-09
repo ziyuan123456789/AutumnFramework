@@ -1,7 +1,6 @@
 package org.example.FrameworkUtils.AutumnCore.Ioc;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.Bean.factorybeantest;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;

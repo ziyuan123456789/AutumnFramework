@@ -1,2 +1,3 @@
-org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor=org.example.FrameworkUtils.Orm.MineBatis.MineBatisStarter
-org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryPostProcessor=org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor
+BeanDefinitionRegistryPostProcessor=org.example.FrameworkUtils.Orm.MineBatis.MineBatisStarter
+BeanFactoryPostProcessor=org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor
+Beans=com.autumn.test.SqlSessionFactoryBean
