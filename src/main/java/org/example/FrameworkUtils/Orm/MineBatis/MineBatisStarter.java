@@ -1,7 +1,10 @@
 package org.example.FrameworkUtils.Orm.MineBatis;
 
 
+import com.autumn.test.SqlSessionFactoryBean;
 import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
+import org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
@@ -26,6 +29,7 @@ import java.util.Set;
  * @since 2024.04
  */
 @Slf4j
+@Import({SqlSessionFactoryBean.class, JokePostProcessor.class})
 public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, PriorityOrdered {
     static {
         Properties p = new Properties(System.getProperties());
@@ -42,11 +46,11 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
     }
 
 
-    public ObjectFactory<?> createFactoryMethod(Class<?> beanClass, SqlSession sqlSession) {
+    public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) {
         return () -> {
             try {
-                SqlSession sqlSession1= (SqlSession) beanFactory.getBean(SqlSession.class.getName());
-                return sqlSession1.getMapper(beanClass);
+                SqlSession sqlSession= (SqlSession) beanFactory.getBean(SqlSession.class.getName());
+                return sqlSession.getMapper(beanClass);
             } catch (Exception e) {
                 log.error("创建MapperBean实例失败", e);
                 throw new BeanCreationException("创建MapperBean实例失败", e);
@@ -84,7 +88,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
             myBeanDefinition.setName(clazz.getName());
             myBeanDefinition.setBeanClass(clazz);
             myBeanDefinition.setStarter(true);
-            myBeanDefinition.setStarterMethod(createFactoryMethod(clazz, sqlSession));
+            myBeanDefinition.setStarterMethod(createFactoryMethod(clazz));
             registry.registerBeanDefinition(clazz.getName(), myBeanDefinition);
         }
         AnnotationScanner.findAnnotatedClasses((String) beanFactory.get("packageUrl"), TypeHandler.class).forEach(typeHandler -> {

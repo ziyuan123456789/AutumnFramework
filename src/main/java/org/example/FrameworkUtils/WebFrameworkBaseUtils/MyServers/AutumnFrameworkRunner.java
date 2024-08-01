@@ -3,6 +3,7 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBean;
 import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAutoConfiguration;
+import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
@@ -45,10 +46,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @MyComponent
 public class AutumnFrameworkRunner {
+    //这个类是启动的入口,这个名字有点难听,以后会换
     AutumnBeanFactory beanFactory ;
     AnnotationScanner scanner = new AnnotationScanner();
 
-    //xxx:模板方法,以后会拓展
+    //xxx:模板方法,以后会拓展,会通过starter机制引入web部分来继承这个启动类,但这都是后话了,目前代码耦合的很紧很难办
     public void postProcessBeanFactory() {
     }
 
@@ -66,7 +68,7 @@ public class AutumnFrameworkRunner {
 
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         List<String> jvmArgs = runtimeBean.getInputArguments();
-
+        //打印一下启动的参数
         for (String arg : jvmArgs) {
             log.warn(arg);
         }
@@ -80,16 +82,18 @@ public class AutumnFrameworkRunner {
                 \033[31m                 /_/    \\_\\__,_|\\__|\\__,_|_| |_| |_|_| |_|_|  |_|   \\/   \\_____|\033[0m"""
         );
 
-        //xxx:保存主类的包名,也就是默认扫描的包
+        //xxx:保存主类的包名,也就是默认扫描的包,以后会开放自定义扫包路径
         beanFactory.put("packageUrl", mainClass.getPackageName());
         try {
             componentScan(mainClass, beanFactory);
         } catch (Exception e) {
-            log.error(String.valueOf(e));
+            log.error(String.valueOf(e), e);
             throw new RuntimeException(e);
         }
+        //这一步是在配置路由表
         Map<String, String> urlMap = new ConcurrentHashMap<>();
         Map<String, Object> iocContainer = beanFactory.getIocContainer();
+        //有些类在aop后置处理器会被替换,所以要检查是不是cglib代理类,是的话要去看他的父类也就是原生类,要不然扫描不到注解,因为注解不会继承
         for (String clazz : iocContainer.keySet()) {
             try{
                 Class<?> temp = Class.forName(clazz);
@@ -104,9 +108,11 @@ public class AutumnFrameworkRunner {
 
         }
         beanFactory.put("urlmapping", urlMap);
+        //运行时判断环境,依照自定义的条件注解选择运行容器,有我写的socketserver和tomcat
         ServerRunner server = (ServerRunner) beanFactory.getBean(ServerRunner.class.getName());
         server.run();
     }
+
 
     private void componentScan(Class<?> mainClass, AutumnBeanFactory myContext) throws Exception {
         XMLBeansLoader xmlBeansLoader = new XMLBeansLoader();
@@ -119,28 +125,47 @@ public class AutumnFrameworkRunner {
         annotations.add(MyWebSocketConfig.class);
         annotations.add(MyAspect.class);
         Set<Class<?>> annotatedClasses = scanner.findAnnotatedClassesList(mainClass.getPackageName(), annotations);
+        //首先我们检测mian方法的包下符合注解要求的类
         List<Class<BeanFactoryPostProcessor>> beanFactoryPostProcessorsClassList = new ArrayList<>();
+        //现在开始魔法时间,引入starter,实际上注解本身没有意义,其实应该是复合注解import一个大爹来调度bean的装配
         if (mainClass.getAnnotation(EnableAutoConfiguration.class) != null) {
-            //xxx:启动自动装配
-            Map<String, List<String>> autoonfigurations = AutumnFactoriesLoader.parseConfigurations();
-            List<String> beanDefinitionRegistryPostProcessors = autoonfigurations.get("BeanDefinitionRegistryPostProcessor");
-            List<String> beanFactoryPostProcessors = autoonfigurations.get("BeanFactoryPostProcessor");
-            for (String s : autoonfigurations.get("Beans")) {
-                annotatedClasses.add(Class.forName(s));
-            }
-            beanFactoryPostProcessors.addAll(beanDefinitionRegistryPostProcessors);
-            beanFactoryPostProcessors.forEach(className -> {
+            // 加载自动配置类
+            Map<String, List<String>> autoConfigurations = AutumnFactoriesLoader.parseConfigurations();
+            List<String> allProcessors = new ArrayList<>(autoConfigurations.get("BeanDefinitionRegistryPostProcessor"));
+            allProcessors.addAll(autoConfigurations.get("BeanFactoryPostProcessor"));
+
+            // 处理所有处理器类，并且检查它们是否是 BeanFactoryPostProcessor 类型的子类
+            for (String className : allProcessors) {
                 try {
                     Class<?> clazz = Class.forName(className);
+                    processImports(annotatedClasses, clazz, beanFactoryPostProcessorsClassList);
+                    // 如果是 BeanFactoryPostProcessor，添加到处理器列表
                     if (BeanFactoryPostProcessor.class.isAssignableFrom(clazz)) {
                         beanFactoryPostProcessorsClassList.add((Class<BeanFactoryPostProcessor>) clazz);
                     }
                 } catch (ClassNotFoundException e) {
-                    System.err.println("Class not found: " + className);
+                    System.err.println("未找到类: " + className);
                 }
-            });
+            }
 
+            //处理所有通过配置文件指定的 Bean类
+            for (String className : autoConfigurations.get("Beans")) {
+                try {
+                    Class<?> clazz = Class.forName(className);
+                    annotatedClasses.add(clazz);
+                    processImports(annotatedClasses, clazz, beanFactoryPostProcessorsClassList);
+                } catch (ClassNotFoundException e) {
+                    System.err.println("未找到类: " + className);
+                }
+            }
         }
+
+        //递归处理所有通过@Import注解引入的类
+        for (Class<?> clazz : annotatedClasses.toArray(new Class[0])) {
+            processImports(annotatedClasses, clazz, beanFactoryPostProcessorsClassList);
+        }
+
+
 //        List<Class<BeanFactoryPostProcessor>> starterRegisterer = xmlBeansLoader.loadStarterClasses("plugins");
         long startTime = System.currentTimeMillis();
         log.info("IOC容器开始初始化");
@@ -205,6 +230,7 @@ public class AutumnFrameworkRunner {
         //xxx:  处理BeanFactoryPostProcessor
         invokePostProcessors(regularPostProcessors, registry);
         for(MyBeanDefinition mb:registry.getBeanDefinitionMap().values()){
+
             if(mb.getBeanClass().isAssignableFrom(BeanPostProcessor.class)){
 
             }
@@ -214,6 +240,27 @@ public class AutumnFrameworkRunner {
         long endTime = System.currentTimeMillis();
         log.info("容器花费了：{} 毫秒实例化", endTime - startTime);
     }
+
+    private void processImports(Set<Class<?>> annotatedClasses, Class<?> clazz, List<Class<BeanFactoryPostProcessor>> beanFactoryPostProcessorsClassList) {
+        if (clazz.isAnnotationPresent(Import.class)) {
+            Import importAnnotation = clazz.getAnnotation(Import.class);
+            for (Class<?> importClass : importAnnotation.value()) {
+                if (importClass.isInterface() || importClass.isAnnotation()) {
+                    throw new RuntimeException("Import注解不能引入接口或注解: " + importClass.getName());
+                }
+                log.warn("通过Import机制导入了{}", importClass.getName());
+                annotatedClasses.add(importClass);
+
+                if (BeanFactoryPostProcessor.class.isAssignableFrom(importClass)) {
+
+                    beanFactoryPostProcessorsClassList.add((Class<BeanFactoryPostProcessor>) importClass);
+                }
+
+                processImports(annotatedClasses, importClass, beanFactoryPostProcessorsClassList);
+            }
+        }
+    }
+
 
     private void getInitOrAfterMethod(MyBeanDefinition myBeanDefinition, Method method) {
         if(method.getAnnotation(MyPostConstruct.class)!=null){

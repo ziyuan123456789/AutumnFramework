@@ -139,6 +139,7 @@ public class MyContext implements AutumnBeanFactory {
         for (MyBeanDefinition definition : beanDefinitionMap.values()) {
             cycleSet = new ArrayList<>();
             Object bean = initBean(definition);
+            //通过之前的排序保证后置处理器优先被init
             if (bean instanceof InstantiationAwareBeanPostProcessor) {
                 instantiationAwareProcessors.add((InstantiationAwareBeanPostProcessor) bean);
             } else if (bean instanceof BeanPostProcessor) {
@@ -173,14 +174,17 @@ public class MyContext implements AutumnBeanFactory {
 
 
     private Object initBean(MyBeanDefinition myBeanDefinition) throws Exception {
+        //获取bean的实例
         Object bean = getBean(myBeanDefinition.getName());
         if (bean != null) {
-            //xxx:对未成熟bean进行依赖注入
+            //因为后置处理器的干预,有些bean不需要依赖注入,所以进行询问
             boolean continueWithInstantiation = doInstantiationAwareBeanPostProcessorAfter(bean,myBeanDefinition.getName());
             if (continueWithInstantiation) {
                 if (bean instanceof BeanFactoryAware) {
+                    //如果实现感知接口就注入BeanFactory给他
                     ((BeanFactoryAware) bean).setBeanFactory(MyContext.getInstance());
                 }
+                //xxx:对未成熟bean进行依赖注入
                 autowireBeanProperties(bean, myBeanDefinition);
             }
             bean = doBeanPostProcessorsBefore(bean, myBeanDefinition.getName());
@@ -341,6 +345,7 @@ public class MyContext implements AutumnBeanFactory {
             if (field.isAnnotationPresent(MyAutoWired.class)) {
                 String myAutoWired = field.getAnnotation(MyAutoWired.class).value();
                 if (myAutoWired.isEmpty()) {
+                    log.warn("开始依赖注入,被处理的类是{}处理的字段是{}", bean.getClass().getSimpleName(), field.getName());
                     injectDependencies(bean, field, mb);
                 } else {
                     Object dependency = getBean(myAutoWired);
@@ -368,7 +373,7 @@ public class MyContext implements AutumnBeanFactory {
 
     private void injectDependencies(Object bean, Field field, MyBeanDefinition mb) throws IllegalAccessException, NoSuchFieldException {
         Class<?> fieldType = field.getType();
-        //xxx:接口,还是不是mapper,那一定是service
+        //xxx:接口,那一定是service或者神秘力量拉进来的
         if (fieldType.isInterface()) {
             Object dependency = getBean(fieldType.getName());
             if (dependency == null) {
@@ -428,7 +433,7 @@ public class MyContext implements AutumnBeanFactory {
     //xxx:注入一般Bean,依照字段查找类,从容器取出为字段赋值
     private void injectNormalDependency(Object bean, Field field) throws IllegalAccessException {
         Class<?> dependencyType = field.getType();
-        //xxx:去容器里看看有没有啊,如果循环依赖了?没关系,反正容器里都是单例,注入一个未成熟的bean进去也无所谓,反正内存地址都一样
+        //xxx:去容器里看看有没有啊,如果循环依赖了?没关系,反正容器里都是单例,注入一个未成熟的bean进去也无所谓,反正内存地址都一样,结束的时候你缺少我,我缺少你,除此之外都完整,所以我们合到一起就是完整的
         Object dependency = getBean(dependencyType.getName());
         if (dependency == null) {
             log.warn("无法解析的依赖：{}", dependencyType.getName());

@@ -1,6 +1,7 @@
 package com.autumn.test;
 
 import lombok.Data;
+import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.FactoryBean;

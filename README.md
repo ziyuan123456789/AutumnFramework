@@ -15,15 +15,6 @@
   在Resources文件夹下创建一个Plugins文件夹,放置一些xml用来声明后置处理器,容器在启动的时候会自动调用
 - 如果你希望使用自动装配机制则需要在主类上加入`@EnableAutoConfiguration`注解来告知框架进行自动装配,框架会开始扫描所有Jar包下的META-INF
 - 如果想实现Mybatis那样`扫描自定义注解`扫描为组件,则需要声明为postProcessBeanDefinitionRegistry,同时可以使用PriorityOrdered与Ordered接口声明优先级,xml注册方式如下
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<beans>
-    <AutumnStarters>
-        <bean class="org.example.FrameworkUtils.Orm.MineBatis.MineBatisStarter"/>
-        <bean class="org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor"/>
-    </AutumnStarters>
-</beans>
- ```
 - MineBatis目前只可以进行查询,不能增删改,马上就会加上这些功能.另外现在只可以注册XmlMapper,注解注册的方式日后添加
 - 如果使用idea可以在xml加入如下内容以获得idea代码提示与跳转,但我`建议不加`因为会去外网下载这个DTD,会让框架启动很慢,这个问题当时排查了非常久
 
@@ -69,6 +60,8 @@
 - Aop模块重写,实现了Aop处理器的复用,从现在开始@EnableAop注解降级为用户态注解,仅作为一个简单的标记,框架通过CgLibAop, InstantiationAwareBeanPostProcessor两个接口在Bean实例化之前替换实现类的方式完成代理类的替换,有关Aop的一切均开放给用户,拦不拦截,怎么拦截都是你说的算,只要你实现AutumnAopFactory接口并加入@MyAspect注解我们就会帮你代理
 - 运行时环境判定,可以选择用SocketServer启动或者拉起内嵌的TomCat,如果你喜欢Netty可以自行写适配器,转化为标准的AutumnRequest/Response接口实现
 - aware接口加入,实现注入容器自身
+- 自动装配机制加入,可以静默配置框架行为,只需要在主类上加入@EnableAutoConfiguration注解即可
+- 加入Import注解,支持递归调用
 
 ## 好玩的示范:
 - 通过修改AST抽象语法树实现一个编译期的注解处理器,这下真的就是全自动了,你只需要在主类上加入@EnableAutumnFramework,然后一行代码也不用写,留一个空的main方法程序就会开始执行,就像Lombok一样简单
@@ -488,16 +481,20 @@ public class UserAopProxyHandler implements AutumnAopFactory {
 ```
 
 ## 代码示范 Bean生命周期以及拓展接口章节
-### 自定义后置处理器干预Bean定义生成
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<beans>
-    <AutumnStarters>
-        <bean class="org.example.FrameworkUtils.Orm.MineBatis.MineBatisStarter"/>
-        <bean class="org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor"/>
-    </AutumnStarters>
-</beans>
+### 自动装配机制:自定义后置处理器干预Bean定义生成
+你可以选择在resources文件夹下建立META-INF/autumn/`AutoConfiguration.imports` 文件,声明自动装配依赖的类.框架会自动扫描并创建依赖,同时Jar包下的相同路径也会被扫描
+```text
+BeanDefinitionRegistryPostProcessor=org.example.FrameworkUtils.Orm.MineBatis.MineBatisStarter
+BeanFactoryPostProcessor=org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor
+Beans=com.autumn.test.SqlSessionFactoryBean
 ```
+你也可以选择使用`Import机制`来导入对应的依赖,但是最终的入口一定是META-INF的配置文件
+```java
+@Slf4j
+@Import({SqlSessionFactoryBean.class, JokePostProcessor.class})
+public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, PriorityOrdered{}
+```
+
 #### 利用这个后置处理器,我们可以自定义更改Bean名称,如果你喜欢你可以直接把所有的BeanDefinition都删了
 ```java
 @Slf4j
@@ -547,6 +544,7 @@ import java.util.Set;
  * @since 2024.04
  */
 @Slf4j
+@Import({SqlSessionFactoryBean.class, JokePostProcessor.class})
 public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, PriorityOrdered {
   static {
     Properties p = new Properties(System.getProperties());
@@ -909,6 +907,9 @@ MineBatis-configXML=minebatis-config.xml
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
+### 2024/8/1
+- 完善了自动装配机制,增加了Import注解,可以简单处理递归Import,但是对循环依赖没有进行处理
+
 ### 2024/7/9
 - 增加了部分自动装配机制,我打算命名为AutumnSpi机制,会扫描项目和Jar包下METE-INF中autumn文件夹中的AutoConfiguration.imports文件,把其中的全类名注册为容器中的组件
 - FactoryBean<T>加入,用于实现复杂的对象创建,同时利用这个机制把第三方组件注册的Bean的时机从Bean定义后置处理器后移,这样可以方便的进行依赖注入了

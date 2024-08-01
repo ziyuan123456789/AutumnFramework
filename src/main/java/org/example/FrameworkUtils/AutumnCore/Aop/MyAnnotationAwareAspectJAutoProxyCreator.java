@@ -18,7 +18,7 @@ import java.util.List;
 @Slf4j
 public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, InstantiationAwareBeanPostProcessor, BeanFactoryAware {
 
-    AutumnBeanFactory beanFactory;
+    private AutumnBeanFactory beanFactory;
 
     private boolean shouldCreateProxy(List<AutumnAopFactory> factories, Class<?> beanClass) {
 
