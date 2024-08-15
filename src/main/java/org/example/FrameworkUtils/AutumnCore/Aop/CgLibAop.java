@@ -7,5 +7,5 @@ import java.util.List;
  * @since 2024.05
  */
 public interface CgLibAop {
-    public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories,Class<?> beanClass, String beanName);
+    Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName);
 }

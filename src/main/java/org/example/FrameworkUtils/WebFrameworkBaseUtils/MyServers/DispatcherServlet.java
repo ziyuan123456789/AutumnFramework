@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestParam;
+import org.example.FrameworkUtils.AutumnCore.Aop.RequestContext;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
@@ -72,6 +73,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
             AutumnRequest autumnRequest = new HttpServletRequestAdapter(req);
+            RequestContext.setRequest(autumnRequest);
             AutumnResponse autumnResponse = new ServletResponseAdapter(resp,(TomCatHtmlResponse) myContext.getBean(TomCatHtmlResponse.class.getName()));
             String url = autumnRequest.getUrl();
             String baseUrl = extractPath(url);
@@ -92,6 +94,12 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
                 resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal server error");
             }
         }
+    }
+    @Override
+    public void destroy()
+    {
+        RequestContext.clear();
+        log.info("请求对象生命周期结束");
     }
 
 

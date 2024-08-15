@@ -1,7 +1,6 @@
-package org.example.FrameworkUtils.Orm.MineBatis;
+package com.autumn.ormstarter;
 
 
-import com.autumn.test.SqlSessionFactoryBean;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
 import org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor;
@@ -61,7 +60,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
 
     @Override
     public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner,BeanDefinitionRegistry registry) throws Exception {
-        log.info("{}从xml中加载或自动装配机制加载,现在要干预BeanDefinition的生成,优先级为PriorityOrdered,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
+        log.info("{}从配置文件中加载或自动装配机制加载,现在要干预BeanDefinition的生成,优先级为PriorityOrdered,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
         try {
             Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
             Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
@@ -81,7 +80,6 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
         }
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
         inputStream.close();
-        SqlSession sqlSession = sqlSessionFactory.openSession();
         Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
         for (Class<?> clazz : classSet) {
             MyBeanDefinition myBeanDefinition = new MyBeanDefinition();

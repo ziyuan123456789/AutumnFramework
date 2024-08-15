@@ -6,11 +6,13 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
+import org.example.FrameworkUtils.AutumnCore.Aop.AutumnRequestProxyFactory;
 import org.example.FrameworkUtils.AutumnCore.Aop.CgLibAop;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.PropertiesReader.PropertiesReader;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
@@ -344,6 +346,11 @@ public class MyContext implements AutumnBeanFactory {
             //xxx:标记@auto wired进行对象/接口依赖注入
             if (field.isAnnotationPresent(MyAutoWired.class)) {
                 String myAutoWired = field.getAnnotation(MyAutoWired.class).value();
+                if(field.getType().equals(AutumnRequest.class)){
+                    field.setAccessible(true);
+                    field.set(bean, AutumnRequestProxyFactory.createAutumnRequestProxy());
+                    continue;
+                }
                 if (myAutoWired.isEmpty()) {
                     log.warn("开始依赖注入,被处理的类是{}处理的字段是{}", bean.getClass().getSimpleName(), field.getName());
                     injectDependencies(bean, field, mb);
@@ -467,7 +474,7 @@ public class MyContext implements AutumnBeanFactory {
         } catch (Exception e) {
             log.error("依赖注入失败：{}", e.getMessage());
         }
-        }
+    }
 
     @Override
     public void put(String key, Object value) {

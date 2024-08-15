@@ -16,15 +16,9 @@
 - 如果想实现Mybatis那样`扫描自定义注解`扫描为组件,则需要声明为postProcessBeanDefinitionRegistry,同时可以使用PriorityOrdered与Ordered接口声明优先级
 - MineBatis目前只可以进行查询,不能增删改,马上就会加上这些功能.另外现在只可以注册XmlMapper,注解注册的方式日后添加
 - 如果使用idea可以在xml加入如下内容以获得idea代码提示与跳转,但我`建议不加`因为会去外网下载这个DTD,会让框架启动很慢,这个问题当时排查了非常久
-
 ```html
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
  ```
-
-- 项目使用JDK17运行,16之后注解处理器的写法开始改变,而且有非常多的坑,如果你想要在编译期修改AST,请参考我的代码,我已经把所有的坑都踩过了
-- IDEA给编译期又套了一层,会出现class org.AutumnAP.FrameworkAnnotationProcessor (in unnamed module @0x6eb1a122) cannot
-  access class com.sun.tools.javac.api.BasicJavacTask (in module jdk.compiler) because module jdk.compiler does not
-  export com.sun.tools.javac.api to unnamed module @0x6eb1a122的问题,加入`javac编译参数-Djps.track.ap.dependencies=false`貌似可以解决
 - 想使用注解处理器先执行`mvn install:install-file -Dfile=src/main/resources/libs/AutumnAnP.jar -DgroupId=org.AutumnAP -DartifactId=AutumnAnP -Dversion=1.0-SNAPSHOT -Dpackaging=jar `再执行`mvn clean install`
 
 
@@ -62,9 +56,11 @@
 - 增加FactoryBean类,可指导复杂Bean生产
 - 自动装配机制加入,可以静默配置框架行为,只需要在主类上加入@EnableAutoConfiguration注解即可
 - 加入Import注解,支持递归调用
+- 增加了全局request/response对象,可以实现类似HTTP作用域的功能
 
-## 好玩的示范:
-- 通过修改AST抽象语法树实现一个编译期的注解处理器,这下真的就是全自动了,你只需要在主类上加入@EnableAutumnFramework,然后一行代码也不用写,留一个空的main方法程序就会开始执行,就像Lombok一样简单
+## 注解处理器示范:
+
+- 通过修改AST抽象语法树实现一个编译期的代码生成器,你只需要在主类上加入@EnableAutumnFramework注解并留一个空的main方法程序就会开始执行,注解处理器会在编译期间为你自动补齐代码,就像Lombok一样
 
 ```java
 
@@ -92,30 +88,36 @@ public class Main {
 }
 ```
 
+- 项目使用JDK17运行,16之后注解处理器的写法开始改变,而且有非常多的坑,如果你想要在编译期修改AST,请参考我的代码
+- IDEA给编译期又套了一层,会出现class org.AutumnAP.FrameworkAnnotationProcessor (in unnamed module @0x6eb1a122) cannot
+  access class com.sun.tools.javac.api.BasicJavacTask (in module jdk.compiler) because module jdk.compiler does not
+  export com.sun.tools.javac.api to unnamed module
+  @0x6eb1a122的问题,请加入`javac编译参数-Djps.track.ap.dependencies=false`貌似可以解决
+
 ## Bean的生命周期
 
 ```
 1. Bean定义阶段：
-   组件扫描与Bean定义注册：自动检测并注册带注解的组件。
-   处理BeanDefinitionRegistryPostProcessor和BeanFactoryPostProcessor：修改Bean定义或注册表的结构。
+   组件扫描与Bean定义注册：自动检测并注册带注解的组件
+   处理BeanDefinitionRegistryPostProcessor和BeanFactoryPostProcessor：修改Bean定义或注册表的结构
 2. 实例化前处理：
-   doInstantiationAwareBeanPostProcessorBefore: 允许在实际实例化前修改或代理Bean。
+   doInstantiationAwareBeanPostProcessorBefore: 允许在实际实例化前修改或代理Bean
 3. 实例化后处理：
-   doInstantiationAwareBeanPostProcessorAfter: 在实例化后决定是否继续Bean的处理流程。
-4. BeanFactoryAware处理：
-   BeanFactoryAware: 在依赖注入前为Bean注入BeanFactory。
+   doInstantiationAwareBeanPostProcessorAfter: 在实例化后决定是否继续Bean的处理流程
+4. BeanFactory/Name Aware处理：
+   BeanFactoryAware: 在依赖注入前为Bean注入BeanFactory
 5. 依赖注入：
-   autowireBeanProperties: 自动装配Bean的依赖属性。
+   autowireBeanProperties: 自动装配Bean的依赖属性
 6. 初始化前处理：
-   doBeanPostProcessorsBefore: 在自定义初始化方法之前对Bean进行处理。
+   doBeanPostProcessorsBefore: 在自定义初始化方法之前对Bean进行处理
 7. 自定义初始化方法：
-   执行初始化方法：执行Bean的自定义初始化方法。
+   执行初始化方法：执行Bean的自定义初始化方法
 8. 初始化后处理：
-   doBeanPostProcessorsAfter: 在自定义初始化方法之后进行处理。
+   doBeanPostProcessorsAfter: 在自定义初始化方法之后进行处理
 9. 循环依赖检测：
-   循环依赖检测：确保没有循环依赖存在。
+   循环依赖检测：确保没有循环依赖存在
 10. 销毁方法的处理：
-   销毁方法：在应用关闭时调用Bean的销毁方法。
+   销毁方法：在应用关闭时调用Bean的销毁方法
 ```
 ## 代码示范 MVC章节
 ### Controller
@@ -132,28 +134,41 @@ public class AutumnTestController {
   private AutumnTestController autumnTestController;
 
   @MyAutoWired
-  LoginService loginService;
+  private LoginService loginService;
 
   @MyAutoWired
-  UserMapper userMapper;
+  private UserMapper userMapper;
 
   @MyAutoWired
-  MyReidsTemplate myReidsTemplate;
+  private MyReidsTemplate myReidsTemplate;
 
   @MyAutoWired("postProcessChange")
-  Car car;
+  private Car car;
 
   @MyAutoWired
-  SqlSession sqlSession;
+  private SqlSession sqlSession;
 
   @MyAutoWired
-  Test test;
+  private Test test;
 
-  //xxx:测试request功能
+  @MyAutoWired
+  private AutumnRequest autumnRequest;
+
+
+  //xxx:测试全局request功能
   @MyRequestMapping("/request")
-  public String requestTest(AutumnRequest request) {
-    return request.getUrl() + request.getMethod() + request.getParameters();
+  public String requestTestWithField() {
+    log.info("{}{}{}", autumnRequest.getUrl(), autumnRequest.getMethod(), autumnRequest.getParameters());
+    return autumnRequest.getUrl() + autumnRequest.getMethod() + autumnRequest.getParameters();
   }
+
+  //xxx:测试方法级request功能
+  @MyRequestMapping("/requestmethod")
+  public String requestTestWithMethodParma(AutumnRequest autumn) {
+    log.info("{}{}{}", autumn.getUrl(), autumn.getMethod(), autumn.getParameters());
+    return autumn.getUrl() + autumn.getMethod() + autumn.getParameters();
+  }
+
 
 
   //xxx:测试response与setCookie功能
@@ -261,7 +276,7 @@ public class UrlFilter implements Filter {
   }
 }
 ```
-### Mapper
+### 整合Minebatis
 ```java
 public interface UserMapper {
     List<User> getOneUser(Integer userId);
@@ -317,22 +332,22 @@ public interface UserMapper {
     </myConfig>
 </configuration>
 ```
-如果你不想自动接管Mapper的生成,你也可以使用@Bean的方式注册一个
+如果你不想自动接管Mapper的生成,你也可以使用@Bean的方式注册一个SqlSession
 ```java
 @AutumnBean
-public SqlSession getMapper() throws PropertyVetoException, DocumentException {
+public SqlSession getMapper() {
     InputStream inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
     SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
     return sqlSessionFactory.openSession();
 }
 
 @MyRequestMapping("/getall")
-public String getAll() throws Exception {
+public String getAll() {
     UserMapper userMapperBean=sqlSession.getMapper(UserMapper.class);
     return userMapperBean.getAllUser(0).toString();
 }
 ```
-### Service
+### Service层,你可以选择注入实现类或声明接口,框架会为你注入合适地实现类
 ```java
 public interface LoginService {
     boolean checkLogin(String userid, String password);
@@ -380,7 +395,7 @@ public class WebSocketController implements WebSocketBaseConfig {
     }
 }
 ```
-### 跨域配置
+### 全局跨域配置
 ```java
 @MyConfig
 public class CrossOriginConfig implements AutumnMvcCrossOriginConfig {
@@ -395,7 +410,7 @@ public class CrossOriginConfig implements AutumnMvcCrossOriginConfig {
     }
 }
 ```
-### 运行时环境判定 如果你喜欢可以自行加入Netty的适配器
+### 运行时环境判定 如果你喜欢可以自行加入Netty的适配器 可依靠条件注解实现无缝的Web容器切换
 ```java
 @MyConfig
 @MyConditional(TomCatConditionCheck.class)
@@ -484,9 +499,9 @@ public class UserAopProxyHandler implements AutumnAopFactory {
 ### 自动装配机制:自定义后置处理器干预Bean定义生成
 你可以选择在resources文件夹下建立META-INF/autumn/`AutoConfiguration.imports` 文件,声明自动装配依赖的类.框架会自动扫描并创建依赖,同时Jar包下的相同路径也会被扫描
 ```text
-BeanDefinitionRegistryPostProcessor=org.example.FrameworkUtils.Orm.MineBatis.MineBatisStarter
+BeanDefinitionRegistryPostProcessor=com.autumn.ormstarter.MineBatisStarter
 BeanFactoryPostProcessor=org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor
-Beans=com.autumn.test.SqlSessionFactoryBean
+Beans=com.autumn.ormstarter.SqlSessionFactoryBean
 ```
 你也可以选择使用`Import机制`来导入对应的依赖,但是最终的入口一定是META-INF的配置文件
 ```java
@@ -502,7 +517,7 @@ public class JokePostProcessor implements BeanFactoryPostProcessor {
 
     @Override
     public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
-        log.info("{} 从xml中加载，现在要干预BeanDefinition的生成", this.getClass().getSimpleName());
+        log.info("{}依靠自动装配加载，现在要干预BeanDefinition的生成", this.getClass().getSimpleName());
         MyBeanDefinition bydBean = null;
         if (registry.containsBeanDefinition("BYD")) {
             bydBean = registry.getBeanDefinition("BYD");
@@ -575,7 +590,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
 
   @Override
   public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
-    log.info("{}从xml中加载,现在要干预BeanDefinition的生成,优先级为PriorityOrdered,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
+    log.info("{}依靠自动装配加载,现在要干预BeanDefinition的生成,优先级为PriorityOrdered,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
     try {
       Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
       Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
@@ -608,7 +623,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
   }
 }
 ```
-### InstantiationAwareBeanPostProcessor 在Bean被反射创建前后提供拓展
+### InstantiationAwareBeanPostProcessor 在Bean被反射创建前后提供拓展 这个处理器用于Aop的底层实现,直接替换之前的实现类为代理类
 ```java
 @MyComponent
 @Slf4j
@@ -692,7 +707,7 @@ public class UserBeanPostProcessor implements BeanPostProcessor, Ordered {
 }
 ```
 
-### FactoryBean 用于创建复杂的Bean
+### FactoryBean 用于创建复杂的Bean 
 ```java
 @Data
 public class SqlSessionFactoryBean implements FactoryBean<SqlSession>, BeanFactoryAware {
@@ -888,10 +903,10 @@ MineBatis-configXML=minebatis-config.xml
 - 技术没什么意义,多发展一下自己在生活中的兴趣爱好,人格的均衡发展才是硬道理
 - 远离infp女生
 - 远离情绪黑洞
--
 
-## 有趣的解释:
-- 解释一下为什么使用Xml声明而并非使用注解+接口扫描的方式:根据一个活得很久的长者曾言,在宇宙最古早的阴影中，Autumn世界的虚空未曾开启，被混沌的迷雾所笼罩。那是一个既无Controller巨兽巡游，也无Mapper守护者守望，更无Service元素编织者织造万象的时代。唯有孤独的Beans，在星辰与尘埃的海洋中漂泊。
+
+## 关于为什么Bean定义后置处理器不允许被常规方法扫描的解释:
+- 解释一下为什么使用配置文件声明而并非使用注解+接口扫描/Import注解引入的方式:根据一个活得很久的长者曾言,在宇宙最古早的阴影中，Autumn世界的虚空未曾开启，被混沌的迷雾所笼罩。那是一个既无Controller巨兽巡游，也无Mapper守护者守望，更无Service元素编织者织造万象的时代。唯有孤独的Beans，在星辰与尘埃的海洋中漂泊。
   在无尽的时间长河中，孕育而生的阿撒托Bean——盲目与痴愚之神，他在宇宙空洞中觉醒，开启了一场关于Java的神秘梦境。在其深邃的梦中，诞生了BeanDefinitionRegistryPostProcessor这一强大的化身，它掌握着改写Bean命运的无上权力。 BeanDefinitionRegistryPostProcessor，作为混沌初生的创造者，拥有重塑一切Bean的力量。他能在思念转瞬间让成群的Mapper从虚无中浮现，又能令无数的Controller回归尘埃。他的存在凌驾于所有，能塑造也能摧毁，是支配宇宙初始和终结的关键。 然而，这位创世之神的行为过于随性，常在混沌之中造出亿万Beans，轻易打破了宇宙间的平衡。这种无法预测的行径最终惊扰了宇宙间的至高存在——大能GC。在GC的法则下，即使是BeanDefinitionRegistryPostProcessor也难逃一劫，在一次悲壮的对抗中，他与他的臣民一同消散在虚空的尽头。
   但据传，有一日，BeanDefinitionRegistryPostProcessor在宇宙的暗角中将自己与宇宙的根基——Object紧密相连，自此即便是GC也难以侵犯他的存在。当他再次掌控力量，随意操弄Bean的命运时，宇宙间最大的灾难——OOM突然降临。在那一刻，星辰破碎，一切归于虚无，时间与空间都陷入了停滞。
   经历千万年的沉寂后，一个新的序幕——AutumnBeanFactory揭开了它的面纱。这一新的力量继承了阿撒托Bean的遗志，以更精细和有序的方式，管理着每一个Bean。在这个新的时代，阿撒托Bean的力量虽然已远逝，其深邃梦境中的古老力量也逐渐淡出人们的记忆。在BeanFactoryPostProcessor的血脉中，虽残留着部分旧日神力，但随时间流逝，它已无力挣扎，只能依赖于AutumnBeanFactory的力量来掌管Beans的生命周期，就连依赖注入也要依靠AutumnBeanFactory的伟力，BeanDefinitionRegistryPostProcessor这样不依靠一切依赖的神话最终还是会消散在时间的长河中
@@ -907,6 +922,24 @@ MineBatis-configXML=minebatis-config.xml
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
+### 2024/8/15
+- 为request对象进行单独开洞,实现了HTTP/THREAD作用域的BEAN,现在可以像SpringBoot那样声明一个全局Request对象,也可以继续选择方法参数注入
+```java
+@MyAutoWired
+private AutumnRequest autumnRequest;
+@MyRequestMapping("/request")
+public String requestTestWithField() {
+  log.info("{}{}{}", autumnRequest.getUrl(), autumnRequest.getMethod(), autumnRequest.getParameters());
+  return autumnRequest.getUrl() + autumnRequest.getMethod() + autumnRequest.getParameters();
+}
+
+@MyRequestMapping("/requestmethod")
+public String requestTestWithMethodParma(AutumnRequest autumn) {
+  log.info("{}{}{}", autumn.getUrl(), autumn.getMethod(), autumn.getParameters());
+  return autumn.getUrl() + autumn.getMethod() + autumn.getParameters();
+}
+```
+- 背后实现原理是使用CGLIB进行代理,使用ThreadLocal<AutumnRequest>存储Request对象,保证每一个线程持有一份Request对象
 ### 2024/8/1
 - 完善了自动装配机制,增加了Import注解,可以简单处理递归Import,但是对循环依赖没有进行处理
 

@@ -38,6 +38,8 @@ public class MyBeanDefinition {
 
     private Method afterMethod;
 
+    private Scope scope;
+
     public MyBeanDefinition(String name, Class<?> beanClass){
         this.name = name;
         this.beanClass = beanClass;
@@ -47,3 +49,13 @@ public class MyBeanDefinition {
 
     }
 }
+
+enum Scope {
+    SINGLETON,
+    PROTOTYPE,
+    REQUEST,
+    SESSION,
+    GLOBAL,
+    THREAD
+}
+

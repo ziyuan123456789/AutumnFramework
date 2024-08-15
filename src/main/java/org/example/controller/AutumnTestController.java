@@ -5,6 +5,7 @@ import org.example.Annotations.CheckParameter;
 import org.example.Bean.Car;
 import org.example.Config.Test;
 import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAop;
+import org.example.FrameworkUtils.AutumnCore.Annotation.Lazy;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
@@ -39,29 +40,40 @@ public class AutumnTestController {
     private AutumnTestController autumnTestController;
 
     @MyAutoWired
-    LoginService loginService;
+    private LoginService loginService;
 
     @MyAutoWired
-    UserMapper userMapper;
+    private UserMapper userMapper;
 
     @MyAutoWired
-    MyReidsTemplate myReidsTemplate;
+    @Lazy
+    private MyReidsTemplate myReidsTemplate;
 
     @MyAutoWired("postProcessChange")
-    Car car;
+    private Car car;
 
     @MyAutoWired
-    SqlSession sqlSession;
+    private SqlSession sqlSession;
 
     @MyAutoWired
-    Test test;
+    private Test test;
+
+    @MyAutoWired
+    private AutumnRequest autumnRequest;
 
 
-    //xxx:测试request功能
+    //xxx:测试全局request功能
     @MyRequestMapping("/request")
-    public String requestTest(AutumnRequest request) {
+    public String requestTestWithField() {
+        log.info("{}{}{}", autumnRequest.getUrl(), autumnRequest.getMethod(), autumnRequest.getParameters());
+        return autumnRequest.getUrl() + autumnRequest.getMethod() + autumnRequest.getParameters();
+    }
 
-        return request.getUrl() + request.getMethod() + request.getParameters();
+    //xxx:测试方法级request功能
+    @MyRequestMapping("/requestmethod")
+    public String requestTestWithMethodParma(AutumnRequest autumn) {
+        log.info("{}{}{}", autumn.getUrl(), autumn.getMethod(), autumn.getParameters());
+        return autumn.getUrl() + autumn.getMethod() + autumn.getParameters();
     }
 
 

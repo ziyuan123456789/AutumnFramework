@@ -15,6 +15,8 @@ import java.lang.reflect.Method;
  */
 @Slf4j
 @MyComponent
+@Deprecated
+//已弃用的初版Aop处理器
 public class  AopProxyFactory {
 
     public <T>T create(Class aopadvice,Class clazz, String[] methods){

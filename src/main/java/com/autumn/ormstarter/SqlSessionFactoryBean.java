@@ -1,9 +1,10 @@
-package com.autumn.test;
+package com.autumn.ormstarter;
 
 import lombok.Data;
-import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
+import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanNameAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.FactoryBean;
 import org.example.FrameworkUtils.Orm.MineBatis.Io.Resources;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
@@ -17,7 +18,8 @@ import java.io.InputStream;
  * @since 2024.07
  */
 @Data
-public class SqlSessionFactoryBean implements FactoryBean<SqlSession>, BeanFactoryAware {
+@Slf4j
+public class SqlSessionFactoryBean implements FactoryBean<SqlSession>, BeanFactoryAware, BeanNameAware {
     private AutumnBeanFactory beanFactory;
 
     @Override
@@ -43,5 +45,10 @@ public class SqlSessionFactoryBean implements FactoryBean<SqlSession>, BeanFacto
     @Override
     public void setBeanFactory(AutumnBeanFactory beanFactory) {
         this.beanFactory = beanFactory;
+    }
+
+    @Override
+    public void setBeanName(String beanName) {
+        log.info("我在IOC里的名字为:{}", beanName);
     }
 }

@@ -27,6 +27,7 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.Ordered;
 import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
 import org.example.FrameworkUtils.AutumnCore.Ioc.SimpleMyBeanDefinitionRegistry;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
+import org.example.FrameworkUtils.Utils.AnnotationUtils;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
 
 import java.lang.annotation.Annotation;
@@ -242,8 +243,8 @@ public class AutumnFrameworkRunner {
     }
 
     private void processImports(Set<Class<?>> annotatedClasses, Class<?> clazz, List<Class<BeanFactoryPostProcessor>> beanFactoryPostProcessorsClassList) {
-        if (clazz.isAnnotationPresent(Import.class)) {
-            Import importAnnotation = clazz.getAnnotation(Import.class);
+        Import importAnnotation = AnnotationUtils.findClassAnnotation(clazz, Import.class);
+        if (importAnnotation != null) {
             for (Class<?> importClass : importAnnotation.value()) {
                 if (importClass.isInterface() || importClass.isAnnotation()) {
                     throw new RuntimeException("Import注解不能引入接口或注解: " + importClass.getName());
@@ -252,7 +253,6 @@ public class AutumnFrameworkRunner {
                 annotatedClasses.add(importClass);
 
                 if (BeanFactoryPostProcessor.class.isAssignableFrom(importClass)) {
-
                     beanFactoryPostProcessorsClassList.add((Class<BeanFactoryPostProcessor>) importClass);
                 }
 
