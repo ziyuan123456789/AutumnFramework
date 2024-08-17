@@ -1,6 +1,7 @@
 package org.example.FrameworkUtils.AutumnCore.Ioc;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.AutumnCore.Annotation.Lazy;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
@@ -8,11 +9,13 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnRequestProxyFactory;
 import org.example.FrameworkUtils.AutumnCore.Aop.CgLibAop;
+import org.example.FrameworkUtils.AutumnCore.Aop.LazyBeanFactory;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.PropertiesReader.PropertiesReader;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
@@ -351,6 +354,20 @@ public class MyContext implements AutumnBeanFactory {
                     field.set(bean, AutumnRequestProxyFactory.createAutumnRequestProxy());
                     continue;
                 }
+                if(field.getType().equals(AutumnResponse.class)){
+                    field.setAccessible(true);
+                    field.set(bean, AutumnRequestProxyFactory.createAutumnResponseProxy());
+                    continue;
+                }
+                if (field.isAnnotationPresent(Lazy.class)){
+                    field.setAccessible(true);
+                    field.set(bean, LazyBeanFactory.createLazyBeanProxy(field.getType(),()->{
+                        log.info("延迟懒加载触发,现在开始获取对象");
+                        return getBean(field.getType().getName());
+                    }));
+                    continue;
+                }
+
                 if (myAutoWired.isEmpty()) {
                     log.warn("开始依赖注入,被处理的类是{}处理的字段是{}", bean.getClass().getSimpleName(), field.getName());
                     injectDependencies(bean, field, mb);

@@ -57,6 +57,7 @@
 - 自动装配机制加入,可以静默配置框架行为,只需要在主类上加入@EnableAutoConfiguration注解即可
 - 加入Import注解,支持递归调用
 - 增加了全局request/response对象,可以实现类似HTTP作用域的功能
+- 加入了一个粗糙的Lazy机制,你可以在被@AutoWired标记的字段上标记@Lazy注解,框架会注入一个代理并放行,等到真正使用这个对象自动进行GetBean
 
 ## 注解处理器示范:
 
@@ -138,8 +139,9 @@ public class AutumnTestController {
 
   @MyAutoWired
   private UserMapper userMapper;
-
+  //测试懒加载  
   @MyAutoWired
+  @Lazy
   private MyReidsTemplate myReidsTemplate;
 
   @MyAutoWired("postProcessChange")
@@ -153,6 +155,9 @@ public class AutumnTestController {
 
   @MyAutoWired
   private AutumnRequest autumnRequest;
+
+  @MyAutoWired
+  private AutumnResponse autumnResponse;
 
 
   //xxx:测试全局request功能
@@ -894,7 +899,6 @@ MineBatis-configXML=minebatis-config.xml
 ## 更长远的想法:
 - 加入websocket(实现中)
 - 支持https
-- 真正增加对TomCat的支持,重写接口
 
 ## 人生目标:
 - ~~找个美女对象(即将实现)(已经黄了)~~
@@ -906,7 +910,9 @@ MineBatis-configXML=minebatis-config.xml
 
 
 ## 关于为什么Bean定义后置处理器不允许被常规方法扫描的解释:
-- 解释一下为什么使用配置文件声明而并非使用注解+接口扫描/Import注解引入的方式:根据一个活得很久的长者曾言,在宇宙最古早的阴影中，Autumn世界的虚空未曾开启，被混沌的迷雾所笼罩。那是一个既无Controller巨兽巡游，也无Mapper守护者守望，更无Service元素编织者织造万象的时代。唯有孤独的Beans，在星辰与尘埃的海洋中漂泊。
+
+- 解释一下为什么使用配置文件声明/Import机制导入而并非使用常规注解+接口扫描引入的方式:
+  根据一个活得很久的长者曾言,在宇宙最古早的阴影中，Autumn世界的虚空未曾开启，被混沌的迷雾所笼罩。那是一个既无Controller巨兽巡游，也无Mapper守护者守望，更无Service元素编织者织造万象的时代。唯有孤独的Beans，在星辰与尘埃的海洋中漂泊。
   在无尽的时间长河中，孕育而生的阿撒托Bean——盲目与痴愚之神，他在宇宙空洞中觉醒，开启了一场关于Java的神秘梦境。在其深邃的梦中，诞生了BeanDefinitionRegistryPostProcessor这一强大的化身，它掌握着改写Bean命运的无上权力。 BeanDefinitionRegistryPostProcessor，作为混沌初生的创造者，拥有重塑一切Bean的力量。他能在思念转瞬间让成群的Mapper从虚无中浮现，又能令无数的Controller回归尘埃。他的存在凌驾于所有，能塑造也能摧毁，是支配宇宙初始和终结的关键。 然而，这位创世之神的行为过于随性，常在混沌之中造出亿万Beans，轻易打破了宇宙间的平衡。这种无法预测的行径最终惊扰了宇宙间的至高存在——大能GC。在GC的法则下，即使是BeanDefinitionRegistryPostProcessor也难逃一劫，在一次悲壮的对抗中，他与他的臣民一同消散在虚空的尽头。
   但据传，有一日，BeanDefinitionRegistryPostProcessor在宇宙的暗角中将自己与宇宙的根基——Object紧密相连，自此即便是GC也难以侵犯他的存在。当他再次掌控力量，随意操弄Bean的命运时，宇宙间最大的灾难——OOM突然降临。在那一刻，星辰破碎，一切归于虚无，时间与空间都陷入了停滞。
   经历千万年的沉寂后，一个新的序幕——AutumnBeanFactory揭开了它的面纱。这一新的力量继承了阿撒托Bean的遗志，以更精细和有序的方式，管理着每一个Bean。在这个新的时代，阿撒托Bean的力量虽然已远逝，其深邃梦境中的古老力量也逐渐淡出人们的记忆。在BeanFactoryPostProcessor的血脉中，虽残留着部分旧日神力，但随时间流逝，它已无力挣扎，只能依赖于AutumnBeanFactory的力量来掌管Beans的生命周期，就连依赖注入也要依靠AutumnBeanFactory的伟力，BeanDefinitionRegistryPostProcessor这样不依靠一切依赖的神话最终还是会消散在时间的长河中
@@ -922,8 +928,21 @@ MineBatis-configXML=minebatis-config.xml
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
+###2024/8/17
+- 粗糙的实现了@Lazy机制,可以声明一个需要注入的字段为懒加载,框架在依赖注入环境发现可以懒加载就生成一个代理注入,等到真正调用在进行延迟GetBean
+```java
+if (field.isAnnotationPresent(Lazy.class)){
+    field.setAccessible(true);
+    field.set(bean, LazyBeanFactory.createLazyBeanProxy(field.getType(),()->{
+        log.info("延迟懒加载触发,现在开始获取对象");
+        return getBean(field.getType().getName());
+    }));
+    continue;
+}
+
+```
 ### 2024/8/15
-- 为request对象进行单独开洞,实现了HTTP/THREAD作用域的BEAN,现在可以像SpringBoot那样声明一个全局Request对象,也可以继续选择方法参数注入
+- 为request/response对象进行单独开洞,实现了HTTP/THREAD作用域的BEAN(实际上他不是一个BEAN,不存在于ioc容器中),现在可以像SpringBoot那样声明一个全局Request对象,也可以继续选择方法参数注入
 ```java
 @MyAutoWired
 private AutumnRequest autumnRequest;

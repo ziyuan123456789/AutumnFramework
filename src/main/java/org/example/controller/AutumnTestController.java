@@ -61,10 +61,14 @@ public class AutumnTestController {
     @MyAutoWired
     private AutumnRequest autumnRequest;
 
+    @MyAutoWired
+    private AutumnResponse autumnResponse;
+
 
     //xxx:测试全局request功能
     @MyRequestMapping("/request")
     public String requestTestWithField() {
+        log.info(myReidsTemplate.getClass().toString());
         log.info("{}{}{}", autumnRequest.getUrl(), autumnRequest.getMethod(), autumnRequest.getParameters());
         return autumnRequest.getUrl() + autumnRequest.getMethod() + autumnRequest.getParameters();
     }
