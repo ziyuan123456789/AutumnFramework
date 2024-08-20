@@ -60,7 +60,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
 
     @Override
     public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner,BeanDefinitionRegistry registry) throws Exception {
-        log.info("{}从配置文件中加载或自动装配机制加载,现在要干预BeanDefinition的生成,优先级为PriorityOrdered,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
+        log.info("{}从配置文件或自动装配机制加载,提前干预BeanDefinition的生成,优先级为PriorityOrdered,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
         try {
             Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
             Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");

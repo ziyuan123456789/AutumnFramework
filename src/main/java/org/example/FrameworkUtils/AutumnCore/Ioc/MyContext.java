@@ -286,20 +286,39 @@ public class MyContext implements AutumnBeanFactory {
 
     }
 
-    private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, ObjectFactory<?> factory) throws Exception {
-        for (InstantiationAwareBeanPostProcessor processor : instantiationAwareProcessors) {
-            Object result = null;
-            if (processor instanceof CgLibAop) {
-                result = ((CgLibAop) processor).postProcessBeforeInstantiation(aopFactories, beanDefinitions.get(beanName).getBeanClass(), beanName);
-            } else {
-                result = processor.postProcessBeforeInstantiation(beanDefinitions.get(beanName).getBeanClass(), beanName);
-            }
+//    private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, ObjectFactory<?> factory) throws Exception {
+//        for (InstantiationAwareBeanPostProcessor processor : instantiationAwareProcessors) {
+//            Object result = null;
+//            if (processor instanceof CgLibAop) {
+//                result = ((CgLibAop) processor).postProcessBeforeInstantiation(aopFactories, beanDefinitions.get(beanName).getBeanClass(), beanName);
+//            } else {
+//                result = processor.postProcessBeforeInstantiation(beanDefinitions.get(beanName).getBeanClass(), beanName);
+//            }
+//            if (result != null) {
+//                return result;
+//            }
+//        }
+//        return factory.getObject();
+//    }
+private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, ObjectFactory<?> factory) throws Exception {
+    Object currentResult = null;
+    Class<?> beanClass = beanDefinitions.get(beanName).getBeanClass();
+    for (InstantiationAwareBeanPostProcessor processor : instantiationAwareProcessors) {
+        if (processor instanceof CgLibAop) {
+            currentResult = ((CgLibAop) processor).postProcessBeforeInstantiation(aopFactories, beanClass, beanName, currentResult);
+        } else {
+            Object result = processor.postProcessBeforeInstantiation(beanClass, beanName);
             if (result != null) {
-                return result;
+                currentResult = result;
             }
         }
-        return factory.getObject();
     }
+    return currentResult != null ? currentResult : factory.getObject();
+}
+
+
+
+
     private Object createStarterBeanInstance(MyBeanDefinition mb) {
         try {
             ObjectFactory<?> factory = mb.getStarterMethod();

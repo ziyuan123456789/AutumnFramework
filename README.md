@@ -7,6 +7,11 @@
 ## 通知:
 - 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了7500行代码,从最开始一个Map<Class,Object>
   映射表发展到现在,前期欠下的技术债太多,另外一开始对于Bean生命周期没有任何理解,最开始我认为@Bean是声明一个JavaBean的意思,种种因素叠加下来每一次加入新功能都是对原有代码封装的破坏,一次次的底层重构让每一行代码都可能出现问题,现在我已经成功靠这个项目找到了一份工作,未来可能会彻底推翻重写
+
+## 重构通知:
+
+- 由于实现了复合注解以及自动装配,一切SpringBoot需要引入Starter的功能均会被剥离出去,成为单独的组件,使用AutumnSpi等机制自动引入
+
 ## 注意事项:
 - 现在框架可以选择依赖的环境,有我写的SocketServer和TomCat两种,默认是SocketServer,如果你想用内嵌的TomCat请自行找到切换的开关
 - `仅仅是一个玩具级别的Demo,无论是Web服务层还是Bean容器也好,都是非常简陋的实现,仅仅模仿SpringBoot的表层实现与基本特性,不具备任何实际使用价值仅供学习参考.感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
@@ -58,7 +63,8 @@
 - 加入Import注解,支持递归调用
 - 增加了全局request/response对象,可以实现类似HTTP作用域的功能
 - 加入了一个粗糙的Lazy机制,你可以在被@AutoWired标记的字段上标记@Lazy注解,框架会注入一个代理并放行,等到真正使用这个对象自动进行GetBean
-
+- Aop模块再次重写,支持了Aop调用链,支持多个切面处理器同时处理一个方法而不会冲突
+- 异步功能加入,在任意类上引入@EnableAutumnAsync注解开启异步处理,在要处理的方法加入@Async注解声明为异步调用,不会阻塞主进程
 ## 注解处理器示范:
 
 - 通过修改AST抽象语法树实现一个编译期的代码生成器,你只需要在主类上加入@EnableAutumnFramework注解并留一个空的main方法程序就会开始执行,注解处理器会在编译期间为你自动补齐代码,就像Lombok一样
@@ -159,6 +165,15 @@ public class AutumnTestController {
   @MyAutoWired
   private AutumnResponse autumnResponse;
 
+  @MyAutoWired
+  private AsyncService asyncService;
+
+  //xxx:测试异步能力
+  @MyRequestMapping("/async")
+  public String asyncTest() {
+    asyncService.asyncTest();
+    return "异步测试";
+  }
 
   //xxx:测试全局request功能
   @MyRequestMapping("/request")
@@ -459,22 +474,20 @@ public class TomCatContainer implements MyServer, BeanFactoryAware {
 @MyAspect
 public class UserAopProxyHandler implements AutumnAopFactory {
   @Override
-  public boolean shouldNeedAop(Class clazz, MyContext myContext) {
-    return AutumnTestController.class.equals(clazz);
+  public boolean shouldNeedAop(Class clazz, AutumnBeanFactory myContext) {
+    return clazz.getAnnotation(MyService.class) != null;
+
   }
 
   @Override
-  public boolean shouldIntercept(Method method, Class clazz, MyContext myContext) {
-    return method.getAnnotation(EnableAop.class) != null;
+  public boolean shouldIntercept(Method method, Class clazz, AutumnBeanFactory myContext) {
+    return true;
   }
 
   @Override
   public void doBefore(Object obj, Method method, Object[] args) {
-    log.warn("用户切面方法开始预处理,切面处理器是{}处理的方法为:{}", this.getClass().getName(), method.getName());
-  }
-
-  @Override
-  public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+    log.warn("用户切面方法开始预处理,切面处理器是{}处理的方法为:{}", this.getClass().getSimpleName(), method.getName());
+    log.info("检查注解");
     Annotation[][] paramAnnotations = method.getParameterAnnotations();
     for (int i = 0; i < paramAnnotations.length; i++) {
       for (Annotation annotation : paramAnnotations[i]) {
@@ -484,9 +497,8 @@ public class UserAopProxyHandler implements AutumnAopFactory {
         }
       }
     }
-//        throw new RuntimeException("AopCheck");
-    return proxy.invokeSuper(obj, args);
   }
+
 
   @Override
   public void doAfter(Object obj, Method method, Object[] args) {
@@ -497,6 +509,57 @@ public class UserAopProxyHandler implements AutumnAopFactory {
   public void doThrowing(Object obj, Method method, Object[] args,Exception e) {
     log.error("用户切面方法抛出异常",e);
   }
+}
+```
+
+## 代码示范 Async章节
+
+### 开启异步服务
+
+用户需要引入@EnableAutumnAsync注解开启异步服务
+
+```java
+@EnableAutumnAsync
+```
+
+### 标记异步方法
+
+使用@Async标记方法
+
+```java
+
+@MyService
+@Slf4j
+public class AsyncServiceImpl implements AsyncService {
+  @Async
+  @Override
+  public void asyncTest() {
+    log.info("方法调用");
+    try {
+      Thread.sleep(10000);
+      System.out.println("asyncTest");
+    } catch (Exception e) {
+
+    }
+
+  }
+}
+```
+
+### 使用方法
+
+异步底层使用Aop+线程池把方法挪到线程池运行,返回一个Task,引入您需要依赖注入这个包含异步方法的类
+
+```java
+
+@MyAutoWired
+private AsyncService asyncService;
+
+//测试异步能力
+@MyRequestMapping("/async")
+public String asyncTest() {
+  asyncService.asyncTest();
+  return "异步测试";
 }
 ```
 
@@ -634,47 +697,80 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
 @Slf4j
 public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, InstantiationAwareBeanPostProcessor, BeanFactoryAware {
 
-  AutumnBeanFactory beanFactory;
+  private AutumnBeanFactory beanFactory;
+  @Value("autumn.debug.cglibClassOutPut")
+  boolean cglibClassOutPut;
 
-  private boolean shouldCreateProxy(List<AutumnAopFactory> factories, Class<?> beanClass) {
 
+  private List<AutumnAopFactory> shouldCreateProxy(List<AutumnAopFactory> factories, Class<?> beanClass) {
+    List<AutumnAopFactory> neededFactories = new ArrayList<>();
     for (AutumnAopFactory factory : factories) {
       if (factory.shouldNeedAop(beanClass, beanFactory)) {
-        return true;
+        neededFactories.add(factory);
       }
     }
-    return false;
+    return neededFactories;
   }
 
-  public <T> T create(List<AutumnAopFactory> factories, Class<T> beanClass) {
+
+  public <T> T create(List<AutumnAopFactory> factories, Class<T> beanClass, Object currentResult) {
+    saveGeneratedCGlibProxyFiles();
     Enhancer enhancer = new Enhancer();
-    enhancer.setSuperclass(beanClass);
+    enhancer.setSuperclass(currentResult != null ? currentResult.getClass() : beanClass);
     enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
-      for (AutumnAopFactory aopFactory : factories) {
-        if (aopFactory.shouldIntercept(method, beanClass, beanFactory)) {
+      Object result = null;
+
+      for (AutumnAopFactory factory : factories) {
+        if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
           try {
-            aopFactory.doBefore(obj, method, args);
-            Object result = aopFactory.intercept(obj, method, args, proxy);
-            aopFactory.doAfter(obj, method, args);
-            return result;
+            factory.doBefore(obj, method, args);
           } catch (Exception e) {
-            aopFactory.doThrowing(obj, method, args, e);
+            factory.doThrowing(obj, method, args, e);
+            return null;
+          }
+        }
+      }
+
+      for (AutumnAopFactory factory : factories) {
+        if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
+          try {
+            result = factory.intercept(obj, method, args, proxy);
+          } catch (Exception e) {
+            factory.doThrowing(obj, method, args, e);
             throw e;
           }
         }
       }
 
-      return proxy.invokeSuper(obj, args);
+
+      for (AutumnAopFactory factory : factories) {
+        if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
+          try {
+            factory.doAfter(obj, method, args);
+          } catch (Exception e) {
+            factory.doThrowing(obj, method, args, e);
+          }
+        }
+      }
+
+      return (T) result;
     });
+
+    if (currentResult != null) {
+      enhancer.setClassLoader(currentResult.getClass().getClassLoader());
+    }
     return (T) enhancer.create();
   }
 
+
   @Override
-  public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName) {
-    if (shouldCreateProxy(factories, beanClass)) {
-      return create(factories, beanClass);
+  public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName, Object currentResult) {
+    List<AutumnAopFactory> neededFactories = shouldCreateProxy(factories, beanClass);
+    if (!neededFactories.isEmpty()) {
+      log.error("创建代理 {}", beanClass.getName());
+      currentResult = create(neededFactories, beanClass, currentResult);
     }
-    return null;
+    return currentResult;
   }
 
   @Override
@@ -691,7 +787,24 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
   public void setBeanFactory(AutumnBeanFactory beanFactory) {
     this.beanFactory = beanFactory;
   }
+
+  public void saveGeneratedCGlibProxyFiles() {
+    if (!cglibClassOutPut) {
+      return;
+    }
+    try {
+      //输出生成的字节码文件
+      String resourcesPath = MyAnnotationAwareAspectJAutoProxyCreator.class.getClassLoader().getResource("").getPath();
+      String cglibClassesPath = resourcesPath + "cglibClasses";
+      System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, cglibClassesPath);
+    } catch (Exception e) {
+      log.error("保存cglib代理文件失败", e);
+    }
+
+  }
+
 }
+
 ```
 ### BeanPostProcessor 在Bean创建完整前后提供拓展
 ```java
@@ -928,7 +1041,16 @@ MineBatis-configXML=minebatis-config.xml
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
-###2024/8/17
+
+### 2024/8/20
+
+- 增加了Aop执行链,一开始想着用Cglib继续代理Cglib 但发现Cglib生产的类有一些内部方法声明为了Final无法再次生成Method继承父类,于是采用了组合多个切面处理器的方法
+- Aop拦截器默认不再暴露Cglib的`proxy.invokeSuper(obj, args)`因此建议全部的逻辑移入Before与After中,如果你Before阶段不在希望代理方法继续运行你可以选择重写
+  `Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy)`方法,阻止框架调用真正的方法
+- 由于能力有限无法实现Aspectj的表达式功能,因此需要多次遍历,时间复杂度远超 $O(n^2)$ ,因此不建议多个切面处理器处理同一个切点
+- 实现了Spring的异步功能,依靠复合注解引入切面处理器进行代理
+
+### 2024/8/17
 - 粗糙的实现了@Lazy机制,可以声明一个需要注入的字段为懒加载,框架在依赖注入环境发现可以懒加载就生成一个代理注入,等到真正调用在进行延迟GetBean
 ```java
 if (field.isAnnotationPresent(Lazy.class)){

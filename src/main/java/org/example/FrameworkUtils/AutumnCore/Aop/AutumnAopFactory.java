@@ -16,7 +16,9 @@ public interface AutumnAopFactory {
     boolean shouldIntercept(Method method,Class clazz, AutumnBeanFactory myContext);
     void doBefore(Object obj, Method method, Object[] args);
 
-    Object intercept(Object obj, Method method, Object[] args, MethodProxy pr) throws Throwable;
+     default Object intercept(Object obj, Method method, Object[] args, MethodProxy pr) throws Throwable {
+         return obj;
+     };
 
     void doAfter(Object obj, Method method, Object[] args);
     void doThrowing(Object obj, Method method, Object[] args,Exception e);

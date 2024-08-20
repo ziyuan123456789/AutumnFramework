@@ -1,6 +1,7 @@
 package org.example;
 
 import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAutoConfiguration;
+import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAutumnAsync;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFrameworkRunner;
 
@@ -11,6 +12,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFramewor
  */
 @MyConfig
 @EnableAutoConfiguration
+@EnableAutumnAsync
 //@CompomentScan({"org.example"})
 //@EnableAutumnFramework
 public class Main {
@@ -18,6 +20,7 @@ public class Main {
       AutumnFrameworkRunner autumnFrameworkRunner=new AutumnFrameworkRunner();
       autumnFrameworkRunner.run(Main.class);
     }
-
 }
+
+
 

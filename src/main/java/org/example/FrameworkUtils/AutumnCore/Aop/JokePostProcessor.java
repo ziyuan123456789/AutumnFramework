@@ -17,7 +17,7 @@ public class JokePostProcessor implements BeanFactoryPostProcessor, Ordered {
 
     @Override
     public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
-        log.info("{} 从自动装配机制中加载，现在要干预BeanDefinition的生成,优先级为Ordered,同时实现了BeanFactoryPostProcessor接口", this.getClass().getSimpleName());
+        log.info("{} 从配置文件或自动装配机制加载,提前干预BeanDefinition的生成,优先级为Ordered,同时实现了BeanFactoryPostProcessor接口", this.getClass().getSimpleName());
         MyBeanDefinition bydBean = null;
         if (registry.containsBeanDefinition("BYD")) {
             bydBean = registry.getBeanDefinition("BYD");

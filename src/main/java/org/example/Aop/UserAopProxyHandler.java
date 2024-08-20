@@ -6,7 +6,6 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
-import org.springframework.cglib.proxy.MethodProxy;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -20,6 +19,7 @@ public class UserAopProxyHandler implements AutumnAopFactory {
     @Override
     public boolean shouldNeedAop(Class clazz, AutumnBeanFactory myContext) {
         return clazz.getAnnotation(MyService.class) != null;
+
     }
 
     @Override
@@ -30,10 +30,7 @@ public class UserAopProxyHandler implements AutumnAopFactory {
     @Override
     public void doBefore(Object obj, Method method, Object[] args) {
         log.warn("用户切面方法开始预处理,切面处理器是{}处理的方法为:{}", this.getClass().getSimpleName(), method.getName());
-    }
-
-    @Override
-    public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+        log.info("检查注解");
         Annotation[][] paramAnnotations = method.getParameterAnnotations();
         for (int i = 0; i < paramAnnotations.length; i++) {
             for (Annotation annotation : paramAnnotations[i]) {
@@ -43,9 +40,8 @@ public class UserAopProxyHandler implements AutumnAopFactory {
                 }
             }
         }
-//        throw new RuntimeException("AopCheck");
-        return proxy.invokeSuper(obj, args);
     }
+
 
     @Override
     public void doAfter(Object obj, Method method, Object[] args) {

@@ -19,6 +19,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocket;
 import org.example.mapper.UserMapper;
+import org.example.service.AsyncService;
 import org.example.service.LoginService;
 
 import java.util.HashMap;
@@ -64,6 +65,15 @@ public class AutumnTestController {
     @MyAutoWired
     private AutumnResponse autumnResponse;
 
+    @MyAutoWired
+    private AsyncService asyncService;
+
+    //xxx:测试异步能力
+    @MyRequestMapping("/async")
+    public String asyncTest() {
+        asyncService.asyncTest();
+        return "异步测试";
+    }
 
     //xxx:测试全局request功能
     @MyRequestMapping("/request")
