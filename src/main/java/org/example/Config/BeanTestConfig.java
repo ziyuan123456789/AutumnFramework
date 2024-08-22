@@ -51,7 +51,7 @@ public class BeanTestConfig {
         }
     }
     @AutumnBean("BYD")
-    public Car giveMeBydCar() throws Exception {
+    public Car giveMeBydCar() {
         Car car=new Car();
         car.setName("BYD");
         return car;

@@ -5,18 +5,34 @@
 ![License](https://img.shields.io/npm/l/mithril.svg)
 
 ## 通知:
-- 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了7500行代码,从最开始一个Map<Class,Object>
+
+- 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了7700行Java代码,从最开始一个Map<Class,Object>
   映射表发展到现在,前期欠下的技术债太多,另外一开始对于Bean生命周期没有任何理解,最开始我认为@Bean是声明一个JavaBean的意思,种种因素叠加下来每一次加入新功能都是对原有代码封装的破坏,一次次的底层重构让每一行代码都可能出现问题,现在我已经成功靠这个项目找到了一份工作,未来可能会彻底推翻重写
 
 ## 重构通知:
 
-- 由于实现了复合注解以及自动装配,一切SpringBoot需要引入Starter的功能均会被剥离出去,成为单独的组件,使用AutumnSpi等机制自动引入
+由于实现了复合注解以及自动装配,一切SpringBoot需要引入Starter的功能均会被剥离出去,成为单独的组件,使用AutumnSpi等机制自动引入
 
+目前已经实现的Starter如下:
+
+- MineBatis
+- Async异步处理
+
+已拓展但未使用Spi/Import机制的如下:
+
+- Swagger
+- Web
+
+已经在设计的如下:
+
+- Transaction
+- Cache
 ## 注意事项:
-- 现在框架可以选择依赖的环境,有我写的SocketServer和TomCat两种,默认是SocketServer,如果你想用内嵌的TomCat请自行找到切换的开关
+
+- 现在框架Web环境有两种分别为SocketServer与TomCat,默认是SocketServer,如果你想用内嵌的TomCat请自行找到切换的开关
 - `仅仅是一个玩具级别的Demo,无论是Web服务层还是Bean容器也好,都是非常简陋的实现,仅仅模仿SpringBoot的表层实现与基本特性,不具备任何实际使用价值仅供学习参考.感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
 - 目前仅支持调用字段的无参默认构创建实例,原则上来说构造器注入也实现了,但问题太多难以维护
-- 框架中的ioc容器仅负责基本的依赖注入,用户可编写自己的后置处理器干预BeanDefinition的生产
+- 框架只负责对默认注解标记以及自动装配机制引入的类进行管理,用户可编写自己的后置处理器干预BeanDefinition的生产
 - 如果你希望使用自动装配机制则需要在主类上加入`@EnableAutoConfiguration`注解来告知框架进行自动装配,框架会开始扫描所有Jar包下的META-INF
 - 如果想实现Mybatis那样`扫描自定义注解`扫描为组件,则需要声明为postProcessBeanDefinitionRegistry,同时可以使用PriorityOrdered与Ordered接口声明优先级
 - MineBatis目前只可以进行查询,不能增删改,马上就会加上这些功能.另外现在只可以注册XmlMapper,注解注册的方式日后添加
@@ -34,21 +50,22 @@
 不依赖TomCat,Servlet等技术实现的网络服务框架,参照了Mybatis,SpringMvc等设计思想从0手写了一个基于注解的仿SpringBoot框架
 
 ## 已经实现:
-- socket实现的网络服务,简单的支持网页输出,GET,POST方法传参,controller声明形参直接注入
-- url-method映射,实现url与controller方法的路由表
-- 由三级缓存组成的ioc容器,解决循环依赖的问题
-- 非常弱的依赖注入实现,可以实现@autowired标注的字段的自动注入,以及@value注入配置文件,还可以注入接口的实现类,基本上和springboot写法一样了
-- cglib实现的aop,稍微解决了代理类注解擦除的问题,可以正常依赖注入
-- Mybatis的简易实现,使用jdk动态代理接口,实现参数映射以及实体类映射
-- 加入了责任链模式的过滤器,~~使用@order声明顺序~~
+
+- Socket实现的网络服务,简单的支持网页输出,GET,POST方法传参,Controller声明形参直接注入
+- Url-Method映射,实现Url与Controller方法的路由表
+- 由三级缓存组成的Ioc容器,解决循环依赖的问题
+- 依赖注入实现,可以实现@Autowired标注的字段的自动注入,以及@Value注入配置文件,还可以注入接口的实现类
+- Cglib实现的Aop,稍微解决了代理类注解擦除的问题,可以正常依赖注入
+- Mybatis的简易实现,使用Jdk动态代理接口,实现参数映射以及实体类映射
+- 加入了过滤器
 - 实现@Bean功能,添加配置类,配置框架行为
-- 用户重写autumnMvcConfig接口覆盖默认实现类,实现自定义首页面,icon等
+- 用户重写AutumnMvcConfig接口覆盖默认实现类,实现自定义首页面,Icon等
 - 简易的RedisTemplate加入,可以连接redis了
 - 加入了Json与JavaBean的转换,可以跟前端用Json通讯了
-- 类级别的条件注解的完整加入,用户可以自定义处理器了,只需要实现condition接口覆盖match逻辑
+- 类级别的条件注解的完整加入,用户可以自定义处理器了,只需要实现Condition接口覆盖Match逻辑
 - Response类加入,用户可以选择自己来控制返回头和内容,例如进行setCookie操作
-- Cookie,session加入,自动为新用户setCookie,设置JSESSIONID
-- 依照JSESSIONID的value查找对应的session
+- Cookie,Session加入,自动为新用户setCookie,设置JSESSIONID
+- 依照JSESSIONID的value查找对应的Session
 - 简易的Swagger加入
 - 循环依赖提示器加入
 - 简易的WebSocket加入,仿照Springboot写法可以处理协议升级与后续数据传递,此过程通过注解指定处理器
@@ -352,7 +369,8 @@ public interface UserMapper {
     </myConfig>
 </configuration>
 ```
-如果你不想自动接管Mapper的生成,你也可以使用@Bean的方式注册一个SqlSession
+
+如果你不想自动接管Mapper的生成,你也可以使用@Bean的方式注册一个SqlSession自己手动管理
 ```java
 @AutumnBean
 public SqlSession getMapper() {
@@ -430,7 +448,8 @@ public class CrossOriginConfig implements AutumnMvcCrossOriginConfig {
     }
 }
 ```
-### 运行时环境判定 如果你喜欢可以自行加入Netty的适配器 可依靠条件注解实现无缝的Web容器切换
+
+### Web容器选择 如果你喜欢可以自行加入Netty的适配器 可依靠条件注解实现无缝的容器切换
 ```java
 @MyConfig
 @MyConditional(TomCatConditionCheck.class)
@@ -548,7 +567,7 @@ public class AsyncServiceImpl implements AsyncService {
 
 ### 使用方法
 
-异步底层使用Aop+线程池把方法挪到线程池运行,返回一个Task,引入您需要依赖注入这个包含异步方法的类
+异步底层使用Aop+线程池把方法挪到线程池运行,返回一个Task,您需要依赖注入这个包含异步方法的类
 
 ```java
 
@@ -563,7 +582,7 @@ public String asyncTest() {
 }
 ```
 
-## 代码示范 Bean生命周期以及拓展接口章节
+## 代码示范  Bean生命周期以及拓展接口章节
 ### 自动装配机制:自定义后置处理器干预Bean定义生成
 你可以选择在resources文件夹下建立META-INF/autumn/`AutoConfiguration.imports` 文件,声明自动装配依赖的类.框架会自动扫描并创建依赖,同时Jar包下的相同路径也会被扫描
 ```text
@@ -571,7 +590,15 @@ BeanDefinitionRegistryPostProcessor=com.autumn.ormstarter.MineBatisStarter
 BeanFactoryPostProcessor=org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor
 Beans=com.autumn.ormstarter.SqlSessionFactoryBean
 ```
-你也可以选择使用`Import机制`来导入对应的依赖,但是最终的入口一定是META-INF的配置文件
+你可以选择使用上述的`AutumnSpi`来导入对应的依赖,也可也使用`Import机制`来连锁导入需要的类,就像SpringBoot那样,添加一个注解开启服务,这个注解为一个复合注解,背后真正有用的元信息的还是`@Import`注解
+```java
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Inherited
+@Import({AutumnAsyncConfiguration.class, AsyncAopProxyHandler.class})
+public @interface EnableAutumnAsync {
+}
+```
 ```java
 @Slf4j
 @Import({SqlSessionFactoryBean.class, JokePostProcessor.class})
@@ -986,7 +1013,7 @@ MineBatis-configXML=minebatis-config.xml
 ```
 ### 项目依赖
 ```
-- TomCat 内嵌了一个TomCat,如果你不希望用我写的SocketHttpServer只需要把条件处理器的逻辑改了即可启动TomCat接管网络服务,记得注册DispatcherServlet
+- TomCat 内嵌了一个TomCat,如果你不希望用我写的SocketHttpServer只需要把条件处理器的逻辑改了即可启动TomCat接管网络服务
 - c3p0 数据库连接池
 - jaxen,dom4j xml解析工具库
 - Jedis 
