@@ -4,10 +4,12 @@
 ![Java17](https://img.shields.io/badge/JDK-17+-success.svg)
 ![License](https://img.shields.io/npm/l/mithril.svg)
 
-## 通知:
-
+## 写在前面的话:
+- `AutumnFramework仅是一个玩具级别的框架,无论是Web服务层还是Bean容器也好,都是非常简洁的实现,仅模仿SpringBoot的表层实现与基本特性.感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
 - 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了7700行Java代码,从最开始一个Map<Class,Object>
   映射表发展到现在,前期欠下的技术债太多,另外一开始对于Bean生命周期没有任何理解,最开始我认为@Bean是声明一个JavaBean的意思,种种因素叠加下来每一次加入新功能都是对原有代码封装的破坏,一次次的底层重构让每一行代码都可能出现问题,现在我已经成功靠这个项目找到了一份工作,未来可能会彻底推翻重写
+- 框架主体是作者在大三实习的时候完成的,也`不是一个成熟的项目`,因此`不会进行过多防御性编程`,源码中只会展示功能的实现而不会对过于复杂的情况进行保护性处理
+
 
 ## 重构通知:
 
@@ -30,7 +32,6 @@
 ## 注意事项:
 
 - 现在框架Web环境有两种分别为SocketServer与TomCat,默认是SocketServer,如果你想用内嵌的TomCat请自行找到切换的开关
-- `仅仅是一个玩具级别的Demo,无论是Web服务层还是Bean容器也好,都是非常简陋的实现,仅仅模仿SpringBoot的表层实现与基本特性,不具备任何实际使用价值仅供学习参考.感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
 - 目前仅支持调用字段的无参默认构创建实例,原则上来说构造器注入也实现了,但问题太多难以维护
 - 框架只负责对默认注解标记以及自动装配机制引入的类进行管理,用户可编写自己的后置处理器干预BeanDefinition的生产
 - 如果你希望使用自动装配机制则需要在主类上加入`@EnableAutoConfiguration`注解来告知框架进行自动装配,框架会开始扫描所有Jar包下的META-INF
@@ -82,41 +83,6 @@
 - 加入了一个粗糙的Lazy机制,你可以在被@AutoWired标记的字段上标记@Lazy注解,框架会注入一个代理并放行,等到真正使用这个对象自动进行GetBean
 - Aop模块再次重写,支持了Aop调用链,支持多个切面处理器同时处理一个方法而不会冲突
 - 异步功能加入,在任意类上引入@EnableAutumnAsync注解开启异步处理,在要处理的方法加入@Async注解声明为异步调用,不会阻塞主进程
-## 注解处理器示范:
-
-- 通过修改AST抽象语法树实现一个编译期的代码生成器,你只需要在主类上加入@EnableAutumnFramework注解并留一个空的main方法程序就会开始执行,注解处理器会在编译期间为你自动补齐代码,就像Lombok一样
-
-```java
-
-@MyConfig
-@Slf4j
-@EnableAutumnFramework
-@EnableAutoConfiguration
-public class Main {
-  public static void main(String[] args)  {
-  }
-}
-```
-
-- 如果你遇到了问题请回退到
-
-```java
-@EnableAutoConfiguration
-@MyConfig
-@Slf4j
-public class Main {
-  public static void main(String[] args) {
-    AutumnFrameworkRunner autumnFrameworkRunner = new AutumnFrameworkRunner();
-    autumnFrameworkRunner.run(Main.class);
-  }
-}
-```
-
-- 项目使用JDK17运行,16之后注解处理器的写法开始改变,而且有非常多的坑,如果你想要在编译期修改AST,请参考我的代码
-- IDEA给编译期又套了一层,会出现class org.AutumnAP.FrameworkAnnotationProcessor (in unnamed module @0x6eb1a122) cannot
-  access class com.sun.tools.javac.api.BasicJavacTask (in module jdk.compiler) because module jdk.compiler does not
-  export com.sun.tools.javac.api to unnamed module
-  @0x6eb1a122的问题,请加入`javac编译参数-Djps.track.ap.dependencies=false`貌似可以解决
 
 ## Bean的生命周期
 
@@ -991,6 +957,41 @@ public class MatchClassByInterface implements MyCondition {
     }
 }
 ```
+### 注解处理器示范:
+
+- 通过修改AST抽象语法树实现一个编译期的代码生成器,你只需要在主类上加入@EnableAutumnFramework注解并留一个空的main方法程序就会开始执行,注解处理器会在编译期间为你自动补齐代码,就像Lombok一样
+
+```java
+
+@MyConfig
+@Slf4j
+@EnableAutumnFramework
+@EnableAutoConfiguration
+public class Main {
+  public static void main(String[] args)  {
+  }
+}
+```
+
+- 如果你遇到了问题请回退到
+
+```java
+@EnableAutoConfiguration
+@MyConfig
+@Slf4j
+public class Main {
+  public static void main(String[] args) {
+    AutumnFrameworkRunner autumnFrameworkRunner = new AutumnFrameworkRunner();
+    autumnFrameworkRunner.run(Main.class);
+  }
+}
+```
+
+- 项目使用JDK17运行,16之后注解处理器的写法开始改变,而且有非常多的坑,如果你想要在编译期修改AST,请参考我的代码
+- IDEA给编译期又套了一层,会出现class org.AutumnAP.FrameworkAnnotationProcessor (in unnamed module @0x6eb1a122) cannot
+  access class com.sun.tools.javac.api.BasicJavacTask (in module jdk.compiler) because module jdk.compiler does not
+  export com.sun.tools.javac.api to unnamed module
+  @0x6eb1a122的问题,请加入`javac编译参数-Djps.track.ap.dependencies=false`貌似可以解决
 
 ### 配置文件
 ```html
@@ -1059,12 +1060,19 @@ MineBatis-configXML=minebatis-config.xml
 
 ## 尚未解决的难点:
 
+## 关于这个项目是如何诞生的:
+还记得小时候玩我的世界装过Java,之后就是大二上学期才开始学的Java听着挺无聊感觉很繁琐,人家Python一行print("HelloWord")就能跑,到java这里啰嗦来啰嗦去写一堆东西,对Java相看两生厌
+大二小学期开始讲JavaWeb,直接上来就是SpringBoot+Vue做前后端开发,作为一个Java语法都不会的菜狗上来就好像撞窗户的苍蝇一样四处乱飞,四处报错四处救火
+小学期的时候是22年,byd天天上网课跟着敲,好不容易配置好SpringBoot环境第一次开了一个网页感觉非常兴奋,开始自学html改点输出内容
+之后的两三天开始教怎么用Mybatis连接数据库,怎么用Html搓一个Form表单做登录,这一个小功能扣了一整个下午+晚上也没整明白,不是没注册Bean就是Mybatis少写了点注解,要不然就是Spring那一套不知所云的报错,但是依然感觉真他妈好玩啊
+后来就开始想,Spring这一套真怪,我就声明了一个字段都没赋值,他是咋有内容的呢?还有写的这些什么@Autowired @Value都是个啥
+接下来一周开始整Vue,妈的我们刚学完Java直接就SpringBoot,没学CssJsHtml直接搞Vue,要不然说现在互联网操蛋,一个啥不会的学生,一周之内就能照猫画虎出个前后台的小破玩意,这有什么门槛,楼底下拉个老太太都能搞JavaWeb那一套
+大三上开始学Servlet和Jsp,当使记得搞了个Servlet+Vue,挺搞笑的.但这时候对JavaWeb和Java这一套东西理解飞速加深,Java能力飞速提升
+大三下学期开始实习,在经理的推动下深入挖掘Spring以及核心细节,项目雏形诞生
+
 ## 流程图:
-#### 试用的插件过期了,没法导出流程图了,这都是老的,没什么参考意义了
 - 项目启动
   ![Main_main.jpg](pics/AutumnFrameworkRunner_run.jpg)
-- Socket实现的简陋http服务器
-  ![SocketServer.jpg](pics/SocketServer_init.jpg)
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:

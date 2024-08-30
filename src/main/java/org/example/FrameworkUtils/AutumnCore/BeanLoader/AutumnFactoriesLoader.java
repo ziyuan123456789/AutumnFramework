@@ -1,5 +1,7 @@
 package org.example.FrameworkUtils.AutumnCore.BeanLoader;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +17,7 @@ import java.util.Map;
  * @author ziyuan
  * @since 2024.07
  */
+@Slf4j
 public class AutumnFactoriesLoader {
     public static Map<String, List<String>> parseConfigurations() throws IOException {
         Map<String, List<String>> configMap = new HashMap<>();
@@ -36,6 +39,7 @@ public class AutumnFactoriesLoader {
                         if (parts.length == 2) {
                             String type = parts[0].trim();
                             String implementation = parts[1].trim();
+                            log.info("{}从META-INF配置文件自动装配", implementation);
                             if (configMap.containsKey(type)) {
                                 configMap.get(type).add(implementation);
                             } else {
