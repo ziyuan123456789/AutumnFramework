@@ -5,5 +5,5 @@ package org.example.service;
  * @since 2024.08
  */
 public interface AsyncService {
-    void asyncTest();
+    void asyncTest() ;
 }

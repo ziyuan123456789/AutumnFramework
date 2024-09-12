@@ -1,4 +1,4 @@
-package org.example.FrameworkUtils.AutumnCore.Annotation;
+package com.autumn.transaction.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

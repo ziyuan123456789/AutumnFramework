@@ -1012,6 +1012,79 @@ redisPort=6379
 allow-circular-references=true
 MineBatis-configXML=minebatis-config.xml
 ```
+
+### 代码结构
+```txt
+C:.
+├─java
+│  ├─com
+│  │  └─autumn  模拟JAR包 保证不被自动扫描到.这部分依靠自动装配机制加载
+│  │      ├─async 异步服务
+│  │      ├─cache 缓存服务
+│  │      ├─ormstarter 数据库服务
+│  │      ├─swaggerstarter 文档服务
+│  │      └─transaction 事务服务
+│  └─org
+│      └─example
+│          ├─Annotations 用户自定义注解
+│          ├─Aop 用户自定义AOP处理器
+│          ├─Bean 用户实体类
+│          ├─Config 用户配置类
+│          ├─controller Controller层 
+│          ├─FrameworkUtils 框架层
+│          │  ├─AutumnCore 核心功能
+│          │  │  ├─Annotation 核心注解
+│          │  │  ├─Aop AOP实现
+│          │  │  ├─AutoConfiguration 一些以前的默认装载类,不应该叫这个名字的
+│          │  │  │  └─AutoConfigurationImpl
+│          │  │  ├─BeanLoader Bean加载器
+│          │  │  ├─Ioc IOC容器
+│          │  │  ├─Listener 生命周期监听器
+│          │  │  └─Transaction 事务
+│          │  ├─DataStructure 自定义数据结构
+│          │  ├─Exception 自定义异常
+│          │  │  └─OrmError
+│          │  ├─Orm 自定义ORM框架
+│          │  │  ├─MineBatis
+│          │  │  │  ├─configuration
+│          │  │  │  ├─executor
+│          │  │  │  ├─Interceptor
+│          │  │  │  ├─Io
+│          │  │  │  ├─mapping
+│          │  │  │  ├─OrmAnnotations
+│          │  │  │  ├─session
+│          │  │  │  └─type
+│          │  │  │      └─TypeHandler
+│          │  │  │          └─Impl
+│          │  │  └─MyRedis
+│          │  ├─PropertiesReader 配置文件读取
+│          │  ├─Utils 工具类
+│          │  └─WebFrameworkBaseUtils 框架基础工具类
+│          │      ├─BaseController 基础控制器
+│          │      ├─Cookie 操作Cookie
+│          │      ├─Json 操作Json
+│          │      ├─MyServers 服务器接口
+│          │      │  └─ConditionCheck 条件注解处理器
+│          │      ├─ResponseType  响应类型
+│          │      │  └─Views
+│          │      ├─ResponseWriter 响应输出
+│          │      ├─Session 操作Session
+│          │      └─WebSocket WebSocket
+│          ├─Interceptor 用户拦截器
+│          ├─mapper Dao层
+│          └─service Service层
+│              └─impl
+└─resources
+    ├─cglibClasses 生成的代理类
+    ├─HTML 静态资源
+    ├─Icon 图标
+    ├─libs 注解处理器JAR包
+    ├─mapper MineBatis配置文件
+    ├─META-INF 自动装配目录
+    │  └─autumn
+    └─plugins 已废弃
+
+```
 ### 项目依赖
 ```
 - TomCat 内嵌了一个TomCat,如果你不希望用我写的SocketHttpServer只需要把条件处理器的逻辑改了即可启动TomCat接管网络服务
@@ -1029,8 +1102,6 @@ MineBatis-configXML=minebatis-config.xml
 ## 未来打算实现:
 - 实现文件上传的功能 (半实现)
 - 加入类似于spring的事务,支持回滚
-- 实现自己写的http服务器与servlet或者其他成熟的web框架的切换(@bean+条件注解实现)(半实现)
-- 加入对Token的支持
 - controller方法形参直接注入JavaBean
 - request和response承担了过多的责任,考虑分出更多的类
 - 新版MineBatis即将加入
@@ -1060,15 +1131,7 @@ MineBatis-configXML=minebatis-config.xml
 
 ## 尚未解决的难点:
 
-## 关于这个项目是如何诞生的:
-还记得小时候玩我的世界装过Java,之后就是大二上学期才开始学的Java听着挺无聊感觉很繁琐,人家Python一行print("HelloWord")就能跑,到java这里啰嗦来啰嗦去写一堆东西,对Java相看两生厌
-大二小学期开始讲JavaWeb,直接上来就是SpringBoot+Vue做前后端开发,作为一个Java语法都不会的菜狗上来就好像撞窗户的苍蝇一样四处乱飞,四处报错四处救火
-小学期的时候是22年,byd天天上网课跟着敲,好不容易配置好SpringBoot环境第一次开了一个网页感觉非常兴奋,开始自学html改点输出内容
-之后的两三天开始教怎么用Mybatis连接数据库,怎么用Html搓一个Form表单做登录,这一个小功能扣了一整个下午+晚上也没整明白,不是没注册Bean就是Mybatis少写了点注解,要不然就是Spring那一套不知所云的报错,但是依然感觉真他妈好玩啊
-后来就开始想,Spring这一套真怪,我就声明了一个字段都没赋值,他是咋有内容的呢?还有写的这些什么@Autowired @Value都是个啥
-接下来一周开始整Vue,妈的我们刚学完Java直接就SpringBoot,没学CssJsHtml直接搞Vue,要不然说现在互联网操蛋,一个啥不会的学生,一周之内就能照猫画虎出个前后台的小破玩意,这有什么门槛,楼底下拉个老太太都能搞JavaWeb那一套
-大三上开始学Servlet和Jsp,当使记得搞了个Servlet+Vue,挺搞笑的.但这时候对JavaWeb和Java这一套东西理解飞速加深,Java能力飞速提升
-大三下学期开始实习,在经理的推动下深入挖掘Spring以及核心细节,项目雏形诞生
+
 
 ## 流程图:
 - 项目启动

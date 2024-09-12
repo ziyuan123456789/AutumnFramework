@@ -29,6 +29,7 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.SimpleMyBeanDefinitionRegistry;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Utils.AnnotationUtils;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
+import org.example.Main;
 
 import java.lang.annotation.Annotation;
 import java.lang.management.ManagementFactory;
@@ -243,24 +244,26 @@ public class AutumnFrameworkRunner {
     }
 
     private void processImports(Set<Class<?>> annotatedClasses, Class<?> clazz, List<Class<BeanFactoryPostProcessor>> beanFactoryPostProcessorsClassList) {
-        Import importAnnotation = AnnotationUtils.findClassAnnotation(clazz, Import.class);
-        if (importAnnotation != null) {
-            for (Class<?> importClass : importAnnotation.value()) {
-                if (importClass.isInterface() || importClass.isAnnotation()) {
-                    throw new RuntimeException("Import注解不能引入接口或注解: " + importClass.getName());
-                }
-                log.warn("通过Import机制导入了{}", importClass.getName());
-                annotatedClasses.add(importClass);
+        List<Import> importAnnotations = AnnotationUtils.findAllClassAnnotations(clazz, Import.class);
 
-                if (BeanFactoryPostProcessor.class.isAssignableFrom(importClass)) {
-                    beanFactoryPostProcessorsClassList.add((Class<BeanFactoryPostProcessor>) importClass);
-                }
+        if (!importAnnotations.isEmpty()) {
+            for (Import importAnnotation : importAnnotations) {
+                for (Class<?> importClass : importAnnotation.value()) {
+                    if (importClass.isInterface() || importClass.isAnnotation()) {
+                        throw new RuntimeException("Import注解不能引入接口或注解: " + importClass.getName());
+                    }
+                    log.warn("通过Import机制导入了{}", importClass.getName());
+                    annotatedClasses.add(importClass);
 
-                processImports(annotatedClasses, importClass, beanFactoryPostProcessorsClassList);
+                    if (BeanFactoryPostProcessor.class.isAssignableFrom(importClass)) {
+                        beanFactoryPostProcessorsClassList.add((Class<BeanFactoryPostProcessor>) importClass);
+                    }
+
+                    processImports(annotatedClasses, importClass, beanFactoryPostProcessorsClassList);
+                }
             }
         }
     }
-
 
     private void getInitOrAfterMethod(MyBeanDefinition myBeanDefinition, Method method) {
         if(method.getAnnotation(MyPostConstruct.class)!=null){
