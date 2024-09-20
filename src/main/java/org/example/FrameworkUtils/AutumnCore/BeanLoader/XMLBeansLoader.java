@@ -16,6 +16,7 @@ import java.util.List;
  * @since 2024.05
  */
 
+@Deprecated
 public class XMLBeansLoader {
     public List<Class<BeanFactoryPostProcessor>> loadStarterClasses(String directoryPath) throws DocumentException, ClassNotFoundException {
         List<Class<BeanFactoryPostProcessor>> otherStarters =new ArrayList<>();

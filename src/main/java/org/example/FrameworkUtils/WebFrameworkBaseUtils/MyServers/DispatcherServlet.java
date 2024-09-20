@@ -1,15 +1,16 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
+
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.AutumnCore.Aop.RequestContext;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.example.FrameworkUtils.DataStructure.Tuple;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector.ControllerInjector;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector.Injector;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Json.JsonFormatter;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
@@ -21,15 +22,17 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -39,23 +42,38 @@ import java.util.concurrent.Executors;
  */
 @WebServlet("/*")
 @Slf4j
+
 @MyComponent
 public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
     private AutumnBeanFactory myContext;
     @MyAutoWired
     private TomCatHtmlResponse tomCatHtmlResponse;
     @MyAutoWired
-    JsonFormatter jsonFormatter;
+    private JsonFormatter jsonFormatter;
+
+
+    @MyAutoWired
+    private AnnotationScanner scanner;
+
+    private Set<ControllerInjector> controllerInjectors = new HashSet<>();
 
     private ExecutorService threadPool;
 
-    Map<String, String> handlerMap;
+    private Map<String, String> handlerMap;
 
 
     @Override
     public void init() throws ServletException {
         super.init();
         int threadNums = 10;
+        Set<Class<?>> temp=scanner.findAnnotatedClassesList((String) myContext.get("packageUrl"), List.of(Injector.class));
+        for(Class c:temp){
+            try {
+                controllerInjectors.add((ControllerInjector) c.newInstance());
+            } catch (InstantiationException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
         handlerMap = (Map<String, String>) myContext.get("urlmapping");
         threadPool = Executors.newFixedThreadPool(threadNums);
     }
@@ -170,26 +188,8 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
         for (Method method : clazz.getDeclaredMethods()) {
             if (method.getName().equals(methodName)) {
                 domethod = method;
-                Parameter[] parameters = method.getParameters();
-                for (Parameter parameter : parameters) {
-                    if (isJavaBean(parameter.getClass())) {
-                        log.info("{}是一个Javabean", parameter.getClass());
-                    }
-                    MyRequestParam myRequestParam = parameter.getAnnotation(MyRequestParam.class);
-                    if (parameter.getType().equals(AutumnRequest.class)) {
-                        objectList.add(myRequest);
-                    }
-                    if (parameter.getType().equals(MyMultipartFile.class)) {
-//                        objectList.add(myRequest.getMyMultipartFile());
-                    }
-                    if (parameter.getType().equals(AutumnResponse.class)) {
-                        objectList.add(myResponse);
-                    }
-                    if (myRequestParam != null) {
-                        if (!myRequestParam.value().isEmpty()) {
-                            objectList.add(useUrlGetParam(myRequestParam.value(), myRequest));
-                        }
-                    }
+                for(ControllerInjector c: controllerInjectors){
+                    c.inject(method, instance, objectList, myRequest, myResponse);
                 }
             }
         }

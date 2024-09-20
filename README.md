@@ -6,7 +6,7 @@
 
 ## 写在前面的话:
 - `AutumnFramework仅是一个玩具级别的框架,无论是Web服务层还是Bean容器也好,都是非常简洁的实现,仅模仿SpringBoot的表层实现与基本特性.感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
-- 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了7700行Java代码,从最开始一个Map<Class,Object>
+- 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了8000行Java代码,从最开始一个Map<Class,Object>
   映射表发展到现在,前期欠下的技术债太多,另外一开始对于Bean生命周期没有任何理解,最开始我认为@Bean是声明一个JavaBean的意思,种种因素叠加下来每一次加入新功能都是对原有代码封装的破坏,一次次的底层重构让每一行代码都可能出现问题,现在我已经成功靠这个项目找到了一份工作,未来可能会彻底推翻重写
 - 框架主体是作者在大三实习的时候完成的,也`不是一个成熟的项目`,因此`不会进行过多防御性编程`,源码中只会展示功能的实现而不会对过于复杂的情况进行保护性处理
 
@@ -24,6 +24,7 @@
 
 - Swagger
 - Web
+- ControllerInject
 
 已经在设计的如下:
 
@@ -83,7 +84,7 @@
 - 加入了一个粗糙的Lazy机制,你可以在被@AutoWired标记的字段上标记@Lazy注解,框架会注入一个代理并放行,等到真正使用这个对象自动进行GetBean
 - Aop模块再次重写,支持了Aop调用链,支持多个切面处理器同时处理一个方法而不会冲突
 - 异步功能加入,在任意类上引入@EnableAutumnAsync注解开启异步处理,在要处理的方法加入@Async注解声明为异步调用,不会阻塞主进程
-
+- 加入了一个只针对Controller层的自定义注入器,用户可以自定义注入方式,比如你可以方便的注入一个枚举,仿照的是SpringBoot的自定义`Converter`
 ## Bean的生命周期
 
 ```
@@ -150,6 +151,12 @@ public class AutumnTestController {
 
   @MyAutoWired
   private AsyncService asyncService;
+
+  //xxx:测试自定义注入规则
+  @MyRequestMapping("/inject")
+  public String injectTest(ColorMappingEnum color) { //这是一个自定义枚举
+    return color.getColorName();
+  }
 
   //xxx:测试异步能力
   @MyRequestMapping("/async")
@@ -399,6 +406,31 @@ public class WebSocketController implements WebSocketBaseConfig {
     }
 }
 ```
+### 自定Converter
+使用`@Inject`注解标记一个类并实现`ControllerInjector`接口,就可以注入一个自定义注入器,来控制Controller方法参数的注入
+例如下面这个例子,我们使用自定义注入器通知框架去正确处理并注入一个枚举
+```java
+@Injector
+public class UserInjector implements ControllerInjector {
+    @Override
+    public void inject(Method method, Object object, List<Object> objectList, AutumnRequest myRequest, AutumnResponse myResponse) {
+        Parameter[] parameters = method.getParameters();
+        for (Parameter parameter : parameters) {
+            if (parameter.getType().equals(ColorMappingEnum.class)) {
+                objectList.add(ColorMappingEnum.fromName(useUrlGetParam("color", myRequest).toString()));
+            }
+
+        }
+    }
+}
+```
+```java
+@MyRequestMapping("/inject")
+public String injectTest(ColorMappingEnum color) {
+    return color.getColorName();
+}
+```
+
 ### 全局跨域配置
 ```java
 @MyConfig
@@ -1139,6 +1171,8 @@ C:.
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
+### 2024/9/20
+- 增加了自定义Controller注入器,辅助框架注入合适的Controller方法参数,目前只给TomCat容器做了适配
 
 ### 2024/8/20
 

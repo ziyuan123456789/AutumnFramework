@@ -18,6 +18,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocket;
+import org.example.Injector.ColorMappingEnum;
 import org.example.mapper.UserMapper;
 import org.example.service.AsyncService;
 import org.example.service.LoginService;
@@ -67,6 +68,12 @@ public class AutumnTestController {
 
     @MyAutoWired
     private AsyncService asyncService;
+
+    //xxx:测试自定义注入规则
+    @MyRequestMapping("/inject")
+    public String injectTest(ColorMappingEnum color) {
+        return color.getColorName();
+    }
 
     //xxx:测试异步能力
     @MyRequestMapping("/async")

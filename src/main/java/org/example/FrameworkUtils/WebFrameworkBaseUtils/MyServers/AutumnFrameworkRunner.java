@@ -29,7 +29,6 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.SimpleMyBeanDefinitionRegistry;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Utils.AnnotationUtils;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
-import org.example.Main;
 
 import java.lang.annotation.Annotation;
 import java.lang.management.ManagementFactory;
@@ -117,6 +116,7 @@ public class AutumnFrameworkRunner {
 
 
     private void componentScan(Class<?> mainClass, AutumnBeanFactory myContext) throws Exception {
+        //xml方式加载beans,弃用
         XMLBeansLoader xmlBeansLoader = new XMLBeansLoader();
         SimpleMyBeanDefinitionRegistry registry = new SimpleMyBeanDefinitionRegistry();
         List<Class<? extends Annotation>> annotations = new ArrayList<>();
