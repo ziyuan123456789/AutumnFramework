@@ -21,6 +21,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocket;
 import org.example.Injector.ColorMappingEnum;
 import org.example.mapper.UserMapper;
 import org.example.service.AsyncService;
+import org.example.service.CacheTestService;
 import org.example.service.LoginService;
 
 import java.util.HashMap;
@@ -68,6 +69,16 @@ public class AutumnTestController {
 
     @MyAutoWired
     private AsyncService asyncService;
+
+    @MyAutoWired
+    private CacheTestService cacheTestService;
+
+    //xxx:测试缓存组件
+    @MyRequestMapping("/cache")
+    public String cacheTest(@MyRequestParam("name") String name) {
+        return cacheTestService.cacheTest(name);
+    }
+
 
     //xxx:测试自定义注入规则
     @MyRequestMapping("/inject")

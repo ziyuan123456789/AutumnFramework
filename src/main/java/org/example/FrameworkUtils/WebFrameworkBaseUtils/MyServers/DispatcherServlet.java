@@ -155,7 +155,8 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
                     resp.setStatus(HttpServletResponse.SC_OK);
                 }
             } catch (Exception e) {
-                log.error("处理请求时出现异常: {}", methodName, e);
+                log.error(e.getMessage(),e);
+//                log.error("处理请求时出现异常: {}", methodName, e);
                 Throwable cause = e.getCause();
                 String errorMessage;
                 if (cause != null) {

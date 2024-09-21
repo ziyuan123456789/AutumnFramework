@@ -1,15 +1,15 @@
 # AutumnFramework
-对spring的拙劣的模仿
+对Spring的拙劣的模仿
 
 ![Java17](https://img.shields.io/badge/JDK-17+-success.svg)
 ![License](https://img.shields.io/npm/l/mithril.svg)
 
 ## 写在前面的话:
 - `AutumnFramework仅是一个玩具级别的框架,无论是Web服务层还是Bean容器也好,都是非常简洁的实现,仅模仿SpringBoot的表层实现与基本特性.感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
-- 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了8000行Java代码,从最开始一个Map<Class,Object>
+- 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了8300行Java代码,从最开始一个Map<Class,Object>
   映射表发展到现在,前期欠下的技术债太多,另外一开始对于Bean生命周期没有任何理解,最开始我认为@Bean是声明一个JavaBean的意思,种种因素叠加下来每一次加入新功能都是对原有代码封装的破坏,一次次的底层重构让每一行代码都可能出现问题,现在我已经成功靠这个项目找到了一份工作,未来可能会彻底推翻重写
 - 框架主体是作者在大三实习的时候完成的,也`不是一个成熟的项目`,因此`不会进行过多防御性编程`,源码中只会展示功能的实现而不会对过于复杂的情况进行保护性处理
-
+- 另外现在从0开始手写React的计划也开始了,计划两个月内出一版Demo,实现一版简单的`React Fiber`
 
 ## 重构通知:
 
@@ -19,6 +19,7 @@
 
 - MineBatis
 - Async异步处理
+- Cache
 
 已拓展但未使用Spi/Import机制的如下:
 
@@ -29,7 +30,7 @@
 已经在设计的如下:
 
 - Transaction
-- Cache
+
 ## 注意事项:
 
 - 现在框架Web环境有两种分别为SocketServer与TomCat,默认是SocketServer,如果你想用内嵌的TomCat请自行找到切换的开关
@@ -85,6 +86,7 @@
 - Aop模块再次重写,支持了Aop调用链,支持多个切面处理器同时处理一个方法而不会冲突
 - 异步功能加入,在任意类上引入@EnableAutumnAsync注解开启异步处理,在要处理的方法加入@Async注解声明为异步调用,不会阻塞主进程
 - 加入了一个只针对Controller层的自定义注入器,用户可以自定义注入方式,比如你可以方便的注入一个枚举,仿照的是SpringBoot的自定义`Converter`
+- 加入了方法级的缓存,在方法上加入`@Cache`以及加入`@EnableAutumnCache`引入服务
 ## Bean的生命周期
 
 ```
@@ -151,6 +153,15 @@ public class AutumnTestController {
 
   @MyAutoWired
   private AsyncService asyncService;
+
+  @MyAutoWired
+  private CacheTestService cacheTestService;
+
+  //xxx:测试缓存组件
+  @MyRequestMapping("/cache")
+  public String cacheTest(@MyRequestParam("name") String name) {
+    return cacheTestService.cacheTest(name);
+  }
 
   //xxx:测试自定义注入规则
   @MyRequestMapping("/inject")
@@ -223,7 +234,7 @@ public class AutumnTestController {
 
   //xxx:测试View层功能
   @MyRequestMapping("/html")
-  public View myhtml() {
+  public View myHtml() {
     return new View("AutumnFrameworkMainPage.html");
   }
 
@@ -1171,6 +1182,38 @@ C:.
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
+
+### 2024/9/21
+- 加入缓存的Starter服务
+```java
+@MyAutoWired
+private CacheTestService cacheTestService;
+
+//xxx:测试缓存组件
+@MyRequestMapping("/cache")
+public String cacheTest(@MyRequestParam("name") String name) {
+    return cacheTestService.cacheTest(name);
+}
+```
+```java
+@Override
+public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+    String cacheKey = generateCacheKey(method, args);
+
+    if (Boolean.TRUE.equals(cacheManager.containsCache(cacheKey))) {
+        Object cachedResult = cacheManager.getCache(cacheKey);
+        if (method.getReturnType().isInstance(cachedResult)) {
+            log.info("缓存命中 {}", cacheKey);
+            return cachedResult;
+        }
+    }
+    log.info("缓存失效: {} 准备invoke目标方法", cacheKey);
+    Object result = proxy.invokeSuper(obj, args);
+    cacheManager.addCache(cacheKey, result);
+    log.info("缓存更新 {}", cacheKey);
+    return result;
+}
+```
 ### 2024/9/20
 - 增加了自定义Controller注入器,辅助框架注入合适的Controller方法参数,目前只给TomCat容器做了适配
 

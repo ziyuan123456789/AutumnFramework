@@ -40,7 +40,7 @@
         </dependency>
 
         <!--Autumn部分依赖-->
-
+<!--        可选的TomCat依赖-->
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>

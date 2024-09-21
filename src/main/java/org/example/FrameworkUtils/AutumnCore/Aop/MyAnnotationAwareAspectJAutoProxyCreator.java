@@ -43,22 +43,31 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
         enhancer.setSuperclass(currentResult != null ? currentResult.getClass() : beanClass);
         enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
             Object result = null;
+            boolean methodInvoked = false;
 
+            // 前置处理
             for (AutumnAopFactory factory : factories) {
                 if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
                     try {
                         factory.doBefore(obj, method, args);
                     } catch (Exception e) {
                         factory.doThrowing(obj, method, args, e);
-                        return null;
+                        return null; // 如果前置处理失败，返回 null
                     }
                 }
             }
 
+            // 核心处理，执行方法或从缓存获取值
             for (AutumnAopFactory factory : factories) {
                 if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
                     try {
                         result = factory.intercept(obj, method, args, proxy);
+
+                        // 如果某个拦截器处理了返回值，跳过后续执行
+                        if (result != null) {
+                            methodInvoked = true;
+                            break;
+                        }
                     } catch (Exception e) {
                         factory.doThrowing(obj, method, args, e);
                         throw e;
@@ -66,7 +75,12 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
                 }
             }
 
+            // 如果没有任何拦截器返回结果，则调用实际方法
+            if (!methodInvoked) {
+                result = proxy.invokeSuper(obj, args);
+            }
 
+            // 后置处理
             for (AutumnAopFactory factory : factories) {
                 if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
                     try {
@@ -87,42 +101,20 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
     }
 
 
+
     @Override
     public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName, Object currentResult) {
         List<AutumnAopFactory> neededFactories = shouldCreateProxy(factories, beanClass);
         if (!neededFactories.isEmpty()) {
+            if(neededFactories.size()>=1){
+                log.error("多个代理工厂,可能会出现问题");
+            }
             log.error("创建代理 {}", beanClass.getName());
             currentResult = create(neededFactories, beanClass, currentResult);
         }
         return currentResult;
     }
 
-//原本cglib不能二次代理,白费劲了
-//    public <T> T create(AutumnAopFactory factory, Class<T> beanClass, Object currentResult) {
-//        Enhancer enhancer = new Enhancer();
-//        enhancer.setSuperclass(currentResult != null ? currentResult.getClass() : beanClass);
-//        enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
-//            if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
-//                try {
-//                    factory.doBefore(obj, method, args);
-//                    Object result = factory.intercept(obj, method, args, proxy);
-//                    factory.doAfter(obj, method, args);
-//                    return result;
-//                } catch (Exception e) {
-//                    factory.doThrowing(obj, method, args, e);
-//                    throw e;
-//                }
-//            }
-//            return proxy.invokeSuper(obj, args);
-//        });
-//        if (currentResult != null) {
-//            log.error("设置类加载器 {}", currentResult.getClass().getClassLoader());
-//            enhancer.setClassLoader(currentResult.getClass().getClassLoader());
-//            log.error("设置类加载器结束");
-//        }
-//        T t=(T) enhancer.create();
-//        return t;
-//    }
 
 
     @Override
