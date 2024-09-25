@@ -46,8 +46,40 @@ public class SimpleExecutor implements Executor {
 
     @Override
     public int update(Configuration configuration, MappedStatement mappedStatement, Method method, Object[] params) throws SQLException {
-        return 0;
+        Connection connection = configuration.getDataSource().getConnection();
+        String sql = mappedStatement.getSql();
+        BoundSql boundSql = getBoundSql(sql);
+
+        Map<String, Object> paramValueMapping = new HashMap<>();
+        Parameter[] parameters = method.getParameters();
+        for (int i = 0; i < parameters.length; i++) {
+            paramValueMapping.put(parameters[i].getName(), params[i]);
+        }
+
+        String jdbcSql = boundSql.getJdbcsqlText();
+
+
+        PreparedStatement statement = connection.prepareStatement(jdbcSql);
+        List<ParameterMapping> parameterMappings = parameterMappingTokenHandler.getParameterMapping();
+        for (int i = 0; i < parameterMappings.size(); i++) {
+            String argName = parameterMappings.get(i).getProperty();
+            System.out.println(argName);
+            System.out.println(paramValueMapping);
+            Object argValue = paramValueMapping.get(argName);
+            Class<?> argClass = argValue.getClass();
+
+            // 利用 TypeHandler 根据参数类型设置 PreparedStatement 参数
+            typeHandlerRegistry.getTypeHandlers().get(argClass).setParameter(statement, i + 1, argValue);
+        }
+
+        int affectedRows = statement.executeUpdate();
+        parameterMappingTokenHandler.resetParameterMappings();
+        statement.close();
+        connection.close();
+
+        return affectedRows;
     }
+
 
     @Override
     public <T> T query(Configuration configuration, MappedStatement mappedStatement, Object[] params) throws Exception {

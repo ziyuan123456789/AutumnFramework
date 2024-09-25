@@ -6,7 +6,7 @@
 
 ## 写在前面的话:
 - `AutumnFramework仅是一个玩具级别的框架,无论是Web服务层还是Bean容器也好,都是非常简洁的实现,仅模仿SpringBoot的表层实现与基本特性.感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
-- 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了8300行Java代码,从最开始一个Map<Class,Object>
+- 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了8600行Java代码,从最开始一个Map<Class,Object>
   映射表发展到现在,前期欠下的技术债太多,另外一开始对于Bean生命周期没有任何理解,最开始我认为@Bean是声明一个JavaBean的意思,种种因素叠加下来每一次加入新功能都是对原有代码封装的破坏,一次次的底层重构让每一行代码都可能出现问题,现在我已经成功靠这个项目找到了一份工作,未来可能会彻底推翻重写
 - 框架主体是作者在大三实习的时候完成的,也`不是一个成熟的项目`,因此`不会进行过多防御性编程`,源码中只会展示功能的实现而不会对过于复杂的情况进行保护性处理
 - 另外现在从0开始手写React的计划也开始了,计划两个月内出一版Demo,实现一版简单的`React Fiber`
@@ -87,6 +87,7 @@
 - 异步功能加入,在任意类上引入@EnableAutumnAsync注解开启异步处理,在要处理的方法加入@Async注解声明为异步调用,不会阻塞主进程
 - 加入了一个只针对Controller层的自定义注入器,用户可以自定义注入方式,比如你可以方便的注入一个枚举,仿照的是SpringBoot的自定义`Converter`
 - 加入了方法级的缓存,在方法上加入`@Cache`以及加入`@EnableAutumnCache`引入服务
+- MineBatis增删改查完整加入,但是没测,明后天给好好整整
 ## Bean的生命周期
 
 ```
@@ -156,6 +157,20 @@ public class AutumnTestController {
 
   @MyAutoWired
   private CacheTestService cacheTestService;
+
+  @MyAutoWired
+  private UpdateMapper updateMapper;
+
+  //xxx:测试minebatis增删改查
+  @MyRequestMapping("/crud")
+  public Object crudKing(@MyRequestParam("method") String method) {
+    return switch (method) {
+      case "insert" -> updateMapper.insertUser("test", "0", "test", "收到");
+      case "update" -> updateMapper.updateUserById("test1", "0", "test3", 1);
+      case "delete" -> updateMapper.deleteUserById(1);
+      default -> Integer.MAX_VALUE;
+    };
+  }
 
   //xxx:测试缓存组件
   @MyRequestMapping("/cache")
@@ -305,6 +320,17 @@ public interface UserMapper {
     User checkUser(String userId, String password);
 }
 ```
+
+```java
+public interface UpdateMapper {
+  int insertUser(String username, String role, String password, String Salt);
+
+  int updateUserById(String username, String role, String password, Integer userID);
+
+  int deleteUserById(Integer userId);
+}
+
+```
 ```xml
 <mapper namespace="org.example.mapper.UserMapper">
     <select id="getOneUser" resultMap="whyYouDoThis" parameterType="java.lang.Integer">
@@ -333,6 +359,27 @@ public interface UserMapper {
     <select id="checkUser" resultType="org.example.Bean.User">
         select * from user u where Username=#{userId} and Password=#{password}
     </select>
+</mapper>
+```
+
+```xml
+
+<mapper namespace="org.example.mapper.UpdateMapper">
+  <insert id="insertUser" parameterType="java.lang.String">
+    INSERT INTO user (username, role, password,Salt)
+    VALUES (#{username}, #{role}, #{password},#{Salt})
+  </insert>
+
+  <update id="updateUserById" parameterType="java.lang.String">
+    UPDATE user
+    SET username = #{username}, role = #{role}, password = #{password}
+    WHERE userID = #{userID}
+  </update>
+
+
+  <delete id="deleteUserById" parameterType="java.lang.Integer">
+    DELETE FROM user WHERE UserId = #{userId}
+  </delete>
 </mapper>
 ```
 ```xml
@@ -727,6 +774,59 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
   }
 }
 ```
+
+#### 利用这个后置处理器,我们可以使用不标记注解仅检测继承接口的方法,把组件注册
+```java
+public interface MiniJpaRepository extends JpaRepository<User,Integer> {
+    Optional<User> getOneById(Integer id);
+}
+```
+```java
+@Slf4j
+public class JpaRepositoriesRegistrar implements BeanDefinitionRegistryPostProcessor {
+
+    private AutumnBeanFactory beanFactory;
+
+    public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) {
+        return () -> {
+            //doSomeThing
+        };
+    }
+
+    @Override
+    public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
+        log.info("{}从配置文件或自动装配机制加载,提前干预BeanDefinition的生成,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
+        try {
+            Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
+            Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
+            getInstanceMethod.setAccessible(true);
+            beanFactory = (AutumnBeanFactory) getInstanceMethod.invoke(null);
+        } catch (Exception e) {
+            log.error(String.valueOf(e));
+            throw new RuntimeException(e);
+        }
+
+
+        AnnotationScanner.findImplByInterface((String) beanFactory.get("packageUrl"), JpaRepository.class).forEach(jpaRepository -> {
+            MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
+            log.info("注册JpaRepository:{}", jpaRepository.getName());
+            myBeanDefinition.setName(jpaRepository.getName());
+            myBeanDefinition.setBeanClass(jpaRepository);
+            myBeanDefinition.setStarter(true);
+            myBeanDefinition.setStarterMethod(createFactoryMethod(jpaRepository));
+            registry.registerBeanDefinition(jpaRepository.getName(), myBeanDefinition);
+        });
+    }
+
+
+    @Override
+    public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
+
+    }
+}
+
+```
+
 ### InstantiationAwareBeanPostProcessor 在Bean被反射创建前后提供拓展 这个处理器用于Aop的底层实现,直接替换之前的实现类为代理类
 ```java
 @MyComponent
@@ -1182,6 +1282,9 @@ C:.
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
+
+### 2024/9/25
+- Minebatis增删改查完整加入
 
 ### 2024/9/21
 - 加入缓存的Starter服务

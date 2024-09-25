@@ -167,18 +167,18 @@ public class MapperJdkProxyFactory implements SqlSession {
     }
 
     @Override
-    public <T> T insert(String statementId, Method method, Object[] args) throws Exception {
-        return null;
+    public int insert(String statementId, Method method, Object[] args) throws Exception {
+        return 0;
     }
 
     @Override
-    public <T> T update(String statementId,Method method,  Object[] args) throws Exception {
-        return null;
+    public int update(String statementId,Method method,  Object[] args) throws Exception {
+        return 0;
     }
 
     @Override
-    public <T> T delete(String statementId,Method method,  Object[] args) throws Exception {
-        return null;
+    public int delete(String statementId,Method method,  Object[] args) throws Exception {
+        return 0;
     }
 
 

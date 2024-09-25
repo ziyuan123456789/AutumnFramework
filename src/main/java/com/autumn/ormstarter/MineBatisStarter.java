@@ -48,6 +48,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
     public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) {
         return () -> {
             try {
+
                 SqlSession sqlSession= (SqlSession) beanFactory.getBean(SqlSession.class.getName());
                 return sqlSession.getMapper(beanClass);
             } catch (Exception e) {

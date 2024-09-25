@@ -5,7 +5,6 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.util.ClasspathHelper;
@@ -25,6 +24,13 @@ import java.util.Set;
 @Slf4j
 public class AnnotationScanner implements BeanFactoryAware {
     private static  AutumnBeanFactory beanFactory;
+
+
+    public static List<Class> findImplByInterface(String packageName, Class interfaceClass){
+        Reflections reflections = new Reflections(packageName, new SubTypesScanner());
+        Set<Class<?>> subinterfaces = reflections.getSubTypesOf(interfaceClass);
+        return new ArrayList<>(subinterfaces);
+    }
 
     public static  <A extends Annotation> List<Class<?>> findAnnotatedClasses(String basePackage, Class<A> annotationClass) {
         List<Class<?>> annotatedClasses = new ArrayList<>();

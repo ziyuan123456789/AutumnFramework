@@ -2,13 +2,11 @@ package org.example.FrameworkUtils.Orm.MineBatis.session;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.Orm.MineBatis.configuration.Configuration;
 import org.example.FrameworkUtils.Orm.MineBatis.configuration.MappedStatement;
 import org.example.FrameworkUtils.Orm.MineBatis.executor.Executor;
 import org.example.FrameworkUtils.Orm.MineBatis.executor.SimpleExecutor;
 import org.example.FrameworkUtils.Orm.MineBatis.type.TypeHandlerRegistry;
-
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -101,17 +99,23 @@ public class DefaultSqlSession implements SqlSession {
     }
 
     @Override
-    public <T> T insert(String statementId, Method method, Object[] args) throws Exception {
+    public int insert(String statementId, Method method, Object[] args) throws Exception {
         return update(statementId, method, args);
     }
 
     @Override
-    public <T> T update(String statementId, Method method, Object[] args) throws Exception {
-        return null;
+    public int update(String statementId, Method method, Object[] args) throws Exception {
+        try {
+            MappedStatement ms = this.configuration.getMappedStatement(statementId);
+            return this.executor.update(configuration, ms, method, args);
+        } catch (Exception e) {
+            log.error("更新sql执行失败");
+            throw e;
+        }
     }
 
     @Override
-    public <T> T delete(String statementId, Method method, Object[] args) throws Exception {
+    public int delete(String statementId, Method method, Object[] args) throws Exception {
         return update(statementId, method, args);
     }
 }

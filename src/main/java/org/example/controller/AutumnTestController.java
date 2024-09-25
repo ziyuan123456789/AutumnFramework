@@ -19,6 +19,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocket;
 import org.example.Injector.ColorMappingEnum;
+import org.example.mapper.UpdateMapper;
 import org.example.mapper.UserMapper;
 import org.example.service.AsyncService;
 import org.example.service.CacheTestService;
@@ -72,6 +73,24 @@ public class AutumnTestController {
 
     @MyAutoWired
     private CacheTestService cacheTestService;
+
+    @MyAutoWired
+    private UpdateMapper updateMapper;
+
+    //xxx:测试minebatis增删改查
+    @MyRequestMapping("/crud")
+    public Object crudKing(@MyRequestParam("method") String method) {
+        switch (method) {
+            case "insert":
+                return updateMapper.insertUser("test", "0", "test","收到");
+            case "update":
+                return updateMapper.updateUserById("test1", "0", "test3",1);
+            case "delete":
+                return updateMapper.deleteUserById(1);
+            default:
+                return Integer.MAX_VALUE;
+        }
+    }
 
     //xxx:测试缓存组件
     @MyRequestMapping("/cache")
