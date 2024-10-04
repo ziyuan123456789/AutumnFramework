@@ -80,16 +80,12 @@ public class AutumnTestController {
     //xxx:测试minebatis增删改查
     @MyRequestMapping("/crud")
     public Object crudKing(@MyRequestParam("method") String method) {
-        switch (method) {
-            case "insert":
-                return updateMapper.insertUser("test", "0", "test","收到");
-            case "update":
-                return updateMapper.updateUserById("test1", "0", "test3",1);
-            case "delete":
-                return updateMapper.deleteUserById(1);
-            default:
-                return Integer.MAX_VALUE;
-        }
+        return switch (method) {
+            case "insert" -> updateMapper.insertUser("test", "0", "test", "收到");
+            case "update" -> updateMapper.updateUserById("test1", "0", "test3", 1);
+            case "delete" -> updateMapper.deleteUserById(1);
+            default -> Integer.MAX_VALUE;
+        };
     }
 
     //xxx:测试缓存组件
