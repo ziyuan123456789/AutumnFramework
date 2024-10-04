@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiniReact Example</title>
+</head>
+
+<body>
+<div id="root"></div>
+
+<script src="/getminireact"></script>
+<script>
+    const App = () => {
+        const [elements, setElements] = Dong.useState([1, 2, 3, 4, 5]);
+        const [data, setData] = Dong.useState(114514);
+        const vDom = Dong.useAware();
+
+        Dong.useEffect(() => {
+            alert("这是一个空数组依赖useEffect, 页面加载会运行一次");
+            return () => {
+                console.log("清理副作用");
+            };
+        }, []);
+
+        Dong.useEffect(() => {
+            alert("这个useEffect依赖于data, 页面加载会运行一次, data变动时也会触发，当前值为 " + data);
+            return () => {
+                console.log("清理副作用");
+            };
+        }, [data]);
+
+        return Dong.createElement("div", { id: "app" },
+            Dong.createElement("h1", { onClick: () => setData((temp) => temp + 1) }, "MiniReact,点击触发一次useState"),
+            Dong.createElement("h2", null, data),
+            Dong.createElement("button", { onClick: () => setElements((temp) => [...temp, ...temp]) }, "点击触发一次useState,复制数组 [...temp, ...temp]"),
+            Dong.createElement("ul", null, elements.map((item, index) => Dong.createElement("li", { key: index }, item))),
+            Dong.createElement("div", null,
+                Dong.createElement("h2", { style: { fontFamily: 'Arial, sans-serif', fontWeight: 'bold', marginBottom: '10px', color: '#333' } }, "虚拟 DOM 展示"),
+                Dong.createElement("pre", null, vDom)
+            )
+        );
+    };
+
+
+    const root = document.getElementById("root");
+    if (root) {
+        Dong.render(Dong.createElement(App, null), root);
+    }
+</script>
+</body>
+
+</html>

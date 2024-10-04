@@ -4,6 +4,8 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ServletResponseAdapter;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 
 import java.lang.reflect.Method;
@@ -24,6 +26,19 @@ public class BaseController implements BeanFactoryAware {
     public View myswagger() {
         return new View("MySwagger.html");
     }
+    @MyRequestMapping("/ReactPage")
+    public View minireactPage() {
+        return new View("minireact.html");
+    }
+
+
+    @MyRequestMapping("/getminireact")
+    public void getminireact (AutumnResponse response) {
+        ServletResponseAdapter servletResponseAdapter=(ServletResponseAdapter) response;
+        servletResponseAdapter.outputJavaScriptFile("js/minireact.js");
+    }
+
+
 
     @MyRequestMapping("/urlMapping")
     public Map<String, Object> urlMapping() {

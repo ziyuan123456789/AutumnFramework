@@ -26,7 +26,7 @@ public class AutumnBaseController implements BeanFactoryAware {
 
     @MyRequestMapping("/favicon.ico")
     public Icon getIcon() {
-        return new Icon("myicon.ico");
+        return new Icon("minireact.ico");
     }
 
     @MyRequestMapping("/")

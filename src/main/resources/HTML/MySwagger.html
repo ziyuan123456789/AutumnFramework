@@ -9,8 +9,9 @@
 </head>
 <body>
 <div id="app" class="container">
-    <h1>AutumnFramework</h1>
-    <h2>MySwagger</h2>
+    <h1>AutumnFramework With Vue.js</h1>
+    <h2>Controller接口参数一览</h2>
+    <h3 @click="goToReactPage" style="cursor: pointer;">现在我们不仅实现了手写的Spring也简单实现了一版手写React,点击跳转体验</h3>
     <el-collapse v-model="activeName">
         <div v-for="(api, endpoint, index) in apiResponse" :key="endpoint">
             <el-collapse-item :name="index.toString()">
@@ -38,6 +39,9 @@
             this.fetchData();
         },
         methods: {
+            goToReactPage:function (){
+                window.location.href = "/ReactPage";
+            },
             fetchData: function () {
                 axios.get('/urlMapping')
                     .then(response => {

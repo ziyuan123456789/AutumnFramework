@@ -6,7 +6,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.TomCatHtmlResponse;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -82,4 +82,36 @@ public class ServletResponseAdapter implements AutumnResponse {
             log.error("Error in outputHtml", e);
         }
     }
+
+    public void outputJavaScriptFile(String filePath) {
+        try {
+            // 设置返回内容的类型为 JavaScript
+            response.setContentType("application/javascript");
+            response.setStatus(httpCode);
+
+            // 读取资源文件夹中的文件
+            InputStream inputStream = getClass().getClassLoader().getResourceAsStream(filePath);
+
+            if (inputStream == null) {
+                log.error("JavaScript file not found: {}", filePath);
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "JavaScript file not found");
+                return;
+            }
+
+            // 将文件内容写入响应
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                 PrintWriter writer = response.getWriter()) {
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    writer.println(line);
+                }
+                writer.flush();
+            }
+
+        } catch (IOException e) {
+            log.error("Error in outputJavaScriptFile", e);
+        }
+    }
+
 }
