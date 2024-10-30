@@ -8,14 +8,17 @@
 </head>
 
 <body>
-<div id="root"></div>
-
+<div class="container">
+    <div id="root"></div>
+    <div id="realdom"></div>
+</div>
 <script src="/getminireact"></script>
 <script>
     const App = () => {
         const [elements, setElements] = Dong.useState([1, 2, 3, 4, 5]);
         const [data, setData] = Dong.useState(114514);
-        const vDom = Dong.useAware();
+        const [backgroundColor, setBackgroundColor] = Dong.useState("");
+        const [vDomString] = Dong.useAware();
 
         Dong.useEffect(() => {
             alert("这是一个空数组依赖useEffect, 页面加载会运行一次");
@@ -25,30 +28,107 @@
         }, []);
 
         Dong.useEffect(() => {
+            const realDomContainer = document.getElementById('realdom');
+            if (realDomContainer) {
+                realDomContainer.innerHTML = `
+                    <h2>虚拟 DOM 展示</h2>
+                    <div>这段内容已脱离虚拟DOM管理, MiniReact无法感知到这部分的变化</div>
+                    <pre>${vDomString}</pre>
+                `;
+            }
+        }, [vDomString]);
+
+        Dong.useEffect(() => {
             alert("这个useEffect依赖于data, 页面加载会运行一次, data变动时也会触发，当前值为 " + data);
             return () => {
                 console.log("清理副作用");
             };
         }, [data]);
 
+        function generateRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        const handleClick = () => {
+            setData((temp) => temp + 1);
+            setBackgroundColor(generateRandomColor());
+        };
+
         return Dong.createElement("div", { id: "app" },
-            Dong.createElement("h1", { onClick: () => setData((temp) => temp + 1) }, "MiniReact,点击触发一次useState"),
+            Dong.createElement("h1", {
+                style: {backgroundColor: backgroundColor, transition: 'background 0.5s'},
+                onClick: handleClick
+            }, "MiniReact - 点击触发一次useState"),
+            Dong.createElement("h2", null, "打开F12查看MiniReact工作详情"),
             Dong.createElement("h2", null, data),
-            Dong.createElement("button", { onClick: () => setElements((temp) => [...temp, ...temp]) }, "点击触发一次useState,复制数组 [...temp, ...temp]"),
-            Dong.createElement("ul", null, elements.map((item, index) => Dong.createElement("li", { key: index }, item))),
-            Dong.createElement("div", null,
-                Dong.createElement("h2", { style: { fontFamily: 'Arial, sans-serif', fontWeight: 'bold', marginBottom: '10px', color: '#333' } }, "虚拟 DOM 展示"),
-                Dong.createElement("pre", null, vDom)
-            )
+            Dong.createElement("button", {
+                onClick: () => setElements((temp) => [...temp, ...temp])
+            }, "点击触发一次useState,复制数组 [...temp, ...temp]"),
+            Dong.createElement("ul", null, elements.map((item, index) =>
+                Dong.createElement("li", {key: index}, item)
+            ))
         );
     };
 
-
+    // 渲染组件
     const root = document.getElementById("root");
     if (root) {
         Dong.render(Dong.createElement(App, null), root);
     }
+
+    const realDomContainer = document.getElementById('realdom');
+    if (realDomContainer) {
+        realDomContainer.innerHTML = `
+            <h2>虚拟 DOM 展示</h2>
+            <div>这段内容已脱离虚拟DOM管理, MiniReact无法感知到这部分的变化</div>
+            <pre>${Dong.useAware()[0]}</pre>
+        `;
+    }
 </script>
 </body>
+<style>
+    body {
+        overflow: hidden;
+    }
 
+    .container {
+        display: flex;
+        height: 100vh;
+    }
+
+    #root {
+        width: 50%;
+        padding: 20px;
+        box-sizing: border-box;
+        overflow-y: scroll;
+        height: 100%;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    #root::-webkit-scrollbar {
+        display: none;
+    }
+
+    #realdom {
+        width: 50%;
+        padding: 20px;
+        background-color: #f0f0f0;
+        border-left: 1px solid #ccc;
+        box-sizing: border-box;
+        overflow-y: scroll;
+        height: 100%;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    #realdom::-webkit-scrollbar {
+        display: none;
+    }
+</Style>
 </html>

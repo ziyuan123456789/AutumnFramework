@@ -136,7 +136,7 @@ public class AutumnTestController {
 
     //xxx:测试参数注入
     @MyRequestMapping("/paramTest")
-    public String paramTest(@MyRequestParam("name") String name, @MyRequestParam("age") String age) {
+    public String paramTest(String name, String age) {
         return name + age;
     }
 

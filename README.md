@@ -11,7 +11,7 @@
 - 框架主体是作者在大三实习的时候完成的,也`不是一个成熟的项目`,因此`不会进行过多防御性编程`,源码中只会展示功能的实现而不会对过于复杂的情况进行保护性处理
 - 另外现在从0开始手写React的计划也开始了,计划两个月内出一版Demo,实现一版简单的`React Fiber + Hooks`(已在项目中使用)
 
-## 引流:
+## 推荐:
 - [MiniReact:简单的React仿写](https://github.com/ziyuan123456789/mini-react)
 
 ## 重构通知:
@@ -166,7 +166,7 @@ public class AutumnTestController {
 
   //xxx:测试minebatis增删改查
   @MyRequestMapping("/crud")
-  public Object crudKing(@MyRequestParam("method") String method) {
+  public Object crudKing(String method) {
     return switch (method) {
       case "insert" -> updateMapper.insertUser("test", "0", "test", "收到");
       case "update" -> updateMapper.updateUserById("test1", "0", "test3", 1);
@@ -177,7 +177,7 @@ public class AutumnTestController {
 
   //xxx:测试缓存组件
   @MyRequestMapping("/cache")
-  public String cacheTest(@MyRequestParam("name") String name) {
+  public String cacheTest(String name) {
     return cacheTestService.cacheTest(name);
   }
 
@@ -222,7 +222,7 @@ public class AutumnTestController {
 
   //xxx:测试参数注入
   @MyRequestMapping("/paramTest")
-  public String paramTest(@MyRequestParam("name") String name, @MyRequestParam("age") String age) {
+  public String paramTest(String name, String age) {
     return name + age;
   }
 
@@ -274,8 +274,8 @@ public class AutumnTestController {
   //xxx:测试数据库功能
   @EnableAop
   @MyRequestMapping("/Login")
-  public String login(@MyRequestParam("username") @CheckParameter String userId,
-                      @MyRequestParam("password") String password) {
+  public String login(@CheckParameter String userId,
+                       String password) {
     if (loginService.checkLogin(userId, password)) {
       return "登录成功";
 

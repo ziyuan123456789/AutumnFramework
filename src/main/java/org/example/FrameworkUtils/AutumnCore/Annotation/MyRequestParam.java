@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2023.11
  */
+@Deprecated
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
