@@ -16,6 +16,9 @@ import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AutumnFactoriesLoader;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.XMLBeansLoader;
+import org.example.FrameworkUtils.AutumnCore.Event.IocInitEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.Listener.EventListener;
+import org.example.FrameworkUtils.AutumnCore.Event.Publisher.EventMulticaster;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
@@ -241,6 +244,17 @@ public class AutumnFrameworkRunner {
         myContext1.initIocCache(registry.getBeanDefinitionMap());
         long endTime = System.currentTimeMillis();
         log.info("容器花费了：{} 毫秒实例化", endTime - startTime);
+        Map<String, Object> iocContainer = myContext1.getIocContainer();
+        EventMulticaster eventMulticaster = (EventMulticaster) iocContainer.get(EventMulticaster.class.getName());
+        for (Map.Entry<String, Object> entry : iocContainer.entrySet()) {
+            Object bean = entry.getValue();
+            if (bean instanceof EventListener) {
+                eventMulticaster.addEventListener((EventListener<?>) bean);
+                log.warn("已注册监听器: {}", bean.getClass().getName());
+            }
+        }
+        IocInitEvent event = new IocInitEvent("容器初始化结束", endTime - startTime);
+        eventMulticaster.publishEvent(event);
     }
 
     private void processImports(Set<Class<?>> annotatedClasses, Class<?> clazz, List<Class<BeanFactoryPostProcessor>> beanFactoryPostProcessorsClassList) {

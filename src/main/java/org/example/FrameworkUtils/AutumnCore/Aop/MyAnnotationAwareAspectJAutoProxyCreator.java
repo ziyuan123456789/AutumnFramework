@@ -106,10 +106,10 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
     public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName, Object currentResult) {
         List<AutumnAopFactory> neededFactories = shouldCreateProxy(factories, beanClass);
         if (!neededFactories.isEmpty()) {
-            if(neededFactories.size()>=1){
-                log.error("多个代理工厂,可能会出现问题");
+            if(!neededFactories.isEmpty()){
+                log.warn("多个代理工厂,可能会出现问题");
             }
-            log.error("创建代理 {}", beanClass.getName());
+            log.info("创建代理 {}", beanClass.getName());
             currentResult = create(neededFactories, beanClass, currentResult);
         }
         return currentResult;

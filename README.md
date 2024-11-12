@@ -91,6 +91,7 @@
 - 加入了一个只针对Controller层的自定义注入器,用户可以自定义注入方式,比如你可以方便的注入一个枚举,仿照的是SpringBoot的自定义`Converter`
 - 加入了方法级的缓存,在方法上加入`@Cache`以及加入`@EnableAutumnCache`引入服务
 - MineBatis增删改查完整加入,但是没测,明后天给好好整整
+- 加入了事件发布机制,自带了一个开机事件
 ## Bean的生命周期
 
 ```
@@ -906,7 +907,7 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
   public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName, Object currentResult) {
     List<AutumnAopFactory> neededFactories = shouldCreateProxy(factories, beanClass);
     if (!neededFactories.isEmpty()) {
-      log.error("创建代理 {}", beanClass.getName());
+      log.info("创建代理 {}", beanClass.getName());
       currentResult = create(neededFactories, beanClass, currentResult);
     }
     return currentResult;
@@ -1250,7 +1251,6 @@ C:.
 - 加入类似于spring的事务,支持回滚
 - controller方法形参直接注入JavaBean
 - request和response承担了过多的责任,考虑分出更多的类
-- 加入生命周期监听器
 
 ## 更长远的想法:
 - 支持https
@@ -1282,7 +1282,20 @@ C:.
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
-
+### 2024/11/12
+- 简单的事件发布机制加入
+```java
+EventMulticaster eventMulticaster = (EventMulticaster) iocContainer.get(EventMulticaster.class.getName());
+for (Map.Entry<String, Object> entry : iocContainer.entrySet()) {
+    Object bean = entry.getValue();
+    if (bean instanceof EventListener) {
+        eventMulticaster.addEventListener((EventListener<?>) bean);
+        log.warn("已注册监听器: {}", bean.getClass().getName());
+    }
+}
+IocInitEvent event = new IocInitEvent("容器初始化结束", endTime - startTime);
+eventMulticaster.publishEvent(event);
+```
 ### 2024/9/25
 - Minebatis增删改查完整加入
 
