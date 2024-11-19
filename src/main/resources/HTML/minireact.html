@@ -18,51 +18,111 @@
         const [elements, setElements] = Dong.useState([1, 2, 3, 4, 5]);
         const [data, setData] = Dong.useState(114514);
         const [backgroundColor, setBackgroundColor] = Dong.useState("");
-        const [vDomString] = Dong.useAware();
+        const [vDomString]=Dong.useAware();
 
-        Dong.useEffect(() => {
-            alert("这是一个空数组依赖useEffect, 页面加载会运行一次");
-            return () => {
-                console.log("清理副作用");
-            };
-        }, []);
 
         Dong.useEffect(() => {
             const realDomContainer = document.getElementById('realdom');
             if (realDomContainer) {
                 realDomContainer.innerHTML = `
-                    <h2>虚拟 DOM 展示</h2>
-                    <div>这段内容已脱离虚拟DOM管理, MiniReact无法感知到这部分的变化</div>
-                    <pre>${vDomString}</pre>
-                `;
+            <h1>虚拟 DOM 展示</h1>
+            <h5>来自useEffect的消息:这是一个空数组依赖useEffect, 页面加载会运行一次</h5>
+            <div>这段内容已脱离虚拟DOM管理,MiniReact无法感知到这部分的变化</div>
+            <pre>${Dong.useAware()[0]}</pre>`;
             }
-        }, [vDomString]);
+            return () => {
+                console.log("清理副作用");
+            };
+        }, []);
+
+        const testFunction = () => {
+            console.log('愚蠢的的MiniReact并不知道函数到底变了没');
+        };
+
+        const testFunctionWithUseCallBack =Dong.useCallBack(()=> {
+            console.log('愚蠢的的MiniReact还是并不知道函数到底变了没,所以他打算引入一些外援');
+        }, []);
+
+
+        const [functionHandler] = Dong.useState(testFunction);
+
+        const [functionHandlerWithUseCallBack] = Dong.useState(testFunctionWithUseCallBack);
 
         Dong.useEffect(() => {
-            alert("这个useEffect依赖于data, 页面加载会运行一次, data变动时也会触发，当前值为 " + data);
+            if (testFunction===functionHandler) {
+                console.log('第一次运行,所以引用相同');
+            } else {
+                console.log('什么事情都是第一次好,第二次就不是一个感觉了');
+            }
+        });
+
+        Dong.useEffect(() => {
+            if (testFunctionWithUseCallBack===functionHandlerWithUseCallBack) {
+                console.log('useCallBack生效中');
+            } else {
+                console.log('useCallBack失效了');
+            }
+        });
+
+        Dong.useEffect(()=>{
+            const realDomContainer = document.getElementById('realdom');
+            if (realDomContainer) {
+                realDomContainer.innerHTML = `
+            <h2>虚拟 DOM 展示</h2>
+            <div>这段内容已脱离虚拟DOM管理,MiniReact无法感知到这部分的变化</div>
+            <pre>${Dong.useAware()[0]}</pre>
+        `;
+            }
+        },[vDomString])
+
+        Dong.useEffect(() => {
+            const realDomContainer = document.getElementById('realdom');
+            if (realDomContainer) {
+                realDomContainer.innerHTML = `
+            <h1>虚拟 DOM 展示</h1>
+            <h5>来自useEffect的消息:这个useEffect依赖于data, 页面加载会运行一次, data变动时也会触发，当前值为 ${data}</h5>
+            <div>这段内容已脱离虚拟DOM管理,MiniReact无法感知到这部分的变化</div>
+            <pre>${Dong.useAware()[0]}</pre>`;
+            }
             return () => {
                 console.log("清理副作用");
             };
         }, [data]);
 
-        function generateRandomColor() {
+        const generateRandomColor = Dong.useCallBack(() => {
             const letters = '0123456789ABCDEF';
             let color = '#';
             for (let i = 0; i < 6; i++) {
                 color += letters[Math.floor(Math.random() * 16)];
             }
             return color;
-        }
+        }, []);
 
-        const handleClick = () => {
+
+        const dispatcher = Dong.useCallBack(() => {
+            if (data % 2 === 0) {
+                handleClick();
+            } else {
+                handleClick2();
+            }
+
+        }, [data]);
+
+
+        const handleClick = Dong.useCallBack(() => {
             setData((temp) => temp + 1);
             setBackgroundColor(generateRandomColor());
-        };
+        }, [generateRandomColor]);
+
+        const handleClick2 = Dong.useCallBack(() => {
+            setData((temp) => temp + 1);
+        }, []);
+
 
         return Dong.createElement("div", { id: "app" },
             Dong.createElement("h1", {
                 style: {backgroundColor: backgroundColor, transition: 'background 0.5s'},
-                onClick: handleClick
+                onClick: dispatcher
             }, "MiniReact - 点击触发一次useState"),
             Dong.createElement("h2", null, "打开F12查看MiniReact工作详情"),
             Dong.createElement("h2", null, data),
@@ -129,6 +189,21 @@
 
     #realdom::-webkit-scrollbar {
         display: none;
+    }
+    @keyframes fadeInBorder {
+        0% {
+            border: 2px solid transparent;
+        }
+        50% {
+            border: 2px solid lightblue;
+        }
+        100% {
+            border: 2px solid transparent;
+        }
+    }
+
+    .fade-in-border {
+        animation: fadeInBorder 3s ease-in-out;
     }
 </Style>
 </html>

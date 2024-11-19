@@ -34,6 +34,20 @@
 
 - Transaction
 
+## 近期准备更新的内容:
+- 事务传播行为
+```text
+REQUIRED(0)
+REQUIRES_NEW(3)
+```
+- 事务隔离
+```text
+READ_UNCOMMITTED 
+READ_COMMITTED
+REPEATABLE_READ
+SERIALIZABLE
+```
+
 ## 注意事项:
 
 - 现在框架Web环境有两种分别为SocketServer与TomCat,默认是SocketServer,如果你想用内嵌的TomCat请自行找到切换的开关
