@@ -24,6 +24,5 @@ public class AsyncServiceImpl implements AsyncService {
             log.error("异常", e);
         }
         System.out.println("asyncTest");
-        throw new RuntimeException("异常");
     }
 }

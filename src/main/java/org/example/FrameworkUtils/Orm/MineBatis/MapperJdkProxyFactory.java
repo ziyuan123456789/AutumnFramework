@@ -1,7 +1,6 @@
 package org.example.FrameworkUtils.Orm.MineBatis;
 
 import lombok.extern.slf4j.Slf4j;
-
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.MySelect;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
 import org.example.FrameworkUtils.Orm.MineBatis.type.TypeHandler.Impl.IntHandler;
@@ -154,6 +153,12 @@ public class MapperJdkProxyFactory implements SqlSession {
             }
         });
         return (T) proxyInstance;
+    }
+
+    @Override
+    public Connection getConnection() throws SQLException {
+        log.error("获取数据库连接,但这个代理工厂暂时没有实现getConnection,请修改源代码适配你的数据库");
+        return DriverManager.getConnection("jdbc:mysql://localhost:3306/demo?serverTimezone=UTC&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true", "root", "root");
     }
 
     @Override

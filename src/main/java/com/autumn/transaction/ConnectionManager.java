@@ -1,23 +1,19 @@
 package com.autumn.transaction;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
 /**
  * @author ziyuan
  * @since 2024.09
  */
-public class ConnectionManager {
-    private static final ThreadLocal<Connection> connectionHolder = new ThreadLocal<>();
+public interface ConnectionManager {
 
-    public static void setConnection(Connection connection) {
-        connectionHolder.set(connection);
-    }
+    void setAutoConnection() throws SQLException;
 
-    public static Connection getConnection() {
-        return connectionHolder.get();
-    }
+    Connection getConnection();
 
-    public static void removeConnection() {
-        connectionHolder.remove();
-    }
+    void setConnection(Connection connection);
+
+    void removeConnection();
 }

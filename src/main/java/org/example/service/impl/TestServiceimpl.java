@@ -14,13 +14,11 @@ import org.example.service.TestService;
 @MyService
 public class TestServiceimpl implements TestService {
 
-
-
     @MyAutoWired
     Test2Service test2Service;
+
     @MyAutoWired
     CycleService cycleService;
-
 
     @Override
     public String print(String s) {

@@ -1,6 +1,7 @@
 package com.autumn.ormstarter;
 
 
+import com.autumn.transaction.ConnectionManager;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
 import org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor;
@@ -81,6 +82,10 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
         }
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
         inputStream.close();
+        MyBeanDefinition connectionManagerMb = new MyBeanDefinition();
+        connectionManagerMb.setName(ConnectionManager.class.getName());
+        connectionManagerMb.setBeanClass(ConnectionManagerMinebatisImpl.class);
+        registry.registerBeanDefinition(ConnectionManager.class.getName(), connectionManagerMb);
         Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
         for (Class<?> clazz : classSet) {
             MyBeanDefinition myBeanDefinition = new MyBeanDefinition();

@@ -2,7 +2,6 @@ package org.example.FrameworkUtils.AutumnCore.Aop;
 
 
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.springframework.cglib.proxy.MethodProxy;
 
 import java.lang.reflect.Method;
@@ -17,7 +16,7 @@ public interface AutumnAopFactory {
     void doBefore(Object obj, Method method, Object[] args);
 
      default Object intercept(Object obj, Method method, Object[] args, MethodProxy pr) throws Throwable {
-         return obj;
+         return null;
      };
 
     void doAfter(Object obj, Method method, Object[] args);

@@ -13,10 +13,8 @@ import org.example.service.TestService;
 @MyService
 public class Test2ServiceImpl implements Test2Service {
 
-
     @MyAutoWired
     TestService testService;
-
 
     @Override
     public String print(String s) {

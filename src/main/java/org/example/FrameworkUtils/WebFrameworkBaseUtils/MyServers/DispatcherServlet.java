@@ -22,11 +22,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -181,21 +182,42 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
     private Tuple<Object, Class<?>> invokeMethod(String classurl, String methodName, AutumnRequest myRequest, AutumnResponse myResponse) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<?> clazz = Class.forName(classurl);
         Object instance = myContext.getBean(clazz.getName());
-        Method domethod = null;
-        List<Object> objectList = new ArrayList<>();
+
         if (classurl.contains("$$")) {
             clazz = clazz.getSuperclass();
         }
+
+        Method targetMethod = null;
+        List<Object> objectList = new ArrayList<>();
+
         for (Method method : clazz.getDeclaredMethods()) {
             if (method.getName().equals(methodName)) {
-                domethod = method;
-                for(ControllerInjector c: controllerInjectors){
-                    c.inject(method, instance, objectList, myRequest, myResponse);
+                targetMethod = method;
+                Set<Integer> processedIndices = new HashSet<>();
+                for (ControllerInjector injector : controllerInjectors) {
+                    injector.inject(method, instance, objectList, processedIndices, myRequest, myResponse);
                 }
+                Parameter[] parameters = method.getParameters();
+                for (int i = 0; i < parameters.length; i++) {
+                    if (!processedIndices.contains(i)) {
+                        objectList.add(null);
+                    }
+                }
+
+                break;
             }
         }
-        return new Tuple<>(domethod.invoke(instance, objectList.toArray()), domethod.getReturnType());
+
+        if (targetMethod == null) {
+            throw new NoSuchMethodException("为啥方法不存在呢? " + methodName);
+        }
+
+        log.debug(String.valueOf(targetMethod));
+        log.debug(Arrays.toString(objectList.toArray()));
+        log.debug(String.valueOf(objectList.size()));
+        return new Tuple<>(targetMethod.invoke(instance, objectList.toArray()), targetMethod.getReturnType());
     }
+
 
     private Object useUrlGetParam(String paramName, AutumnRequest myRequest) {
         Map<String, String> param = myRequest.getParameters();

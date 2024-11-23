@@ -6,7 +6,6 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
-import org.springframework.cglib.proxy.MethodProxy;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -31,7 +30,6 @@ public class UserAopProxyHandler implements AutumnAopFactory {
     @Override
     public void doBefore(Object obj, Method method, Object[] args) {
         log.warn("用户切面方法开始预处理,切面处理器是{}处理的方法为:{}", this.getClass().getSimpleName(), method.getName());
-        log.info("检查注解");
         Annotation[][] paramAnnotations = method.getParameterAnnotations();
         for (int i = 0; i < paramAnnotations.length; i++) {
             for (Annotation annotation : paramAnnotations[i]) {

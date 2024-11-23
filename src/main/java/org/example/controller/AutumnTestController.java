@@ -24,7 +24,9 @@ import org.example.mapper.UserMapper;
 import org.example.service.AsyncService;
 import org.example.service.CacheTestService;
 import org.example.service.LoginService;
+import org.example.service.TransactionService;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -77,7 +79,16 @@ public class AutumnTestController {
     @MyAutoWired
     private UpdateMapper updateMapper;
 
-    //xxx:测试minebatis增删改查
+    @MyAutoWired
+    private TransactionService transactionService;
+
+    //测试事务
+    @MyRequestMapping("/transaction")
+    public String transactionTest() throws SQLException {
+        return transactionService.transactionTest();
+    }
+
+    //测试minebatis增删改查
     @MyRequestMapping("/crud")
     public Object crudKing(@MyRequestParam("method") String method) {
         return switch (method) {
@@ -88,27 +99,27 @@ public class AutumnTestController {
         };
     }
 
-    //xxx:测试缓存组件
+    //测试缓存组件
     @MyRequestMapping("/cache")
-    public String cacheTest(@MyRequestParam("name") String name) {
+    public String cacheTest(String name) {
         return cacheTestService.cacheTest(name);
     }
 
 
-    //xxx:测试自定义注入规则
+    //测试自定义注入规则
     @MyRequestMapping("/inject")
     public String injectTest(ColorMappingEnum color) {
         return color.getColorName();
     }
 
-    //xxx:测试异步能力
+    //测试异步能力
     @MyRequestMapping("/async")
     public String asyncTest() {
         asyncService.asyncTest();
         return "异步测试";
     }
 
-    //xxx:测试全局request功能
+    //测试全局request功能
     @MyRequestMapping("/request")
     public String requestTestWithField() {
         log.info(myReidsTemplate.getClass().toString());
@@ -116,7 +127,7 @@ public class AutumnTestController {
         return autumnRequest.getUrl() + autumnRequest.getMethod() + autumnRequest.getParameters();
     }
 
-    //xxx:测试方法级request功能
+    //测试方法级request功能
     @MyRequestMapping("/requestmethod")
     public String requestTestWithMethodParma(AutumnRequest autumn) {
         log.info("{}{}{}", autumn.getUrl(), autumn.getMethod(), autumn.getParameters());
@@ -124,7 +135,7 @@ public class AutumnTestController {
     }
 
 
-    //xxx:测试response与setCookie功能
+    //测试response与setCookie功能
     @MyRequestMapping("/response")
     public void responseTest(AutumnResponse myResponse) {
         Cookie cookie = new Cookie("newcookie", "session1");
@@ -134,19 +145,19 @@ public class AutumnTestController {
                 .outputHtml();
     }
 
-    //xxx:测试参数注入
+    //测试参数注入
     @MyRequestMapping("/paramTest")
     public String paramTest(String name, String age) {
         return name + age;
     }
 
-    //xxx:循环依赖测试
+    //循环依赖测试
     @MyRequestMapping("/cycletest")
     public Map<String, Object> cycleTest() {
         return autumnTestController.mapTest();
     }
 
-    //xxx:测试@Bean("BeanName")功能是否正常,同时看看Json解析器好不好用
+    //测试@Bean("BeanName")功能是否正常,同时看看Json解析器好不好用
     @MyRequestMapping("/map")
     public Map<String, Object> mapTest() {
         Map<String, Object> myMap = new HashMap<>();
@@ -156,7 +167,7 @@ public class AutumnTestController {
         return myMap;
     }
 
-    //xxx:测试redis
+    //测试redis
     @MyRequestMapping("/redis")
     public String redis() {
         myReidsTemplate.init();
@@ -164,14 +175,14 @@ public class AutumnTestController {
         return myReidsTemplate.toString() + "\n" + myReidsTemplate.get("test");
     }
 
-    //xxx:测试View层功能
+    //测试View层功能
     @MyRequestMapping("/html")
     public View myhtml() {
         return new View("AutumnFrameworkMainPage.html");
     }
 
 
-    //xxx:测试session功能
+    //测试session功能
     @MyRequestMapping("/session")
     public String session(AutumnRequest myRequest) {
         String sessionId = myRequest.getSession().getSessionId();
@@ -179,17 +190,17 @@ public class AutumnTestController {
         return "切换阅览器查看唯一标识符是否变化? 标识符如下:"+myRequest.getSession().getAttribute("name");
     }
 
-    //xxx:测试WebSocket功能
+    //测试WebSocket功能
     @MyRequestMapping("/websocket")
     public MyWebSocket websocketTest() {
         return new MyWebSocket();
     }
 
-    //xxx:测试数据库功能
+    //测试数据库功能
     @EnableAop
     @MyRequestMapping("/Login")
-    public String login(@MyRequestParam("username") @CheckParameter String userId,
-                        @MyRequestParam("password") String password) {
+    public String login(@CheckParameter String userId,
+                        String password) {
         if (loginService.checkLogin(userId, password)) {
             return "登录成功";
 
@@ -199,7 +210,7 @@ public class AutumnTestController {
 
     }
 
-    //xxx:测试数据库功能
+    //测试数据库功能
     @MyRequestMapping("/getall")
     public String getAll() {
         return userMapper.getAllUser(0).toString();

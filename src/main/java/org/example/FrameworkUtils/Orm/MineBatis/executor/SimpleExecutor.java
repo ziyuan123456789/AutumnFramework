@@ -1,6 +1,6 @@
 package org.example.FrameworkUtils.Orm.MineBatis.executor;
 
-import lombok.Getter;
+import com.autumn.ormstarter.ORMUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.Orm.MineBatis.GenericTokenParser;
 import org.example.FrameworkUtils.Orm.MineBatis.ParameterMapping;
@@ -39,14 +39,18 @@ public class SimpleExecutor implements Executor {
 
     private TypeHandlerRegistry typeHandlerRegistry;
 
+
+
     private ParameterMappingTokenHandler parameterMappingTokenHandler = new ParameterMappingTokenHandler();
+
     public SimpleExecutor(TypeHandlerRegistry typeHandlerRegistry){
         this.typeHandlerRegistry=typeHandlerRegistry;
     }
 
+
     @Override
     public int update(Configuration configuration, MappedStatement mappedStatement, Method method, Object[] params) throws SQLException {
-        Connection connection = configuration.getDataSource().getConnection();
+        Connection connection = ORMUtils.getCurrentConnection();
         String sql = mappedStatement.getSql();
         BoundSql boundSql = getBoundSql(sql);
 
@@ -63,20 +67,13 @@ public class SimpleExecutor implements Executor {
         List<ParameterMapping> parameterMappings = parameterMappingTokenHandler.getParameterMapping();
         for (int i = 0; i < parameterMappings.size(); i++) {
             String argName = parameterMappings.get(i).getProperty();
-            System.out.println(argName);
-            System.out.println(paramValueMapping);
             Object argValue = paramValueMapping.get(argName);
             Class<?> argClass = argValue.getClass();
-
-            // 利用 TypeHandler 根据参数类型设置 PreparedStatement 参数
             typeHandlerRegistry.getTypeHandlers().get(argClass).setParameter(statement, i + 1, argValue);
         }
-
         int affectedRows = statement.executeUpdate();
         parameterMappingTokenHandler.resetParameterMappings();
         statement.close();
-        connection.close();
-
         return affectedRows;
     }
 
@@ -184,6 +181,7 @@ public class SimpleExecutor implements Executor {
         }
         parameterMappingTokenHandler.resetParameterMappings();
         connection.close();
+        System.out.println(returnList);
         return (T) returnList;
 
     }

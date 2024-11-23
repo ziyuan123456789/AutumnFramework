@@ -1,8 +1,7 @@
 package com.autumn.transaction.annotation;
 
-import com.autumn.async.AsyncAopProxyHandler;
-import com.autumn.async.AutumnAsyncConfiguration;
 import com.autumn.transaction.TransactionAspect;
+import com.autumn.transaction.TransactionManager;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
 
 import java.lang.annotation.ElementType;
@@ -18,6 +17,6 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-@Import({TransactionAspect.class})
+@Import({TransactionAspect.class, TransactionManager.class})
 public @interface EnableAutumnTransactional {
 }

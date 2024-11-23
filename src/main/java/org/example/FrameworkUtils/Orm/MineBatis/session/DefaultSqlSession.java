@@ -13,6 +13,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -70,6 +72,11 @@ public class DefaultSqlSession implements SqlSession {
             }
         );
         return (T) proxyInstance;
+    }
+
+    @Override
+    public Connection getConnection() throws SQLException {
+        return configuration.getDataSource().getConnection();
     }
 
 

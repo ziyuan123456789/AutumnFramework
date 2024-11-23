@@ -6,10 +6,10 @@
 
 ## 写在前面的话:
 - `AutumnFramework仅是一个玩具级别的框架,无论是Web服务层还是Bean容器也好,都是非常简洁的实现,仅模仿SpringBoot的表层实现与基本特性.感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
-- 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了8600行Java代码,从最开始一个Map<Class,Object>
+- 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了9000行Java代码,从最开始一个Map<Class,Object>
   映射表发展到现在,前期欠下的技术债太多,另外一开始对于Bean生命周期没有任何理解,最开始我认为@Bean是声明一个JavaBean的意思,种种因素叠加下来每一次加入新功能都是对原有代码封装的破坏,一次次的底层重构让每一行代码都可能出现问题,现在我已经成功靠这个项目找到了一份工作,未来可能会彻底推翻重写
 - 框架主体是作者在大三实习的时候完成的,也`不是一个成熟的项目`,因此`不会进行过多防御性编程`,源码中只会展示功能的实现而不会对过于复杂的情况进行保护性处理
-- 另外现在从0开始手写React的计划也开始了,计划两个月内出一版Demo,实现一版简单的`React Fiber + Hooks`(已在项目中使用)
+- 另外现在从0开始手写React的计划也开始了,实现了一版简单的`React Fiber + Hooks`(已在项目中使用)
 
 ## 推荐:
 - [MiniReact:简单的React仿写](https://github.com/ziyuan123456789/mini-react)
@@ -23,6 +23,7 @@
 - MineBatis
 - Async异步处理
 - Cache
+- Transaction
 
 已拓展但未使用Spi/Import机制的如下:
 
@@ -32,21 +33,11 @@
 
 已经在设计的如下:
 
-- Transaction
+
 
 ## 近期准备更新的内容:
-- 事务传播行为
-```text
-REQUIRED(0)
-REQUIRES_NEW(3)
-```
-- 事务隔离
-```text
-READ_UNCOMMITTED 
-READ_COMMITTED
-REPEATABLE_READ
-SERIALIZABLE
-```
+- Controller直接注入对象
+
 
 ## 注意事项:
 
@@ -85,7 +76,7 @@ SERIALIZABLE
 - 类级别的条件注解的完整加入,用户可以自定义处理器了,只需要实现Condition接口覆盖Match逻辑
 - Response类加入,用户可以选择自己来控制返回头和内容,例如进行setCookie操作
 - Cookie,Session加入,自动为新用户setCookie,设置JSESSIONID
-- 依照JSESSIONID的value查找对应的Session
+- 依照JSESSIONID的Value查找对应的Session
 - 简易的Swagger加入
 - 循环依赖提示器加入
 - 简易的WebSocket加入,仿照Springboot写法可以处理协议升级与后续数据传递,此过程通过注解指定处理器
@@ -94,7 +85,7 @@ SERIALIZABLE
 - 用户可以自定义后置处理器,干预BeanDefinition的生产过程,例如Mapper的注入,框架在启动的时候会调用,现在只提供Xml读取的方式
 - Aop模块重写,实现了Aop处理器的复用,从现在开始@EnableAop注解降级为用户态注解,仅作为一个简单的标记,框架通过CgLibAop, InstantiationAwareBeanPostProcessor两个接口在Bean实例化之前替换实现类的方式完成代理类的替换,有关Aop的一切均开放给用户,拦不拦截,怎么拦截都是你说的算,只要你实现AutumnAopFactory接口并加入@MyAspect注解我们就会帮你代理
 - 运行时环境判定,可以选择用SocketServer启动或者拉起内嵌的TomCat,如果你喜欢Netty可以自行写适配器,转化为标准的AutumnRequest/Response接口实现
-- aware接口加入,实现注入容器自身
+- Aware接口加入,实现注入容器自身
 - 增加FactoryBean类,可指导复杂Bean生产
 - 自动装配机制加入,可以静默配置框架行为,只需要在主类上加入@EnableAutoConfiguration注解即可
 - 加入Import注解,支持递归调用
@@ -106,6 +97,7 @@ SERIALIZABLE
 - 加入了方法级的缓存,在方法上加入`@Cache`以及加入`@EnableAutumnCache`引入服务
 - MineBatis增删改查完整加入,但是没测,明后天给好好整整
 - 加入了事件发布机制,自带了一个开机事件
+- 事务系统的加入,实现了基本的事务功能,在方法上加入`@Transactional`即可开启事务
 ## Bean的生命周期
 
 ```
@@ -150,7 +142,7 @@ public class AutumnTestController {
 
   @MyAutoWired
   private UserMapper userMapper;
-  //测试懒加载  
+
   @MyAutoWired
   @Lazy
   private MyReidsTemplate myReidsTemplate;
@@ -179,9 +171,18 @@ public class AutumnTestController {
   @MyAutoWired
   private UpdateMapper updateMapper;
 
-  //xxx:测试minebatis增删改查
+  @MyAutoWired
+  private TransactionService transactionService;
+
+  //测试事务
+  @MyRequestMapping("/transaction")
+  public String transactionTest() throws SQLException {
+    return transactionService.transactionTest();
+  }
+
+  //测试minebatis增删改查
   @MyRequestMapping("/crud")
-  public Object crudKing(String method) {
+  public Object crudKing(@MyRequestParam("method") String method) {
     return switch (method) {
       case "insert" -> updateMapper.insertUser("test", "0", "test", "收到");
       case "update" -> updateMapper.updateUserById("test1", "0", "test3", 1);
@@ -190,33 +191,35 @@ public class AutumnTestController {
     };
   }
 
-  //xxx:测试缓存组件
+  //测试缓存组件
   @MyRequestMapping("/cache")
   public String cacheTest(String name) {
     return cacheTestService.cacheTest(name);
   }
 
-  //xxx:测试自定义注入规则
+
+  //测试自定义注入规则
   @MyRequestMapping("/inject")
-  public String injectTest(ColorMappingEnum color) { //这是一个自定义枚举
+  public String injectTest(ColorMappingEnum color) {
     return color.getColorName();
   }
 
-  //xxx:测试异步能力
+  //测试异步能力
   @MyRequestMapping("/async")
   public String asyncTest() {
     asyncService.asyncTest();
     return "异步测试";
   }
 
-  //xxx:测试全局request功能
+  //测试全局request功能
   @MyRequestMapping("/request")
   public String requestTestWithField() {
+    log.info(myReidsTemplate.getClass().toString());
     log.info("{}{}{}", autumnRequest.getUrl(), autumnRequest.getMethod(), autumnRequest.getParameters());
     return autumnRequest.getUrl() + autumnRequest.getMethod() + autumnRequest.getParameters();
   }
 
-  //xxx:测试方法级request功能
+  //测试方法级request功能
   @MyRequestMapping("/requestmethod")
   public String requestTestWithMethodParma(AutumnRequest autumn) {
     log.info("{}{}{}", autumn.getUrl(), autumn.getMethod(), autumn.getParameters());
@@ -224,8 +227,7 @@ public class AutumnTestController {
   }
 
 
-
-  //xxx:测试response与setCookie功能
+  //测试response与setCookie功能
   @MyRequestMapping("/response")
   public void responseTest(AutumnResponse myResponse) {
     Cookie cookie = new Cookie("newcookie", "session1");
@@ -235,19 +237,19 @@ public class AutumnTestController {
             .outputHtml();
   }
 
-  //xxx:测试参数注入
+  //测试参数注入
   @MyRequestMapping("/paramTest")
   public String paramTest(String name, String age) {
     return name + age;
   }
 
-  //xxx:循环依赖测试
+  //循环依赖测试
   @MyRequestMapping("/cycletest")
   public Map<String, Object> cycleTest() {
     return autumnTestController.mapTest();
   }
 
-  //xxx:测试@Bean("BeanName")功能是否正常,同时看看Json解析器好不好用
+  //测试@Bean("BeanName")功能是否正常,同时看看Json解析器好不好用
   @MyRequestMapping("/map")
   public Map<String, Object> mapTest() {
     Map<String, Object> myMap = new HashMap<>();
@@ -257,7 +259,7 @@ public class AutumnTestController {
     return myMap;
   }
 
-  //xxx:测试redis
+  //测试redis
   @MyRequestMapping("/redis")
   public String redis() {
     myReidsTemplate.init();
@@ -265,14 +267,14 @@ public class AutumnTestController {
     return myReidsTemplate.toString() + "\n" + myReidsTemplate.get("test");
   }
 
-  //xxx:测试View层功能
+  //测试View层功能
   @MyRequestMapping("/html")
-  public View myHtml() {
+  public View myhtml() {
     return new View("AutumnFrameworkMainPage.html");
   }
 
 
-  //xxx:测试session功能
+  //测试session功能
   @MyRequestMapping("/session")
   public String session(AutumnRequest myRequest) {
     String sessionId = myRequest.getSession().getSessionId();
@@ -280,17 +282,17 @@ public class AutumnTestController {
     return "切换阅览器查看唯一标识符是否变化? 标识符如下:"+myRequest.getSession().getAttribute("name");
   }
 
-  //xxx:测试WebSocket功能
+  //测试WebSocket功能
   @MyRequestMapping("/websocket")
   public MyWebSocket websocketTest() {
     return new MyWebSocket();
   }
 
-  //xxx:测试数据库功能
+  //测试数据库功能
   @EnableAop
   @MyRequestMapping("/Login")
   public String login(@CheckParameter String userId,
-                       String password) {
+                      String password) {
     if (loginService.checkLogin(userId, password)) {
       return "登录成功";
 
@@ -300,7 +302,7 @@ public class AutumnTestController {
 
   }
 
-  //xxx:测试数据库功能
+  //测试数据库功能
   @MyRequestMapping("/getall")
   public String getAll() {
     return userMapper.getAllUser(0).toString();
@@ -434,6 +436,70 @@ public String getAll() {
     return userMapperBean.getAllUser(0).toString();
 }
 ```
+
+### 事务
+首先你需要引入`@EnableAutumnTransactional`注解来开启事务服务
+接着在需要的方法上声明`@AutumnTransactional` 框架便会自动接管事务
+事务传播机制实现了
+```text
+REQUIRED(0)
+REQUIRES_NEW(3)
+```
+事务隔离实现了
+```text
+READ_UNCOMMITTED 
+READ_COMMITTED
+REPEATABLE_READ
+SERIALIZABLE
+```
+事务处理器为stater提供,框架本身不提供任何事物的服务,一切实现均为手写的ORM提供
+在如下的代码中可以看到事务的使用,当声明为REQUIRED时候,存在现成的事务则加入,没有则新建
+及时你在父方法中进行了异常捕获但依然会造成整个大事务回滚
+如果声明为REQUIRES_NEW则另起炉灶,从连接处取出一个新的连接,拥有隔离的上下文,REQUIRES_NEW的崩溃不会导致其他事务的回滚,但如果你没有捕获异常那就另说了..
+另外如果你在同一个类声明了多个事务方法,那么你依然需要进行自注入以保证拿到的是代理类,而不是这个类本身,导致事务失效,这一点与Spring保持一致
+```java
+@MyService
+public class TransactionImplService implements TransactionService {
+    
+    @MyAutoWired
+    private UpdateMapper updateMapper;
+
+    @MyAutoWired
+    private TransactionService transactionService;
+
+    @Override
+    @AutumnTransactional(rollbackFor = Exception.class,
+            propagation = Propagation.REQUIRED,
+            isolation = Isolation.DEFAULT
+    )
+    public String transactionTest() throws SQLException {
+        updateMapper.insertUser("1", "1", "1", "1");
+        try {
+            transactionService.transactionRequireNew();
+        } catch (Exception e) {
+
+        }
+        return "OK";
+    }
+
+    @Override
+    @AutumnTransactional(propagation = Propagation.REQUIRES_NEW)
+    public void transactionRequire() throws SQLException {
+        updateMapper.insertUser("2", "2", "2", "2");
+        throw new RuntimeException("测试");
+    }
+
+    @Override
+    @AutumnTransactional(rollbackFor = Exception.class)
+    public void transactionRequireNew() throws SQLException {
+        updateMapper.insertUser("2", "2", "2", "2");
+        throw new RuntimeException("测试");
+    }
+
+}
+
+```
+
 ### Service层,你可以选择注入实现类或声明接口,框架会为你注入合适地实现类
 ```java
 public interface LoginService {
@@ -488,16 +554,24 @@ public class WebSocketController implements WebSocketBaseConfig {
 ```java
 @Injector
 public class UserInjector implements ControllerInjector {
-    @Override
-    public void inject(Method method, Object object, List<Object> objectList, AutumnRequest myRequest, AutumnResponse myResponse) {
-        Parameter[] parameters = method.getParameters();
-        for (Parameter parameter : parameters) {
-            if (parameter.getType().equals(ColorMappingEnum.class)) {
-                objectList.add(ColorMappingEnum.fromName(useUrlGetParam("color", myRequest).toString()));
-            }
+  @Override
+  public void inject(Method method, Object object, List<Object> methodParams, Set<Integer> processedIndices, AutumnRequest myRequest, AutumnResponse myResponse) {
+    Parameter[] parameters = method.getParameters();
+    for (int i = 0; i < parameters.length; i++) {
+      if (processedIndices.contains(i)) {
+        continue;
+      }
 
+      Parameter parameter = parameters[i];
+      if (parameter.getType().equals(ColorMappingEnum.class)) {
+        Object value = useUrlGetParam("color", myRequest);
+        if (value != null) {
+          methodParams.add(ColorMappingEnum.fromName(value.toString()));
+          processedIndices.add(i);
         }
+      }
     }
+  }
 }
 ```
 ```java
@@ -612,7 +686,7 @@ public class UserAopProxyHandler implements AutumnAopFactory {
 用户需要引入@EnableAutumnAsync注解开启异步服务
 
 ```java
-@EnableAutumnAsync
+@EnableAutumnAsyn
 ```
 
 ### 标记异步方法
@@ -871,8 +945,18 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
     saveGeneratedCGlibProxyFiles();
     Enhancer enhancer = new Enhancer();
     enhancer.setSuperclass(currentResult != null ? currentResult.getClass() : beanClass);
+
+    //看看检查一下是否需要代理
+    boolean shouldProxy = factories.stream()
+            .anyMatch(factory -> factory.shouldNeedAop(beanClass, beanFactory));
+
+    if (!shouldProxy) {
+      return (T) currentResult;
+    }
+
     enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
       Object result = null;
+      boolean methodInvoked = false;
 
       for (AutumnAopFactory factory : factories) {
         if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
@@ -889,13 +973,34 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
         if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
           try {
             result = factory.intercept(obj, method, args, proxy);
+            if (result != null) {
+              methodInvoked = true;
+              break;
+            }
           } catch (Exception e) {
             factory.doThrowing(obj, method, args, e);
-            throw e;
           }
         }
       }
 
+      //如果没有任何拦截器返回非空结果那么调用实际方法
+      if (!methodInvoked) {
+        try {
+          result = proxy.invokeSuper(obj, args);
+        } catch (Exception e) {
+          Exception exception=null;
+          for (AutumnAopFactory factory : factories) {
+            if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
+              factory.doThrowing(obj, method, args, e);
+              exception=e;
+            }
+          }
+          if(exception!=null){
+            throw exception;
+          }
+        }
+
+      }
 
       for (AutumnAopFactory factory : factories) {
         if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
@@ -907,13 +1012,15 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
         }
       }
 
-      return (T) result;
+      return result;
     });
 
     if (currentResult != null) {
       enhancer.setClassLoader(currentResult.getClass().getClassLoader());
     }
+
     return (T) enhancer.create();
+
   }
 
 
@@ -921,11 +1028,16 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
   public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName, Object currentResult) {
     List<AutumnAopFactory> neededFactories = shouldCreateProxy(factories, beanClass);
     if (!neededFactories.isEmpty()) {
+      if(!neededFactories.isEmpty()){
+        log.warn("多个代理工厂,如果你没有处理好invokeSuper的条件那么狠可能会出现问题");
+      }
       log.info("创建代理 {}", beanClass.getName());
       currentResult = create(neededFactories, beanClass, currentResult);
     }
     return currentResult;
   }
+
+
 
   @Override
   public Object postProcessBeforeInitialization(Object bean, String beanName) throws Exception {
@@ -958,7 +1070,6 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
   }
 
 }
-
 ```
 ### BeanPostProcessor 在Bean创建完整前后提供拓展
 ```java
@@ -1262,7 +1373,6 @@ C:.
 
 ## 未来打算实现:
 - 实现文件上传的功能 (半实现)
-- 加入类似于spring的事务,支持回滚
 - controller方法形参直接注入JavaBean
 - request和response承担了过多的责任,考虑分出更多的类
 
@@ -1296,6 +1406,12 @@ C:.
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
 ## 更新记录:
+### 2024/11/23
+- 针对注入器做一些修改,之前多个Controller注入器会导致多次注入,例如自定义枚举注入器解析了枚举,但是基础注入器又加入到参数列表一次,导致Invoke方法的时候参数不匹配,现在加入了一个索引Set解决这个问题
+- 修复了AOP执行链的一些问题,现在可以正确处理多个工厂的执行问题,例如都可以收到异常通知
+- 加入了事务,但现在对ORM部分还是存在代码侵入,日后进行改进
+
+```java
 ### 2024/11/12
 - 简单的事件发布机制加入
 ```java

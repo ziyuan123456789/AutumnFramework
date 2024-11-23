@@ -1,6 +1,8 @@
 package org.example.FrameworkUtils.Orm.MineBatis.session;
 
 import java.lang.reflect.Method;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -15,5 +17,6 @@ public interface SqlSession {
     int update(String statementId,Method method,  Object[] params)throws Exception;
     int delete(String statementId, Method method, Object[] params)throws Exception;
     <T>T getMapper(Class<?> mapperClass) throws Exception;
+    Connection getConnection() throws SQLException;
 
 }

@@ -41,46 +41,63 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
         saveGeneratedCGlibProxyFiles();
         Enhancer enhancer = new Enhancer();
         enhancer.setSuperclass(currentResult != null ? currentResult.getClass() : beanClass);
+
+        //看看检查一下是否需要代理
+        boolean shouldProxy = factories.stream()
+                .anyMatch(factory -> factory.shouldNeedAop(beanClass, beanFactory));
+
+        if (!shouldProxy) {
+            return (T) currentResult;
+        }
+
         enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
             Object result = null;
             boolean methodInvoked = false;
 
-            // 前置处理
             for (AutumnAopFactory factory : factories) {
                 if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
                     try {
                         factory.doBefore(obj, method, args);
                     } catch (Exception e) {
                         factory.doThrowing(obj, method, args, e);
-                        return null; // 如果前置处理失败，返回 null
+                        return null;
                     }
                 }
             }
 
-            // 核心处理，执行方法或从缓存获取值
             for (AutumnAopFactory factory : factories) {
                 if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
                     try {
                         result = factory.intercept(obj, method, args, proxy);
-
-                        // 如果某个拦截器处理了返回值，跳过后续执行
                         if (result != null) {
                             methodInvoked = true;
                             break;
                         }
                     } catch (Exception e) {
                         factory.doThrowing(obj, method, args, e);
-                        throw e;
                     }
                 }
             }
 
-            // 如果没有任何拦截器返回结果，则调用实际方法
+            //如果没有任何拦截器返回非空结果那么调用实际方法
             if (!methodInvoked) {
-                result = proxy.invokeSuper(obj, args);
+                try {
+                    result = proxy.invokeSuper(obj, args);
+                } catch (Exception e) {
+                    Exception exception=null;
+                    for (AutumnAopFactory factory : factories) {
+                        if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
+                            factory.doThrowing(obj, method, args, e);
+                            exception=e;
+                        }
+                    }
+                    if(exception!=null){
+                        throw exception;
+                    }
+                }
+
             }
 
-            // 后置处理
             for (AutumnAopFactory factory : factories) {
                 if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
                     try {
@@ -91,15 +108,16 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
                 }
             }
 
-            return (T) result;
+            return result;
         });
 
         if (currentResult != null) {
             enhancer.setClassLoader(currentResult.getClass().getClassLoader());
         }
-        return (T) enhancer.create();
-    }
 
+        return (T) enhancer.create();
+
+    }
 
 
     @Override
@@ -107,7 +125,7 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
         List<AutumnAopFactory> neededFactories = shouldCreateProxy(factories, beanClass);
         if (!neededFactories.isEmpty()) {
             if(!neededFactories.isEmpty()){
-                log.warn("多个代理工厂,可能会出现问题");
+                log.warn("多个代理工厂,如果你没有处理好invokeSuper的条件那么狠可能会出现问题");
             }
             log.info("创建代理 {}", beanClass.getName());
             currentResult = create(neededFactories, beanClass, currentResult);
