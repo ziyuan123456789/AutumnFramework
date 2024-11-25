@@ -124,7 +124,7 @@
                 style: {backgroundColor: backgroundColor, transition: 'background 0.5s'},
                 onClick: dispatcher
             }, "MiniReact - 点击触发一次useState"),
-            Dong.createElement("h2", null, "打开F12查看MiniReact工作详情"),
+            Dong.createElement("h2", null, "打开F12查看MiniReact工作详情 当差异出现会绘制一个淡蓝色的边框包裹住更新的元素"),
             Dong.createElement("h2", null, data),
             Dong.createElement("button", {
                 onClick: () => setElements((temp) => [...temp, ...temp])
@@ -187,23 +187,20 @@
         -ms-overflow-style: none;
     }
 
-    #realdom::-webkit-scrollbar {
-        display: none;
-    }
-    @keyframes fadeInBorder {
+    @keyframes fadeInOutline {
         0% {
-            border: 2px solid transparent;
+            outline: 2px solid transparent;
         }
         50% {
-            border: 2px solid lightblue;
+            outline: 2px solid lightblue;
         }
         100% {
-            border: 2px solid transparent;
+            outline: 2px solid transparent;
         }
     }
 
     .fade-in-border {
-        animation: fadeInBorder 3s ease-in-out;
+        animation: fadeInOutline 3s ease-in-out;
     }
-</Style>
+</style>
 </html>

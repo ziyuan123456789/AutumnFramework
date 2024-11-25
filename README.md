@@ -461,10 +461,16 @@ REPEATABLE_READ
 SERIALIZABLE
 ```
 
-在如下的代码中可以看到事务的使用,当声明为REQUIRED时候,存在现成的事务则加入,没有则新建
-即使你在父方法中进行了`异常捕获`但依然会造成`整个大事务回滚`
-如果声明为REQUIRES_NEW则另起炉灶,从连接池取出一个新的连接,拥有隔离的上下文,REQUIRES_NEW的崩溃不会导致其他事务的回滚,但如果你没有捕获异常那就另说了..
-另外如果你在同一个类声明了多个事务方法,那么你依然需要进行`自注入`以保证拿到的是代理类,而不是这个类本身,导致事务失效,这一点与Spring保持一致
+在如下的代码中可以看到事务的使用,当声明为 `REQUIRED` 时候，存在现成的事务则加入,没有则新建
+
+即使你在父方法中进行了 `异常捕获` 但依然会造成 `整个大事务回滚`
+
+如果声明为 `REQUIRES_NEW` 则另起炉灶,从连接池取出一个新的连接,拥有隔离的上下文  
+`REQUIRES_NEW` 的崩溃不会导致其他事务的回滚,但如果你没有捕获异常那就另说了
+
+另外如果你在同一个类声明了多个事务方法，那么你依然需要进行 `自注入` 以保证拿到的是代理类,而不是这个类本身,导致事务失效,这一点与
+Spring 保持一致
+
 ```java
 @MyService
 public class TransactionImplService implements TransactionService {
@@ -507,12 +513,13 @@ public class TransactionImplService implements TransactionService {
 }
 ```
 
-ORM与框架为互相隔离的状态,没有任何侵入性的依赖,ORM感知不到框架的存在,框架也不会感知到ORM的存在,他俩之间的联系依靠第三方的Starter来实现
-事务本身由手搓的ORM提供,框架本身是上层服务调用方,如果你希望使用其他的ORM请自己写适配器,保证可以主动注册到事务管理器中
-ORM执行器代码示例如下
+ORM 与框架为互相隔离的状态,没有任何侵入性的依赖,ORM 感知不到框架的存在,框架也不会感知到 ORM 的存在  
+他俩之间的联系依靠第三方的 Starter 来实现
+
+事务本身由手搓的 ORM 提供,框架本身是上层服务调用方  
+如果你希望使用其他的 ORM 请自己写适配器,保证可以主动注册到事务管理器中
 
 ```java
-
 @Override
 public int update(Configuration configuration, MappedStatement mappedStatement, Method method, Object[] params) throws SQLException {
   Connection connection = TransactionContext.getCurrentConnection();
