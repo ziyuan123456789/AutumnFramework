@@ -83,7 +83,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
         inputStream.close();
         MyBeanDefinition connectionManagerMb = new MyBeanDefinition();
-        connectionManagerMb.setName(ConnectionManager.class.getName());
+        connectionManagerMb.setName(ConnectionManagerMinebatisImpl.class.getName());
         connectionManagerMb.setBeanClass(ConnectionManagerMinebatisImpl.class);
         registry.registerBeanDefinition(ConnectionManager.class.getName(), connectionManagerMb);
         Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();

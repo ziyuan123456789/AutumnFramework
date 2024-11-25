@@ -22,9 +22,9 @@ import java.util.List;
 public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, InstantiationAwareBeanPostProcessor, BeanFactoryAware {
 
     private AutumnBeanFactory beanFactory;
+
     @Value("autumn.debug.cglibClassOutPut")
     boolean cglibClassOutPut;
-
 
     private List<AutumnAopFactory> shouldCreateProxy(List<AutumnAopFactory> factories, Class<?> beanClass) {
         List<AutumnAopFactory> neededFactories = new ArrayList<>();
@@ -124,9 +124,7 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
     public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName, Object currentResult) {
         List<AutumnAopFactory> neededFactories = shouldCreateProxy(factories, beanClass);
         if (!neededFactories.isEmpty()) {
-            if(!neededFactories.isEmpty()){
-                log.warn("多个代理工厂,如果你没有处理好invokeSuper的条件那么狠可能会出现问题");
-            }
+            log.warn("多个代理工厂,如果你没有处理好invokeSuper的条件那么很可能会出现问题");
             log.info("创建代理 {}", beanClass.getName());
             currentResult = create(neededFactories, beanClass, currentResult);
         }

@@ -248,7 +248,7 @@ public class AutumnFrameworkRunner {
         EventMulticaster eventMulticaster = (EventMulticaster) iocContainer.get(EventMulticaster.class.getName());
         for (Map.Entry<String, Object> entry : iocContainer.entrySet()) {
             Object bean = entry.getValue();
-            if (bean instanceof EventListener) {
+            if (bean instanceof EventListener && !bean.getClass().isInterface()) {
                 eventMulticaster.addEventListener((EventListener<?>) bean);
                 log.warn("已注册监听器: {}", bean.getClass().getName());
             }

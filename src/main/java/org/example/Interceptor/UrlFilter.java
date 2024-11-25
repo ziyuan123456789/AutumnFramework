@@ -7,7 +7,6 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.Filter;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyResponse;
 
 /**
  * @author wsh
@@ -23,7 +22,7 @@ public class UrlFilter implements Filter {
     public boolean doChain(AutumnRequest autumnRequest, AutumnResponse autumnResponse) {
         if ("GET".equals(autumnRequest.getMethod())) {
             log.info("一级过滤链拦截,开始第一步鉴权");
-//            myResponse.setCode(400).setResponseText("鉴权失败").outputErrorMessage();
+//            myResponse.setCode(401).setResponseText("鉴权失败").outputErrorMessage();
             return indexFilter.doChain(autumnRequest, autumnResponse);
         } else {
             log.info("一级过滤链放行");

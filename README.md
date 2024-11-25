@@ -5,11 +5,15 @@
 ![License](https://img.shields.io/npm/l/mithril.svg)
 
 ## 写在前面的话:
-- `AutumnFramework仅是一个玩具级别的框架,无论是Web服务层还是Bean容器也好,都是非常简洁的实现,仅模仿SpringBoot的表层实现与基本特性.感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
-- 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了9000行Java代码,从最开始一个Map<Class,Object>
+
+-
+
+`AutumnFramework仅是一个玩具级别的框架,无论是Web服务层还是Bean容器也好,都是非常简洁的实现,模仿了SpringBoot的表层实现与基本特性.感谢异步图书的SpringBoot源码解读与原理分析这本书,读一些源码变得简单很多 `
+
+- 随着框架功能性的增加,代码复杂度也在以不可控的速度增加,目前整个项目已经到了9100行Java代码,从最开始一个Map<Class,Object>
   映射表发展到现在,前期欠下的技术债太多,另外一开始对于Bean生命周期没有任何理解,最开始我认为@Bean是声明一个JavaBean的意思,种种因素叠加下来每一次加入新功能都是对原有代码封装的破坏,一次次的底层重构让每一行代码都可能出现问题,现在我已经成功靠这个项目找到了一份工作,未来可能会彻底推翻重写
 - 框架主体是作者在大三实习的时候完成的,也`不是一个成熟的项目`,因此`不会进行过多防御性编程`,源码中只会展示功能的实现而不会对过于复杂的情况进行保护性处理
-- 另外现在从0开始手写React的计划也开始了,实现了一版简单的`React Fiber + Hooks`(已在项目中使用)
+- 从0开始手写React的计划也开始了,已实现一版简单的`React Fiber + Hooks`(已在项目中使用)
 
 ## 推荐:
 - [MiniReact:简单的React仿写](https://github.com/ziyuan123456789/mini-react)
@@ -33,21 +37,22 @@
 
 已经在设计的如下:
 
+- ControllerAdvice
 
 
 ## 近期准备更新的内容:
 - Controller直接注入对象
 
-
 ## 注意事项:
 
 - 现在框架Web环境有两种分别为SocketServer与TomCat,默认是SocketServer,如果你想用内嵌的TomCat请自行找到切换的开关
-- 目前仅支持调用字段的无参默认构创建实例,原则上来说构造器注入也实现了,但问题太多难以维护
+- 目前仅支持调用字段的无参默认构创建实例,原则上来说构造器注入也实现了,但问题太多难以维护,不在代码中启用.另外构造器注入会让三级缓存部分失效,因为解决循环依赖的核心是
+  `创建对象`与`注入对象`分离,但构造器让这一步`不可分割`,只能使用`代理模式`这种丑陋的方式解决
 - 框架只负责对默认注解标记以及自动装配机制引入的类进行管理,用户可编写自己的后置处理器干预BeanDefinition的生产
 - 如果你希望使用自动装配机制则需要在主类上加入`@EnableAutoConfiguration`注解来告知框架进行自动装配,框架会开始扫描所有Jar包下的META-INF
 - 如果想实现Mybatis那样`扫描自定义注解`扫描为组件,则需要声明为postProcessBeanDefinitionRegistry,同时可以使用PriorityOrdered与Ordered接口声明优先级
-- MineBatis目前只可以进行查询,不能增删改,马上就会加上这些功能.另外现在只可以注册XmlMapper,注解注册的方式日后添加
-- 如果使用idea可以在xml加入如下内容以获得idea代码提示与跳转,但我`建议不加`因为会去外网下载这个DTD,会让框架启动很慢,这个问题当时排查了非常久
+- MineBatis现在只可以注册XmlMapper,注解注册的方式日后添加
+- 如果使用Idea可以在xml加入如下内容以获得Idea代码提示与跳转,但我`建议不加`因为会去外网下载这个DTD,会让框架启动很慢,这个问题当时排查了非常久
 ```html
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
  ```
@@ -323,7 +328,7 @@ public class UrlFilter implements Filter {
   public boolean doChain(AutumnRequest autumnRequest, AutumnResponse autumnResponse) {
     if ("GET".equals(autumnRequest.getMethod())) {
       log.info("一级过滤链拦截,开始第一步鉴权");
-//            myResponse.setCode(400).setResponseText("鉴权失败").outputErrorMessage();
+//            myResponse.setCode(401).setResponseText("鉴权失败").outputErrorMessage();
       return indexFilter.doChain(autumnRequest, autumnResponse);
     } else {
       log.info("一级过滤链放行");
@@ -438,13 +443,16 @@ public String getAll() {
 ```
 
 ### 事务
-首先你需要引入`@EnableAutumnTransactional`注解来开启事务服务
-接着在需要的方法上声明`@AutumnTransactional` 框架便会自动接管事务
+
+首先你需要引入`@EnableAutumnTransactional`注解来开启事务服务,复合注解会自动引入其他依赖
+接着在需要的方法上声明`@AutumnTransactional` 框架便会进行代理自动接管事务
 事务传播机制实现了
+
 ```text
-REQUIRED(0)
-REQUIRES_NEW(3)
+REQUIRED
+REQUIRES_NEW
 ```
+
 事务隔离实现了
 ```text
 READ_UNCOMMITTED 
@@ -452,11 +460,11 @@ READ_COMMITTED
 REPEATABLE_READ
 SERIALIZABLE
 ```
-事务处理器为stater提供,框架本身不提供任何事物的服务,一切实现均为手写的ORM提供
+
 在如下的代码中可以看到事务的使用,当声明为REQUIRED时候,存在现成的事务则加入,没有则新建
-及时你在父方法中进行了异常捕获但依然会造成整个大事务回滚
-如果声明为REQUIRES_NEW则另起炉灶,从连接处取出一个新的连接,拥有隔离的上下文,REQUIRES_NEW的崩溃不会导致其他事务的回滚,但如果你没有捕获异常那就另说了..
-另外如果你在同一个类声明了多个事务方法,那么你依然需要进行自注入以保证拿到的是代理类,而不是这个类本身,导致事务失效,这一点与Spring保持一致
+即使你在父方法中进行了`异常捕获`但依然会造成`整个大事务回滚`
+如果声明为REQUIRES_NEW则另起炉灶,从连接池取出一个新的连接,拥有隔离的上下文,REQUIRES_NEW的崩溃不会导致其他事务的回滚,但如果你没有捕获异常那就另说了..
+另外如果你在同一个类声明了多个事务方法,那么你依然需要进行`自注入`以保证拿到的是代理类,而不是这个类本身,导致事务失效,这一点与Spring保持一致
 ```java
 @MyService
 public class TransactionImplService implements TransactionService {
@@ -497,7 +505,38 @@ public class TransactionImplService implements TransactionService {
     }
 
 }
+```
 
+ORM与框架为互相隔离的状态,没有任何侵入性的依赖,ORM感知不到框架的存在,框架也不会感知到ORM的存在,他俩之间的联系依靠第三方的Starter来实现
+事务本身由手搓的ORM提供,框架本身是上层服务调用方,如果你希望使用其他的ORM请自己写适配器,保证可以主动注册到事务管理器中
+ORM执行器代码示例如下
+
+```java
+
+@Override
+public int update(Configuration configuration, MappedStatement mappedStatement, Method method, Object[] params) throws SQLException {
+  Connection connection = TransactionContext.getCurrentConnection();
+  String sql = mappedStatement.getSql();
+  BoundSql boundSql = getBoundSql(sql);
+  Map<String, Object> paramValueMapping = new HashMap<>();
+  Parameter[] parameters = method.getParameters();
+  for (int i = 0; i < parameters.length; i++) {
+    paramValueMapping.put(parameters[i].getName(), params[i]);
+  }
+  String jdbcSql = boundSql.getJdbcsqlText();
+  PreparedStatement statement = connection.prepareStatement(jdbcSql);
+  List<ParameterMapping> parameterMappings = parameterMappingTokenHandler.getParameterMapping();
+  for (int i = 0; i < parameterMappings.size(); i++) {
+    String argName = parameterMappings.get(i).getProperty();
+    Object argValue = paramValueMapping.get(argName);
+    Class<?> argClass = argValue.getClass();
+    typeHandlerRegistry.getTypeHandlers().get(argClass).setParameter(statement, i + 1, argValue);
+  }
+  int affectedRows = statement.executeUpdate();
+  parameterMappingTokenHandler.resetParameterMappings();
+  statement.close();
+  return affectedRows;
+}
 ```
 
 ### Service层,你可以选择注入实现类或声明接口,框架会为你注入合适地实现类
@@ -716,6 +755,7 @@ public class AsyncServiceImpl implements AsyncService {
 ### 使用方法
 
 异步底层使用Aop+线程池把方法挪到线程池运行,返回一个Task,您需要依赖注入这个包含异步方法的类
+注意:`异步方法使用事务会存在问题`,因为事务的底层依靠`ThreadLocal`而异步方法并不在主线程运行,所以事务的上下文无法传递到异步方法中
 
 ```java
 
@@ -775,32 +815,6 @@ public class JokePostProcessor implements BeanFactoryPostProcessor {
 ```
 #### 利用这个后置处理器,我们可以扫描Mapper把他们也纳入容器,同时生成代理类
 ```java
-package org.example.FrameworkUtils.Orm.MineBatis;
-
-
-import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
-import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
-import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
-import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
-import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
-import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
-import org.example.FrameworkUtils.Exception.BeanCreationException;
-import org.example.FrameworkUtils.Orm.MineBatis.Io.Resources;
-import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
-import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactory;
-import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactoryBuilder;
-
-import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.util.Properties;
-import java.util.Set;
-
-/**
- * @author ziyuan
- * @since 2024.04
- */
 @Slf4j
 @Import({SqlSessionFactoryBean.class, JokePostProcessor.class})
 public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, PriorityOrdered {
@@ -819,9 +833,11 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
   }
 
 
-  public ObjectFactory<?> createFactoryMethod(Class<?> beanClass, SqlSession sqlSession) {
+  public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) {
     return () -> {
       try {
+
+        SqlSession sqlSession = (SqlSession) beanFactory.getBean(SqlSession.class.getName());
         return sqlSession.getMapper(beanClass);
       } catch (Exception e) {
         log.error("创建MapperBean实例失败", e);
@@ -833,7 +849,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
 
   @Override
   public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
-    log.info("{}依靠自动装配加载,现在要干预BeanDefinition的生成,优先级为PriorityOrdered,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
+    log.info("{}从配置文件或自动装配机制加载,提前干预BeanDefinition的生成,优先级为PriorityOrdered,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
     try {
       Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
       Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
@@ -844,6 +860,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
       throw new RuntimeException(e);
     }
     String minebatisXml = beanFactory.getProperties().getProperty("MineBatis-configXML");
+
     InputStream inputStream;
     if (minebatisXml == null || minebatisXml.isEmpty()) {
       inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
@@ -852,71 +869,27 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
     }
     SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
     inputStream.close();
-    //xxx:确定工厂后生产session
-    SqlSession sqlSession = sqlSessionFactory.openSession();
+    MyBeanDefinition connectionManagerMb = new MyBeanDefinition();
+    connectionManagerMb.setName(ConnectionManagerMinebatisImpl.class.getName());
+    connectionManagerMb.setBeanClass(ConnectionManagerMinebatisImpl.class);
+    registry.registerBeanDefinition(ConnectionManager.class.getName(), connectionManagerMb);
     Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
     for (Class<?> clazz : classSet) {
       MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
       myBeanDefinition.setName(clazz.getName());
       myBeanDefinition.setBeanClass(clazz);
       myBeanDefinition.setStarter(true);
-      myBeanDefinition.setStarterMethod(createFactoryMethod(clazz, sqlSession));
+      myBeanDefinition.setStarterMethod(createFactoryMethod(clazz));
       registry.registerBeanDefinition(clazz.getName(), myBeanDefinition);
     }
-  }
-}
-```
-
-#### 利用这个后置处理器,我们可以使用不标记注解仅检测继承接口的方法,把组件注册
-```java
-public interface MiniJpaRepository extends JpaRepository<User,Integer> {
-    Optional<User> getOneById(Integer id);
-}
-```
-```java
-@Slf4j
-public class JpaRepositoriesRegistrar implements BeanDefinitionRegistryPostProcessor {
-
-    private AutumnBeanFactory beanFactory;
-
-    public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) {
-        return () -> {
-            //doSomeThing
-        };
-    }
-
-    @Override
-    public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
-        log.info("{}从配置文件或自动装配机制加载,提前干预BeanDefinition的生成,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
-        try {
-            Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
-            Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
-            getInstanceMethod.setAccessible(true);
-            beanFactory = (AutumnBeanFactory) getInstanceMethod.invoke(null);
-        } catch (Exception e) {
-            log.error(String.valueOf(e));
-            throw new RuntimeException(e);
-        }
-
-
-        AnnotationScanner.findImplByInterface((String) beanFactory.get("packageUrl"), JpaRepository.class).forEach(jpaRepository -> {
+    AnnotationScanner.findAnnotatedClasses((String) beanFactory.get("packageUrl"), TypeHandler.class).forEach(typeHandler -> {
             MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
-            log.info("注册JpaRepository:{}", jpaRepository.getName());
-            myBeanDefinition.setName(jpaRepository.getName());
-            myBeanDefinition.setBeanClass(jpaRepository);
-            myBeanDefinition.setStarter(true);
-            myBeanDefinition.setStarterMethod(createFactoryMethod(jpaRepository));
-            registry.registerBeanDefinition(jpaRepository.getName(), myBeanDefinition);
+      myBeanDefinition.setName(typeHandler.getName());
+      myBeanDefinition.setBeanClass(typeHandler);
+      registry.registerBeanDefinition(typeHandler.getName(), myBeanDefinition);
         });
     }
-
-
-    @Override
-    public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
-
-    }
 }
-
 ```
 
 ### InstantiationAwareBeanPostProcessor 在Bean被反射创建前后提供拓展 这个处理器用于Aop的底层实现,直接替换之前的实现类为代理类
@@ -1405,13 +1378,18 @@ C:.
   ![Main_main.jpg](pics/AutumnFrameworkRunner_run.jpg)
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
+
 ## 更新记录:
+
+### 2024/11/25
+
+- 修复了部分情况下 监听器会注册两次的问题
+- 现在ORM与框架完全解耦合 不互相依赖
 ### 2024/11/23
 - 针对注入器做一些修改,之前多个Controller注入器会导致多次注入,例如自定义枚举注入器解析了枚举,但是基础注入器又加入到参数列表一次,导致Invoke方法的时候参数不匹配,现在加入了一个索引Set解决这个问题
 - 修复了AOP执行链的一些问题,现在可以正确处理多个工厂的执行问题,例如都可以收到异常通知
 - 加入了事务,但现在对ORM部分还是存在代码侵入,日后进行改进
 
-```java
 ### 2024/11/12
 - 简单的事件发布机制加入
 ```java

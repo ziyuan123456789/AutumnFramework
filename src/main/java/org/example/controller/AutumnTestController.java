@@ -37,11 +37,11 @@ import java.util.Map;
 @MyController
 @Slf4j
 public class AutumnTestController {
-    //xxx:测试配置文件注入器
+    //测试配置文件注入器
     @Value("url")
     private String sqlUrl;
 
-    //xxx:测试自身循环依赖
+    //测试自身循环依赖
     @MyAutoWired
     private AutumnTestController autumnTestController;
 

@@ -31,7 +31,7 @@ public class TransactionImplService implements TransactionService {
     public String transactionTest() throws SQLException {
         updateMapper.insertUser("1", "1", "1", "1");
         try {
-            transactionService.transactionRequireNew();
+            transactionService.transactionRequire();
         } catch (Exception e) {
 
         }

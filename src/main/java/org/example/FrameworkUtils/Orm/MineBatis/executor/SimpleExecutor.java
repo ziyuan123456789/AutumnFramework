@@ -1,8 +1,8 @@
 package org.example.FrameworkUtils.Orm.MineBatis.executor;
 
-import com.autumn.ormstarter.ORMUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.Orm.MineBatis.GenericTokenParser;
+import org.example.FrameworkUtils.Orm.MineBatis.Io.TransactionContext;
 import org.example.FrameworkUtils.Orm.MineBatis.ParameterMapping;
 import org.example.FrameworkUtils.Orm.MineBatis.ParameterMappingTokenHandler;
 import org.example.FrameworkUtils.Orm.MineBatis.configuration.BoundSql;
@@ -50,19 +50,15 @@ public class SimpleExecutor implements Executor {
 
     @Override
     public int update(Configuration configuration, MappedStatement mappedStatement, Method method, Object[] params) throws SQLException {
-        Connection connection = ORMUtils.getCurrentConnection();
+        Connection connection = TransactionContext.getCurrentConnection();
         String sql = mappedStatement.getSql();
         BoundSql boundSql = getBoundSql(sql);
-
         Map<String, Object> paramValueMapping = new HashMap<>();
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; i++) {
             paramValueMapping.put(parameters[i].getName(), params[i]);
         }
-
         String jdbcSql = boundSql.getJdbcsqlText();
-
-
         PreparedStatement statement = connection.prepareStatement(jdbcSql);
         List<ParameterMapping> parameterMappings = parameterMappingTokenHandler.getParameterMapping();
         for (int i = 0; i < parameterMappings.size(); i++) {
