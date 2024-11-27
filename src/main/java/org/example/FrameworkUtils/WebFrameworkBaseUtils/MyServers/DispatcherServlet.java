@@ -28,7 +28,6 @@ import java.lang.reflect.Parameter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -46,12 +45,14 @@ import java.util.concurrent.Executors;
 
 @MyComponent
 public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
+
     private AutumnBeanFactory myContext;
+
     @MyAutoWired
     private TomCatHtmlResponse tomCatHtmlResponse;
+
     @MyAutoWired
     private JsonFormatter jsonFormatter;
-
 
     @MyAutoWired
     private AnnotationScanner scanner;
@@ -224,24 +225,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
         return param.get(paramName);
     }
 
-    private static boolean isJavaBean(Class<?> clazz) {
-        try {
-            clazz.getConstructor();
-        } catch (NoSuchMethodException e) {
-            return false;
-        }
-        if (Collection.class.isAssignableFrom(clazz) ||
-                Map.class.isAssignableFrom(clazz) ||
-                clazz.isArray() ||
-                clazz.isPrimitive() ||
-                clazz == String.class ||
-                Number.class.isAssignableFrom(clazz) ||
-                Date.class.isAssignableFrom(clazz)) {
-            return false;
-        }
 
-        return true;
-    }
 
     //xxx:依照方法的返回值来确定选择哪种返回器
     private void handleSocketOutputByType(Object result, HttpServletResponse resp) {

@@ -77,13 +77,24 @@ public class TransactionAspect implements AutumnAopFactory {
     public void doThrowing(Object obj, Method method, Object[] args, Exception e) {
         AutumnTransactional transactional = method.getAnnotation(AutumnTransactional.class);
         if (transactional != null) {
-            try {
-                transactionManager.rollbackTransaction();
-            } catch (SQLException ex) {
-                throw new RuntimeException("回滚事务失败", ex);
+            Class<? extends Throwable>[] rollbackFor = transactional.rollbackFor();
+            boolean shouldRollback = false;
+            for (Class<? extends Throwable> rollbackException : rollbackFor) {
+                if (rollbackException.isAssignableFrom(e.getClass())) {
+                    shouldRollback = true;
+                    break;
+                }
+            }
+            if (shouldRollback) {
+                try {
+                    transactionManager.rollbackTransaction();
+                } catch (SQLException ex) {
+                    throw new RuntimeException("回滚事务失败", ex);
+                }
             }
         }
     }
+
 
 }
 

@@ -31,7 +31,7 @@ public class TransactionImplService implements TransactionService {
     public String transactionTest() throws SQLException {
         updateMapper.insertUser("1", "1", "1", "1");
         try {
-            transactionService.transactionRequire();
+            transactionService.transactionRequireNew();
         } catch (Exception e) {
 
         }
@@ -39,17 +39,17 @@ public class TransactionImplService implements TransactionService {
     }
 
     @Override
-    @AutumnTransactional(propagation = Propagation.REQUIRES_NEW)
-    public void transactionRequire() throws SQLException {
+    @AutumnTransactional
+    public void transactionRequire() {
         updateMapper.insertUser("2", "2", "2", "2");
         throw new RuntimeException("测试");
     }
 
     @Override
-    @AutumnTransactional(rollbackFor = Exception.class)
+    @AutumnTransactional
     public void transactionRequireNew() throws SQLException {
         updateMapper.insertUser("2", "2", "2", "2");
-        throw new RuntimeException("测试");
+        throw new SQLException("测试");
     }
 
 }

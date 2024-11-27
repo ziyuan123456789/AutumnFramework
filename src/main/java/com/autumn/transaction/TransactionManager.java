@@ -1,5 +1,7 @@
 package com.autumn.transaction;
 
+import static com.autumn.transaction.Propagation.REQUIRED;
+import static com.autumn.transaction.Propagation.REQUIRES_NEW;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.Orm.MineBatis.Io.TransactionContext;
@@ -27,6 +29,7 @@ public class TransactionManager {
                     Connection connection = sqlSession.getConnection();
                     connection.setAutoCommit(false);
                     TransactionContext.pushConnection(connection);
+                    log.info("开启事务,隔离等级为：{}", REQUIRED);
                 } else {
                 }
                 break;
@@ -34,6 +37,7 @@ public class TransactionManager {
                 Connection newConnection = sqlSession.getConnection();
                 newConnection.setAutoCommit(false);
                 TransactionContext.pushConnection(newConnection);
+                log.info("开启事务,隔离等级为：{}", REQUIRES_NEW);
                 break;
             default:
                 throw new UnsupportedOperationException("不支持的事务传播行为：" + propagation);
@@ -47,6 +51,7 @@ public class TransactionManager {
             connection.commit();
             connection.close();
             TransactionContext.popConnection();
+            log.info("事务提交成功");
         }
     }
 
@@ -57,6 +62,7 @@ public class TransactionManager {
             connection.rollback();
             connection.close();
             TransactionContext.popConnection();
+            log.info("事务回滚成功");
         }
     }
 }
