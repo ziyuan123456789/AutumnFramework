@@ -131,11 +131,11 @@
 @MyController
 @Slf4j
 public class AutumnTestController {
-  //xxx:测试配置文件注入器
+  //测试配置文件注入器
   @Value("url")
   private String sqlUrl;
 
-  //xxx:测试自身循环依赖
+  //测试自身循环依赖
   @MyAutoWired
   private AutumnTestController autumnTestController;
 
@@ -470,7 +470,6 @@ SERIALIZABLE
 `rollbackFor = Exception.class/Throwable.class`
 
 另外如果你在同一个类声明了多个事务方法，那么你依然需要进行 `自注入` 以保证拿到的是代理类,而不是这个被代理类本身,这一点与
-
 Spring 保持一致 此外直接调用方法与this.method 效果是一样的,均会导致事务失效
 
 ```java
@@ -515,11 +514,8 @@ public class TransactionImplService implements TransactionService {
 }
 ```
 
-ORM 与框架为互相隔离的状态,没有任何侵入性的依赖,ORM 感知不到框架的存在,框架也不会感知到 ORM 的存在  
-他俩之间的联系依靠第三方的 Starter 来实现
-
-事务本身由手搓的 ORM 提供,框架本身是上层服务调用方  
-如果你希望使用其他的 ORM 请自己写适配器,保证可以主动注册到事务管理器中
+ORM与框架为互相隔离的状态,ORM感知不到框架的存在,框架也不会感知到ORM的存在  
+事务本身由手搓的 ORM 提供,框架本身是上层服务调用方.如果你希望使用其他的 ORM 请自己写适配器,保证可以主动注册到事务管理器中
 
 ```java
 @Override

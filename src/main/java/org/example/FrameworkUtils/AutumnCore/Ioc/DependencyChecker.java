@@ -18,9 +18,11 @@ import java.util.Set;
  */
 @Slf4j
 @MyComponent
-//有向图的深度优先搜索
+//有向图的DFS
 public class DependencyChecker {
+
     private Map<String, List<Class<?>>> beanDependencies;
+
     @Value("allow-circular-references")
     private boolean enableCycleDependency;
 
@@ -58,7 +60,7 @@ public class DependencyChecker {
                 String depName = depClass.getName();
 
                 if (!globalVisited.contains(depName)) {
-                    parentMap.put(depName, current); // Record parent
+                    parentMap.put(depName, current);
 
                     if (isCyclic(depName, localVisited, parentMap, cycle, globalVisited, allCycles)) {
                         foundCycle = true;
@@ -78,7 +80,7 @@ public class DependencyChecker {
             }
         }
 
-        localVisited.remove(current); // Remove from localVisited when backtracking
+        localVisited.remove(current);
         return foundCycle;
     }
 
