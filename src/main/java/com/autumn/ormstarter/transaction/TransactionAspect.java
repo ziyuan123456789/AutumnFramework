@@ -1,6 +1,6 @@
-package com.autumn.transaction;
+package com.autumn.ormstarter.transaction;
 
-import com.autumn.transaction.annotation.AutumnTransactional;
+import com.autumn.ormstarter.transaction.annotation.AutumnTransactional;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;

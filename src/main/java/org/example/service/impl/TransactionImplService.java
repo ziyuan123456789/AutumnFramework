@@ -1,8 +1,8 @@
 package org.example.service.impl;
 
-import com.autumn.transaction.Isolation;
-import com.autumn.transaction.Propagation;
-import com.autumn.transaction.annotation.AutumnTransactional;
+import com.autumn.ormstarter.transaction.Isolation;
+import com.autumn.ormstarter.transaction.Propagation;
+import com.autumn.ormstarter.transaction.annotation.AutumnTransactional;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.mapper.UpdateMapper;

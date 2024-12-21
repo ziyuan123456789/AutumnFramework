@@ -37,9 +37,8 @@ import java.util.stream.Collectors;
 //xxx:简单执行器
 public class SimpleExecutor implements Executor {
 
+
     private TypeHandlerRegistry typeHandlerRegistry;
-
-
 
     private ParameterMappingTokenHandler parameterMappingTokenHandler = new ParameterMappingTokenHandler();
 

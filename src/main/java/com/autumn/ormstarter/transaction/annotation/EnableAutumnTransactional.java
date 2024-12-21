@@ -1,7 +1,7 @@
-package com.autumn.transaction.annotation;
+package com.autumn.ormstarter.transaction.annotation;
 
-import com.autumn.transaction.TransactionAspect;
-import com.autumn.transaction.TransactionManager;
+import com.autumn.ormstarter.transaction.TransactionAspect;
+import com.autumn.ormstarter.transaction.TransactionManager;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
 
 import java.lang.annotation.ElementType;

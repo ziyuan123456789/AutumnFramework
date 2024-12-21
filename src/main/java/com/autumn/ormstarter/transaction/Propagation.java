@@ -1,4 +1,4 @@
-package com.autumn.transaction;
+package com.autumn.ormstarter.transaction;
 
 /**
  * @author ziyuan

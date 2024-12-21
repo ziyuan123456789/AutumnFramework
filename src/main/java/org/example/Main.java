@@ -3,7 +3,7 @@ package org.example;
 import com.autumn.async.EnableAutumnAsync;
 import com.autumn.cache.EnableAutumnCache;
 import com.autumn.ormstarter.minijpa.EnableJpaRepositories;
-import com.autumn.transaction.annotation.EnableAutumnTransactional;
+import com.autumn.ormstarter.transaction.annotation.EnableAutumnTransactional;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAutoConfiguration;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;

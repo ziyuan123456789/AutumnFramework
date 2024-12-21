@@ -1,7 +1,7 @@
-package com.autumn.transaction.annotation;
+package com.autumn.ormstarter.transaction.annotation;
 
-import com.autumn.transaction.Isolation;
-import com.autumn.transaction.Propagation;
+import com.autumn.ormstarter.transaction.Isolation;
+import com.autumn.ormstarter.transaction.Propagation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

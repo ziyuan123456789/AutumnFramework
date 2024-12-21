@@ -1,7 +1,7 @@
 package org.example.service.impl;
 
 import com.autumn.async.Async;
-import com.autumn.transaction.annotation.AutumnTransactional;
+import com.autumn.ormstarter.transaction.annotation.AutumnTransactional;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.service.AsyncService;

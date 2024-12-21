@@ -1,9 +1,12 @@
-package com.autumn.transaction;
+package com.autumn.ormstarter.transaction;
 
-import static com.autumn.transaction.Propagation.REQUIRED;
-import static com.autumn.transaction.Propagation.REQUIRES_NEW;
+import static com.autumn.ormstarter.transaction.Propagation.REQUIRED;
+import static com.autumn.ormstarter.transaction.Propagation.REQUIRES_NEW;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnCore.Event.Event;
+import org.example.FrameworkUtils.AutumnCore.Event.IocInitEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.Listener.EventListener;
 import org.example.FrameworkUtils.Orm.MineBatis.Io.TransactionContext;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
 
@@ -16,10 +19,10 @@ import java.sql.SQLException;
  */
 
 @Slf4j
-public class TransactionManager {
+public class TransactionManager implements EventListener<IocInitEvent> {
+
     @MyAutoWired
     private SqlSession sqlSession;
-
 
     // 开始事务
     public void beginTransaction(Propagation propagation) throws SQLException {
@@ -64,5 +67,15 @@ public class TransactionManager {
             TransactionContext.popConnection();
             log.info("事务回滚成功");
         }
+    }
+
+    @Override
+    public void onEvent(IocInitEvent event) {
+        log.warn("成功接收到开机信号,MineBatis事务处理器已成功注册");
+    }
+
+    @Override
+    public boolean supportsEvent(Event event) {
+        return event instanceof IocInitEvent;
     }
 }
