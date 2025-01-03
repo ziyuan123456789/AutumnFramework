@@ -1232,8 +1232,8 @@ public class Main {
 @Slf4j
 public class Main {
   public static void main(String[] args) {
-    AutumnFrameworkRunner autumnFrameworkRunner = new AutumnFrameworkRunner();
-    autumnFrameworkRunner.run(Main.class);
+    AutumnFrameworkRunner autumnApplication = new AutumnFrameworkRunner();
+    autumnApplication.run(Main.class);
   }
 }
 ```

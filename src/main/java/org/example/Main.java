@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAutoConfiguration;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyPreDestroy;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFrameworkRunner;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnApplication;
 
 
 /*
@@ -30,8 +30,8 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnFramewor
  */
 public class Main {
     public static void main(String[] args) {
-        AutumnFrameworkRunner autumnFrameworkRunner = new AutumnFrameworkRunner();
-        autumnFrameworkRunner.run(Main.class);
+        AutumnApplication autumnApplication = new AutumnApplication();
+        autumnApplication.run(Main.class);
     }
     @MyPreDestroy
     public void sayBay(){

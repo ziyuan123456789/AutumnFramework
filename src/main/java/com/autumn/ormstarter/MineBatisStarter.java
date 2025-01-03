@@ -26,7 +26,7 @@ import java.util.Set;
 /**
  * @author ziyuan
  * @since 2024.04
-<p>这是一个连接 ORM 框架和 Spring 框架的桥梁，提供无侵入的方式引入并配置 ORM 框架。</p>
+<p>这是一个连接 ORM和框架的桥梁，提供无侵入的方式引入并配置 ORM 框架。</p>
 <ol>
 <li><b>扫描注册 Mapper</b>: 自动扫描并注册所有的 Mapper。</li>
 <li><b>扫描注册 TypeHandler</b>: 自动扫描并注册自定义的 TypeHandler。</li>

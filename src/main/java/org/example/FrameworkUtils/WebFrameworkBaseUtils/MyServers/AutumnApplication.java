@@ -49,8 +49,12 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @MyComponent
-public class AutumnFrameworkRunner {
-    //这个类是启动的入口,这个名字有点难听,以后会换
+/*
+ * 核心启动类,当时在设计这个类的时候糅合了网络与容器部分,正常来说这个启动类应该只负责容器的创建,其他部分用插件形式来进行扩展
+ * 不过随着条件注解,复合注解,简易spi机制,与各种后置处理器的加入形成了简单的自动装配机制,启动类的作用就逐渐降低了
+ * 今后会从启动类完整剔除网络部分
+ */
+public class AutumnApplication {
     AutumnBeanFactory beanFactory ;
     AnnotationScanner scanner = new AnnotationScanner();
 
@@ -60,7 +64,7 @@ public class AutumnFrameworkRunner {
 
     public void run(Class<?> mainClass) {
         try {
-            //xxx:保证容器已经存在
+            //保证容器已经存在
             Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
             Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
             getInstanceMethod.setAccessible(true);
@@ -372,6 +376,7 @@ public class AutumnFrameworkRunner {
                 if (method.isAnnotationPresent(MyRequestMapping.class)) {
                     MyRequestMapping annotation = method.getAnnotation(MyRequestMapping.class);
                     String value = annotation.value();
+                    log.info("映射URL: {}", value);
                     if (!value.isEmpty()) {
                         String fullMethodName = clazz.getName() + "." + method.getName();
                         urlMap.put(value, fullMethodName);
