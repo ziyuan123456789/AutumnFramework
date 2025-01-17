@@ -5,8 +5,7 @@ import com.autumn.cache.EnableAutumnCache;
 import com.autumn.ormstarter.minijpa.EnableJpaRepositories;
 import com.autumn.ormstarter.transaction.annotation.EnableAutumnTransactional;
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAutoConfiguration;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
+import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBootApplication;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyPreDestroy;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnApplication;
 
@@ -15,15 +14,12 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnApplicat
   @author ziyuan
  * @since 2023.10
  */
-@MyConfig
-@EnableAutoConfiguration
 @EnableAutumnAsync
 @EnableAutumnCache
 @EnableAutumnTransactional
 @EnableJpaRepositories
+@AutumnBootApplication
 @Slf4j
-//@CompomentScan({"org.example"})
-//@EnableAutumnFramework
 /*
 默认扫描Main方法所在的包也就是org.example
 你可以注意到com.autumn与org.example平级,用于模拟jar包,避免Bean发现机制扫描到

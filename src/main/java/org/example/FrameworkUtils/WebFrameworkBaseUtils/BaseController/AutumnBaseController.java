@@ -31,7 +31,6 @@ public class AutumnBaseController implements BeanFactoryAware {
 
     @MyRequestMapping("/")
     public View getMainPage() {
-        System.out.println("woao");
         return autumnMvcConfiguration.getMainPage();
     }
 

@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2023.10
  */
 @Slf4j
-@MyComponent
+
 /*
  * 核心启动类,当时在设计这个类的时候糅合了网络与容器部分,正常来说这个启动类应该只负责容器的创建,其他部分用插件形式来进行扩展
  * 不过随着条件注解,复合注解,简易spi机制,与各种后置处理器的加入形成了简单的自动装配机制,启动类的作用就逐渐降低了
@@ -134,10 +134,11 @@ public class AutumnApplication {
         annotations.add(MyWebSocketConfig.class);
         annotations.add(MyAspect.class);
         Set<Class<?>> annotatedClasses = scanner.findAnnotatedClassesList(mainClass.getPackageName(), annotations);
-        //首先我们检测mian方法的包下符合注解要求的类
+        //首先我们检测main方法的包下符合注解要求的类
         List<Class<BeanFactoryPostProcessor>> beanFactoryPostProcessorsClassList = new ArrayList<>();
         //现在开始魔法时间,引入starter,实际上注解本身没有意义,其实应该是复合注解import一个大爹来调度bean的装配
-        if (mainClass.getAnnotation(EnableAutoConfiguration.class) != null) {
+        if (!AnnotationUtils.findAllClassAnnotations(mainClass, EnableAutoConfiguration.class).isEmpty()) {
+//        if (mainClass.getAnnotation(EnableAutoConfiguration.class) != null) {
             // 加载自动配置类
             Map<String, List<String>> autoConfigurations = AutumnFactoriesLoader.parseConfigurations();
             List<String> allProcessors = new ArrayList<>(autoConfigurations.get("BeanDefinitionRegistryPostProcessor"));
@@ -178,10 +179,13 @@ public class AutumnApplication {
 //        List<Class<BeanFactoryPostProcessor>> starterRegisterer = xmlBeansLoader.loadStarterClasses("plugins");
         long startTime = System.currentTimeMillis();
         log.info("IOC容器开始初始化");
-
         for (Class<?> clazz : annotatedClasses) {
-            MyConfig myConfig = clazz.getAnnotation(MyConfig.class);
-            if (myConfig != null || FactoryBean.class.isAssignableFrom(clazz)) {
+            List<MyConfig> allClassAnnotations = AnnotationUtils.findAllClassAnnotations(clazz, MyConfig.class);
+//            MyConfig myConfig = clazz.getAnnotation(MyConfig.class);
+            if (!allClassAnnotations.isEmpty() || FactoryBean.class.isAssignableFrom(clazz)) {
+                if (clazz.isAnnotation()) {
+                    continue;
+                }
                 MyBeanDefinition myConfigBeanDefinition = new MyBeanDefinition();
                 myConfigBeanDefinition.setName(clazz.getName());
                 myConfigBeanDefinition.setBeanClass(clazz);
@@ -196,6 +200,7 @@ public class AutumnApplication {
                     }
 
                 }
+                //实际上这是一个完全错误的设计,但确实可以起到作用
                 if (FactoryBean.class.isAssignableFrom(clazz)) {
                     try {
                         Method getObjectMethod = clazz.getMethod("getObject");
@@ -206,6 +211,9 @@ public class AutumnApplication {
                     }
                 }
             } else {
+                if (clazz.isAnnotation()) {
+                    continue;
+                }
                 MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
                 Method[] methods = clazz.getDeclaredMethods();
                 for (Method method : methods) {

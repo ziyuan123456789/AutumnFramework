@@ -37,8 +37,8 @@
 
 ## 近期准备更新的内容:
 - Controller直接注入对象
-
 - 尝试手写TomCat 命名为Jerry mouse
+- 对启动类进行完整的重写,按照SpringBoot的初始化方式进行启动
 
 ## 注意事项:
 
@@ -124,6 +124,37 @@
    循环依赖检测：确保没有循环依赖存在
 10. 销毁方法的处理：
    销毁方法：在应用关闭时调用Bean的销毁方法
+```
+
+## 代码示范 启动类
+
+```java
+
+@EnableAutumnAsync
+@EnableAutumnCache
+@EnableAutumnTransactional
+@AutumnBootApplication
+@Slf4j
+public class Main {
+  public static void main(String[] args) {
+    AutumnApplication autumnApplication = new AutumnApplication();
+    autumnApplication.run(Main.class);
+  }
+
+  @MyPreDestroy
+  public void sayBay() {
+    log.info("再见孩子们");
+  }
+}
+
+@MyConfig
+@EnableAutoConfiguration
+@Target({ElementType.TYPE})
+@Inherited
+@Retention(RetentionPolicy.RUNTIME)
+public @interface AutumnBootApplication {
+}
+
 ```
 ## 代码示范 MVC章节
 ### Controller
