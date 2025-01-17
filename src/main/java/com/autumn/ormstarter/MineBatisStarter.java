@@ -126,4 +126,9 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
             registry.registerBeanDefinition(typeHandler.getName(), myBeanDefinition);
         });
     }
+
+    @Override
+    public int getOrder() {
+        return 4;
+    }
 }

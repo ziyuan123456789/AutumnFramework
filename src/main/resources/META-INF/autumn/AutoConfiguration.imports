@@ -1,2 +1,3 @@
 BeanDefinitionRegistryPostProcessor=com.autumn.ormstarter.MineBatisStarter
 Beans=com.autumn.swaggerstarter.BaseController
+ApplicationContextInitializer=org.example.FrameworkUtils.AutumnCore.Bootstrap.BaseBootstrapRegistryInitializer

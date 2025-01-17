@@ -16,6 +16,7 @@ import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AutumnFactoriesLoader;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.XMLBeansLoader;
+import org.example.FrameworkUtils.AutumnCore.Bootstrap.BootstrapRegistryInitializer;
 import org.example.FrameworkUtils.AutumnCore.Event.IocInitEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.EventListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Publisher.EventMulticaster;
@@ -32,6 +33,7 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.SimpleMyBeanDefinitionRegistry;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Utils.AnnotationUtils;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
+import org.springframework.util.Assert;
 
 import java.lang.annotation.Annotation;
 import java.lang.management.ManagementFactory;
@@ -47,22 +49,64 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author ziyuan
  * @since 2023.10
  */
-@Slf4j
 
 /*
  * 核心启动类,当时在设计这个类的时候糅合了网络与容器部分,正常来说这个启动类应该只负责容器的创建,其他部分用插件形式来进行扩展
  * 不过随着条件注解,复合注解,简易spi机制,与各种后置处理器的加入形成了简单的自动装配机制,启动类的作用就逐渐降低了
  * 今后会从启动类完整剔除网络部分
  */
+@Slf4j
 public class AutumnApplication {
+
+    private Class<?> primarySources;
+
+    private List<BootstrapRegistryInitializer> bootstrapRegistryInitializers;
+
+    private Map<String, List<String>> spiMap;
+
     AutumnBeanFactory beanFactory ;
+
     AnnotationScanner scanner = new AnnotationScanner();
 
-    //xxx:模板方法,以后会拓展,会通过starter机制引入web部分来继承这个启动类,但这都是后话了,目前代码耦合的很紧很难办
-    public void postProcessBeanFactory() {
+
+    public AutumnApplication(Class<?> primarySources) {
+        Assert.notNull(primarySources, "主类不得为空");
+        this.primarySources = primarySources;
+        this.initAutumnSpi();
+        this.bootstrapRegistryInitializers = this.getAutumnFactoriesInstances(BootstrapRegistryInitializer.class);
     }
 
-    public void run(Class<?> mainClass) {
+    private void initAutumnSpi() {
+        try {
+            spiMap = AutumnFactoriesLoader.parseConfigurations();
+        } catch (Exception e) {
+            log.error("加载spi配置文件失败", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void addInitializers(BootstrapRegistryInitializer initializer) {
+        this.bootstrapRegistryInitializers.add(initializer);
+    }
+
+    private <T> List<T> getAutumnFactoriesInstances(Class<T> type) {
+        List<String> initializers = new ArrayList<>(spiMap.get("ApplicationContextInitializer"));
+        List<BootstrapRegistryInitializer> result = new ArrayList<>();
+        for (String className : initializers) {
+            try {
+                Class<?> clazz = Class.forName(className);
+                if (type.isAssignableFrom(clazz)) {
+                    result.add((BootstrapRegistryInitializer) clazz.getDeclaredConstructor().newInstance());
+                }
+            } catch (Exception e) {
+                log.warn(e.getMessage(), e);
+            }
+        }
+        return (List<T>) result;
+    }
+
+    public void run() {
+
         try {
             //保证容器已经存在
             Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
@@ -70,7 +114,7 @@ public class AutumnApplication {
             getInstanceMethod.setAccessible(true);
             beanFactory = (AutumnBeanFactory) getInstanceMethod.invoke(null);
         } catch(Exception e){
-            log.error(String.valueOf(e));
+            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
 
@@ -78,7 +122,7 @@ public class AutumnApplication {
         List<String> jvmArgs = runtimeBean.getInputArguments();
         //打印一下启动的参数
         for (String arg : jvmArgs) {
-            log.warn(arg);
+            log.info(arg);
         }
         log.info("""
 
@@ -91,11 +135,11 @@ public class AutumnApplication {
         );
 
         //xxx:保存主类的包名,也就是默认扫描的包,以后会开放自定义扫包路径
-        beanFactory.put("packageUrl", mainClass.getPackageName());
+        beanFactory.put("packageUrl", primarySources.getPackageName());
         try {
-            componentScan(mainClass, beanFactory);
+            componentScan(primarySources, beanFactory);
         } catch (Exception e) {
-            log.error(String.valueOf(e), e);
+            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
         //这一步是在配置路由表
@@ -140,9 +184,9 @@ public class AutumnApplication {
         if (!AnnotationUtils.findAllClassAnnotations(mainClass, EnableAutoConfiguration.class).isEmpty()) {
 //        if (mainClass.getAnnotation(EnableAutoConfiguration.class) != null) {
             // 加载自动配置类
-            Map<String, List<String>> autoConfigurations = AutumnFactoriesLoader.parseConfigurations();
-            List<String> allProcessors = new ArrayList<>(autoConfigurations.get("BeanDefinitionRegistryPostProcessor"));
-            allProcessors.addAll(autoConfigurations.get("BeanFactoryPostProcessor"));
+
+            List<String> allProcessors = new ArrayList<>(spiMap.get("BeanDefinitionRegistryPostProcessor"));
+            allProcessors.addAll(spiMap.get("BeanFactoryPostProcessor"));
 
             // 处理所有处理器类，并且检查它们是否是 BeanFactoryPostProcessor 类型的子类
             for (String className : allProcessors) {
@@ -154,12 +198,12 @@ public class AutumnApplication {
                         beanFactoryPostProcessorsClassList.add((Class<BeanFactoryPostProcessor>) clazz);
                     }
                 } catch (ClassNotFoundException e) {
-                    System.err.println("未找到类: " + className);
+                    log.warn(e.getMessage(), e);
                 }
             }
 
             //处理所有通过配置文件指定的 Bean类
-            for (String className : autoConfigurations.get("Beans")) {
+            for (String className : spiMap.get("Beans")) {
                 try {
                     Class<?> clazz = Class.forName(className);
                     annotatedClasses.add(clazz);

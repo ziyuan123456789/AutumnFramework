@@ -1,7 +1,6 @@
 package org.example.FrameworkUtils.AutumnCore.Aop;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
@@ -27,5 +26,10 @@ public class JokePostProcessor implements BeanFactoryPostProcessor, Ordered {
             registry.removeBeanDefinition("BYD");
             registry.registerBeanDefinition("postProcessChange", bydBean);
         }
+    }
+
+    @Override
+    public int getOrder() {
+        return 1;
     }
 }

@@ -78,5 +78,10 @@ public class CacheAopProxyHandler implements AutumnAopFactory, Ordered {
     public void doThrowing(Object obj, Method method, Object[] args, Exception e) {
         log.error("缓存切面方法抛出异常", e);
     }
+
+    @Override
+    public int getOrder() {
+        return 2;
+    }
 }
 

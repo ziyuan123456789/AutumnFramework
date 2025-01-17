@@ -25,10 +25,13 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnApplicat
 你可以注意到com.autumn与org.example平级,用于模拟jar包,避免Bean发现机制扫描到
  */
 public class Main {
+
     public static void main(String[] args) {
-        AutumnApplication autumnApplication = new AutumnApplication();
-        autumnApplication.run(Main.class);
+        AutumnApplication autumnApplication = new AutumnApplication(Main.class);
+//        autumnApplication.addInitializers(new BaseBootstrapRegistryInitializer());
+        autumnApplication.run();
     }
+
     @MyPreDestroy
     public void sayBay(){
         log.info("再见孩子们");

@@ -19,11 +19,13 @@ import java.util.Map;
  */
 @Slf4j
 public class AutumnFactoriesLoader {
+
     public static Map<String, List<String>> parseConfigurations() throws IOException {
         Map<String, List<String>> configMap = new HashMap<>();
         configMap.put("BeanDefinitionRegistryPostProcessor", new ArrayList<>());
         configMap.put("BeanFactoryPostProcessor", new ArrayList<>());
         configMap.put("Beans", new ArrayList<>());
+        configMap.put("ApplicationContextInitializer", new ArrayList<>());
 
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         Enumeration<URL> urls = classLoader.getResources("META-INF/autumn/AutoConfiguration.imports");

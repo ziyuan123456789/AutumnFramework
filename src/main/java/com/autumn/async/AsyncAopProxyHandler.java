@@ -69,5 +69,10 @@ public class AsyncAopProxyHandler implements AutumnAopFactory, Ordered {
     public void doThrowing(Object obj, Method method, Object[] args, Exception e) {
         log.error("异步切面方法抛出异常", e);
     }
+
+    @Override
+    public int getOrder() {
+        return 3;
+    }
 }
 

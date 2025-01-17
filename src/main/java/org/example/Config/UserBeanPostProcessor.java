@@ -33,4 +33,9 @@ public class UserBeanPostProcessor implements BeanPostProcessor, Ordered , BeanF
     public void setBeanFactory(AutumnBeanFactory beanFactory) {
         this.beanFactory=beanFactory;
     }
+
+    @Override
+    public int getOrder() {
+        return 10;
+    }
 }
