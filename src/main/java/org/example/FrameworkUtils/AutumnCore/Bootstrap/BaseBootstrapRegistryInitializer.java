@@ -12,9 +12,7 @@ public class BaseBootstrapRegistryInitializer implements BootstrapRegistryInitia
     @Override
     public void initialize(BootstrapRegistry registry) {
         log.info("BaseBootstrapRegistryInitializer加载");
-        DefaultAutumnBootstrapContext context = new DefaultAutumnBootstrapContext();
         DataController test = new DataController();
-        context.register(DataController.class, test);
         registry.register(DataController.class, InstanceSupplier.of(test));
     }
 }

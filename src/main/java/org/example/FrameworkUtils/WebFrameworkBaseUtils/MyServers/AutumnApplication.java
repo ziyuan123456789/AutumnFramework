@@ -17,8 +17,10 @@ import org.example.FrameworkUtils.AutumnCore.BeanLoader.AutumnFactoriesLoader;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.XMLBeansLoader;
 import org.example.FrameworkUtils.AutumnCore.Bootstrap.BootstrapRegistryInitializer;
+import org.example.FrameworkUtils.AutumnCore.Bootstrap.DefaultBootstrapContext;
 import org.example.FrameworkUtils.AutumnCore.Event.IocInitEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
+import org.example.FrameworkUtils.AutumnCore.Event.Listener.AutumnApplicationRunListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.EventListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Publisher.EventMulticaster;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
@@ -137,6 +139,13 @@ public class AutumnApplication {
 
     public void run() {
 
+        DefaultBootstrapContext bootstrapContext = this.createBootstrapContext();
+        List<AutumnApplicationRunListener> listeners = getAutumnFactoriesInstances(AutumnApplicationRunListener.class);
+        for (AutumnApplicationRunListener listener : listeners) {
+            listener.starting(bootstrapContext, primarySources);
+        }
+
+
         try {
             //保证容器已经存在
             Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
@@ -193,6 +202,12 @@ public class AutumnApplication {
         //运行时判断环境,依照自定义的条件注解选择运行容器,有我写的socketserver和tomcat
         ServerRunner server = (ServerRunner) beanFactory.getBean(ServerRunner.class.getName());
         server.run();
+    }
+
+    private DefaultBootstrapContext createBootstrapContext() {
+        DefaultBootstrapContext bootstrapContext = new DefaultBootstrapContext();
+        this.bootstrapRegistryInitializers.forEach((initializer) -> initializer.initialize(bootstrapContext));
+        return bootstrapContext;
     }
 
 

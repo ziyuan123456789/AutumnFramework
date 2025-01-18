@@ -10,6 +10,6 @@ public interface InstanceSupplier<T> {
         return (registry) -> instance;
     }
 
-    T get(AutumnBootstrapContext context);
+    T get(ConfigurableBootstrapContext context);
 
 }

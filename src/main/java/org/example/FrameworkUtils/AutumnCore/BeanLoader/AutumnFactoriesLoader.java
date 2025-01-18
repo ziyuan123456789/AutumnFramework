@@ -1,6 +1,7 @@
 package org.example.FrameworkUtils.AutumnCore.BeanLoader;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.AutumnCore.Event.Listener.AutumnApplicationRunListener;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,6 +29,7 @@ public class AutumnFactoriesLoader {
         configMap.put("BootstrapRegistryInitializer", new ArrayList<>());
         configMap.put("ApplicationContextInitializer", new ArrayList<>());
         configMap.put("ApplicationListener", new ArrayList<>());
+        configMap.put("AutumnApplicationRunListener", new ArrayList<>());
 
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         Enumeration<URL> urls = classLoader.getResources("META-INF/autumn/AutoConfiguration.imports");
