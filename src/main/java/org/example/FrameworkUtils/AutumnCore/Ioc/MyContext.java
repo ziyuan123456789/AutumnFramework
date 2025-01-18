@@ -91,11 +91,11 @@ public class MyContext implements AutumnBeanFactory {
 
         // xxx:一级缓存找不到
         if (singletonObject == null) {
-            log.debug("一级缓存中找不到Bean,前往二级缓存查找: {}", beanName);
+//            log.debug("一级缓存中找不到Bean,前往二级缓存查找: {}", beanName);
             // xxx:二级缓存寻找
             singletonObject = earlySingletonObjects.get(beanName);
             if (singletonObject == null) {
-                log.debug("二级缓存中找不到Bean,前往三级缓存查找: {}", beanName);
+//                log.debug("二级缓存中找不到Bean,前往三级缓存查找: {}", beanName);
                 // xxx:二级缓存中找不到
                 // xxx: 从三级缓存获取工厂方法
                 ObjectFactory<?> singletonFactory = singletonFactories.get(beanName);
@@ -294,7 +294,6 @@ private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, Obje
     Class<?> beanClass = beanDefinitions.get(beanName).getBeanClass();
     for (InstantiationAwareBeanPostProcessor processor : instantiationAwareProcessors) {
         if (processor instanceof CgLibAop) {
-            log.debug("代理介入{}开始处理", processor.getClass().getName());
             currentResult = ((CgLibAop) processor).postProcessBeforeInstantiation(aopFactories, beanClass, beanName, currentResult);
         } else {
             Object result = processor.postProcessBeforeInstantiation(beanClass, beanName);

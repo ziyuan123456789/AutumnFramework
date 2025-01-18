@@ -25,7 +25,9 @@ public class AutumnFactoriesLoader {
         configMap.put("BeanDefinitionRegistryPostProcessor", new ArrayList<>());
         configMap.put("BeanFactoryPostProcessor", new ArrayList<>());
         configMap.put("Beans", new ArrayList<>());
+        configMap.put("BootstrapRegistryInitializer", new ArrayList<>());
         configMap.put("ApplicationContextInitializer", new ArrayList<>());
+        configMap.put("ApplicationListener", new ArrayList<>());
 
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         Enumeration<URL> urls = classLoader.getResources("META-INF/autumn/AutoConfiguration.imports");

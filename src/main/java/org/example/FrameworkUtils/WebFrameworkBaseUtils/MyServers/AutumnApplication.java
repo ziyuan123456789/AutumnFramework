@@ -18,6 +18,7 @@ import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.XMLBeansLoader;
 import org.example.FrameworkUtils.AutumnCore.Bootstrap.BootstrapRegistryInitializer;
 import org.example.FrameworkUtils.AutumnCore.Event.IocInitEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.EventListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Publisher.EventMulticaster;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
@@ -30,6 +31,7 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.Ordered;
 import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
 import org.example.FrameworkUtils.AutumnCore.Ioc.SimpleMyBeanDefinitionRegistry;
+import org.example.FrameworkUtils.AutumnCore.context.ApplicationContextInitializer;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Utils.AnnotationUtils;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
@@ -39,10 +41,7 @@ import java.lang.annotation.Annotation;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -62,6 +61,11 @@ public class AutumnApplication {
 
     private List<BootstrapRegistryInitializer> bootstrapRegistryInitializers;
 
+    private List<ApplicationContextInitializer> initializers;
+
+    private List<ApplicationListener> listeners;
+
+
     private Map<String, List<String>> spiMap;
 
     AutumnBeanFactory beanFactory ;
@@ -69,11 +73,13 @@ public class AutumnApplication {
     AnnotationScanner scanner = new AnnotationScanner();
 
 
-    public AutumnApplication(Class<?> primarySources) {
-        Assert.notNull(primarySources, "主类不得为空");
-        this.primarySources = primarySources;
+    public AutumnApplication(Class<?> mainClass) {
+        Assert.notNull(mainClass, "主类不得为空");
+        this.primarySources = mainClass;
         this.initAutumnSpi();
         this.bootstrapRegistryInitializers = this.getAutumnFactoriesInstances(BootstrapRegistryInitializer.class);
+        this.setInitializers(this.getAutumnFactoriesInstances(ApplicationContextInitializer.class));
+        this.setListeners(this.getAutumnFactoriesInstances(ApplicationListener.class));
     }
 
     private void initAutumnSpi() {
@@ -85,24 +91,48 @@ public class AutumnApplication {
         }
     }
 
+    public void setListeners(List<ApplicationListener> listeners) {
+        this.listeners = new ArrayList<>(listeners);
+    }
+
+    public void setInitializers(List<? extends ApplicationContextInitializer> initializers) {
+        this.initializers = new ArrayList<>(initializers);
+    }
+
+    public void addApplicationContextInitializer(ApplicationContextInitializer initializer) {
+        this.initializers.add(initializer);
+    }
+
+    public void addApplicationListener(ApplicationListener listener) {
+        this.listeners.add(listener);
+    }
+
+
     public void addInitializers(BootstrapRegistryInitializer initializer) {
         this.bootstrapRegistryInitializers.add(initializer);
     }
 
+
+
     private <T> List<T> getAutumnFactoriesInstances(Class<T> type) {
-        List<String> initializers = new ArrayList<>(spiMap.get("ApplicationContextInitializer"));
-        List<BootstrapRegistryInitializer> result = new ArrayList<>();
-        for (String className : initializers) {
-            try {
-                Class<?> clazz = Class.forName(className);
-                if (type.isAssignableFrom(clazz)) {
-                    result.add((BootstrapRegistryInitializer) clazz.getDeclaredConstructor().newInstance());
-                }
-            } catch (Exception e) {
-                log.warn(e.getMessage(), e);
+        try{
+            List<String> initializers = new ArrayList<>(spiMap.get(type.getSimpleName()));
+            List<T> result = new ArrayList<>();
+            for (String className : initializers) {
+
+                    Class<?> clazz = Class.forName(className);
+                    if (type.isAssignableFrom(clazz)) {
+                        result.add((T) clazz.getDeclaredConstructor().newInstance());
+                    }
+
             }
+            return result;
+        }catch (Exception e){
+            log.warn("装载失败");
+            return new ArrayList<>();
         }
-        return (List<T>) result;
+
+
     }
 
     public void run() {
