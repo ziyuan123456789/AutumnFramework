@@ -11,7 +11,6 @@ import org.example.controller.DataController;
 public class BaseBootstrapRegistryInitializer implements BootstrapRegistryInitializer {
     @Override
     public void initialize(BootstrapRegistry registry) {
-        log.info("BaseBootstrapRegistryInitializer加载");
         DataController test = new DataController();
         registry.register(DataController.class, InstanceSupplier.of(test));
     }

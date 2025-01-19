@@ -34,9 +34,17 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.Ordered;
 import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
 import org.example.FrameworkUtils.AutumnCore.Ioc.SimpleMyBeanDefinitionRegistry;
 import org.example.FrameworkUtils.AutumnCore.context.ApplicationContextInitializer;
+import org.example.FrameworkUtils.AutumnCore.env.ApplicationArguments;
+
+import org.example.FrameworkUtils.AutumnCore.env.DefaultApplicationArguments;
+import org.example.FrameworkUtils.AutumnCore.env.DefaultEnvironment;
+import org.example.FrameworkUtils.AutumnCore.env.Environment;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Utils.AnnotationUtils;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
+
+
+
 import org.springframework.util.Assert;
 
 import java.lang.annotation.Annotation;
@@ -70,6 +78,10 @@ public class AutumnApplication {
 
     private Map<String, List<String>> spiMap;
 
+    private Map<String, List<String>> autoConfigurationMap;
+
+    private String[] sysArgs;
+
     AutumnBeanFactory beanFactory ;
 
     AnnotationScanner scanner = new AnnotationScanner();
@@ -87,6 +99,7 @@ public class AutumnApplication {
     private void initAutumnSpi() {
         try {
             spiMap = AutumnFactoriesLoader.parseConfigurations();
+            autoConfigurationMap=AutumnFactoriesLoader.parseAutoConfigurations();
         } catch (Exception e) {
             log.error("加载spi配置文件失败", e);
             throw new RuntimeException(e);
@@ -137,13 +150,15 @@ public class AutumnApplication {
 
     }
 
-    public void run() {
-
+    public void run(String[] args) {
+        this.sysArgs=args;
         DefaultBootstrapContext bootstrapContext = this.createBootstrapContext();
         List<AutumnApplicationRunListener> listeners = getAutumnFactoriesInstances(AutumnApplicationRunListener.class);
         for (AutumnApplicationRunListener listener : listeners) {
             listener.starting(bootstrapContext, primarySources);
         }
+        ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+        Environment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
 
 
         try {
@@ -157,12 +172,6 @@ public class AutumnApplication {
             throw new RuntimeException(e);
         }
 
-        RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
-        List<String> jvmArgs = runtimeBean.getInputArguments();
-        //打印一下启动的参数
-        for (String arg : jvmArgs) {
-            log.info(arg);
-        }
         log.info("""
 
                 \033[35m                                _                         __  ____      _______\s
@@ -204,6 +213,17 @@ public class AutumnApplication {
         server.run();
     }
 
+    private Environment prepareEnvironment(List<AutumnApplicationRunListener> listeners, DefaultBootstrapContext bootstrapContext, ApplicationArguments applicationArguments) {
+        Environment environment = new DefaultEnvironment(applicationArguments);
+        environment.loadConfiguration("src/main/resources/test.properties");
+        for (AutumnApplicationRunListener listener : listeners) {
+            listener.environmentPrepared(environment);
+        }
+        bootstrapContext.setEnvironment(environment);
+        return environment;
+
+    }
+
     private DefaultBootstrapContext createBootstrapContext() {
         DefaultBootstrapContext bootstrapContext = new DefaultBootstrapContext();
         this.bootstrapRegistryInitializers.forEach((initializer) -> initializer.initialize(bootstrapContext));
@@ -230,8 +250,8 @@ public class AutumnApplication {
 //        if (mainClass.getAnnotation(EnableAutoConfiguration.class) != null) {
             // 加载自动配置类
 
-            List<String> allProcessors = new ArrayList<>(spiMap.get("BeanDefinitionRegistryPostProcessor"));
-            allProcessors.addAll(spiMap.get("BeanFactoryPostProcessor"));
+            List<String> allProcessors = new ArrayList<>(autoConfigurationMap.get("BeanDefinitionRegistryPostProcessor"));
+            allProcessors.addAll(autoConfigurationMap.get("BeanFactoryPostProcessor"));
 
             // 处理所有处理器类，并且检查它们是否是 BeanFactoryPostProcessor 类型的子类
             for (String className : allProcessors) {

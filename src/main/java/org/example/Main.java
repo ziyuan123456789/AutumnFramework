@@ -29,7 +29,7 @@ public class Main {
     public static void main(String[] args) {
         AutumnApplication autumnApplication = new AutumnApplication(Main.class);
 //        autumnApplication.addInitializers(new BaseBootstrapRegistryInitializer());
-        autumnApplication.run();
+        autumnApplication.run(args);
     }
 
     @MyPreDestroy

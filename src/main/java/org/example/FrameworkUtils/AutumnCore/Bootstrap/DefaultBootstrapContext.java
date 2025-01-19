@@ -1,5 +1,7 @@
 package org.example.FrameworkUtils.AutumnCore.Bootstrap;
 
+import org.example.FrameworkUtils.AutumnCore.env.Environment;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,7 +14,10 @@ import java.util.Map;
 public class DefaultBootstrapContext implements ConfigurableBootstrapContext {
 
     private final Map<Class<?>, Object> registry = new HashMap<>();
+
     private final Map<Class<?>, InstanceSupplier<?>> instanceSuppliers = new HashMap<>();
+
+    private Environment environment;
 
     @Override
     public <T> T get(Class<T> type) {
@@ -33,6 +38,11 @@ public class DefaultBootstrapContext implements ConfigurableBootstrapContext {
     @Override
     public <T> void register(Class<T> type, T instance) {
         registry.put(type, instance);
+    }
+
+    @Override
+    public void setEnvironment(Environment environment) {
+        this.environment=environment;
     }
 
     @Override

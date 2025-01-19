@@ -21,18 +21,20 @@ import java.util.Map;
 @Slf4j
 public class AutumnFactoriesLoader {
 
+    private static final String FACTORIES_RESOURCE_LOCATION = "META-INF/autumn/autumn.factories";
+
+    private static final String AUTOCONFIGURATION_RESOURCE_LOCATION = "META-INF/autumn/AutoConfiguration.imports";
+
     public static Map<String, List<String>> parseConfigurations() throws IOException {
         Map<String, List<String>> configMap = new HashMap<>();
-        configMap.put("BeanDefinitionRegistryPostProcessor", new ArrayList<>());
         configMap.put("BeanFactoryPostProcessor", new ArrayList<>());
-        configMap.put("Beans", new ArrayList<>());
         configMap.put("BootstrapRegistryInitializer", new ArrayList<>());
         configMap.put("ApplicationContextInitializer", new ArrayList<>());
         configMap.put("ApplicationListener", new ArrayList<>());
         configMap.put("AutumnApplicationRunListener", new ArrayList<>());
+        configMap.put("Beans", new ArrayList<>());
 
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        Enumeration<URL> urls = classLoader.getResources("META-INF/autumn/AutoConfiguration.imports");
+        Enumeration<URL> urls = Thread.currentThread().getContextClassLoader().getResources(FACTORIES_RESOURCE_LOCATION);
 
         while (urls.hasMoreElements()) {
             URL url = urls.nextElement();
@@ -45,7 +47,6 @@ public class AutumnFactoriesLoader {
                         if (parts.length == 2) {
                             String type = parts[0].trim();
                             String implementation = parts[1].trim();
-                            log.info("{}从META-INF配置文件自动装配", implementation);
                             if (configMap.containsKey(type)) {
                                 configMap.get(type).add(implementation);
                             } else {
@@ -54,6 +55,36 @@ public class AutumnFactoriesLoader {
                         }
                     } else {
                         configMap.get("Beans").add(line);
+                    }
+                }
+            }
+        }
+
+        return configMap;
+    }
+
+    public static Map<String, List<String>> parseAutoConfigurations() throws IOException {
+        Map<String, List<String>> configMap = new HashMap<>();
+        configMap.put("BeanDefinitionRegistryPostProcessor", new ArrayList<>());
+        configMap.put("BeanFactoryPostProcessor", new ArrayList<>());
+
+        Enumeration<URL> urls = Thread.currentThread().getContextClassLoader().getResources(AUTOCONFIGURATION_RESOURCE_LOCATION);
+
+        while (urls.hasMoreElements()) {
+            URL url = urls.nextElement();
+            try (InputStream is = url.openStream();
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains("=")) {
+                        String[] parts = line.split("=");
+                        if (parts.length == 2) {
+                            String type = parts[0].trim();
+                            String implementation = parts[1].trim();
+                            if (configMap.containsKey(type)) {
+                                configMap.get(type).add(implementation);
+                            }
+                        }
                     }
                 }
             }
