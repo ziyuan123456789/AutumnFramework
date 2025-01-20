@@ -1,5 +1,7 @@
 package org.example.FrameworkUtils.AutumnCore.Ioc;
 
+import org.example.FrameworkUtils.AutumnCore.env.Environment;
+
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +12,9 @@ import java.util.Properties;
  * @since 2024.06
  */
 public interface AutumnBeanFactory {
+
+    Environment getEnvironment();
+
     Object getBean(String beanName);
 
     void put(String key, Object value);

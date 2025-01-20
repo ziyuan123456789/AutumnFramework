@@ -10,7 +10,10 @@ import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
+import org.example.FrameworkUtils.AutumnCore.Ioc.EarlyBeanFactoryAware;
+import org.example.FrameworkUtils.AutumnCore.Ioc.EarlyEnvironmentAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
+import org.example.FrameworkUtils.AutumnCore.env.Environment;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Orm.MineBatis.Io.Resources;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.TypeHandler;
@@ -19,7 +22,6 @@ import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactory;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactoryBuilder;
 
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.util.Properties;
 import java.util.Set;
 
@@ -54,7 +56,13 @@ import java.util.Set;
  */
 @Slf4j
 @Import({SqlSessionFactoryBean.class, JokePostProcessor.class})
-public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, PriorityOrdered {
+public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, PriorityOrdered, EarlyEnvironmentAware, EarlyBeanFactoryAware {
+
+
+    private AutumnBeanFactory beanFactory;
+
+    private Environment environment;
+
     static {
         Properties p = new Properties(System.getProperties());
         p.put("com.mchange.v2.log.MLog", "com.mchange.v2.log.FallbackMLog");
@@ -62,18 +70,15 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
         System.setProperties(p);
     }
 
-    private AutumnBeanFactory beanFactory;
-
     @Override
     public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
 
     }
 
-
+    @Override
     public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) {
         return () -> {
             try {
-
                 SqlSession sqlSession= (SqlSession) beanFactory.getBean(SqlSession.class.getName());
                 return sqlSession.getMapper(beanClass);
             } catch (Exception e) {
@@ -87,17 +92,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
     @Override
     public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner,BeanDefinitionRegistry registry) throws Exception {
         log.info("{}从配置文件或自动装配机制加载,提前干预BeanDefinition的生成,优先级为PriorityOrdered,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
-        try {
-            Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
-            Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
-            getInstanceMethod.setAccessible(true);
-            beanFactory = (AutumnBeanFactory) getInstanceMethod.invoke(null);
-        } catch (Exception e) {
-            log.error(String.valueOf(e));
-            throw new RuntimeException(e);
-        }
-        String minebatisXml = beanFactory.getProperties().getProperty("MineBatis-configXML");
-
+        String minebatisXml = environment.getProperty("MineBatis-configXML");
         InputStream inputStream;
         if (minebatisXml == null || minebatisXml.isEmpty()) {
             inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
@@ -106,10 +101,6 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
         }
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
         inputStream.close();
-//        MyBeanDefinition connectionManagerMb = new MyBeanDefinition();
-//        connectionManagerMb.setName(ConnectionManagerMinebatisImpl.class.getName());
-//        connectionManagerMb.setBeanClass(ConnectionManagerMinebatisImpl.class);
-//        registry.registerBeanDefinition(ConnectionManager.class.getName(), connectionManagerMb);
         Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
         for (Class<?> clazz : classSet) {
             MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
@@ -130,5 +121,16 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
     @Override
     public int getOrder() {
         return 4;
+    }
+
+
+    @Override
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
+    }
+
+    @Override
+    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
     }
 }

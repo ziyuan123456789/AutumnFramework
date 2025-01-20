@@ -47,7 +47,7 @@
   `创建对象`与`注入对象`分离,但构造器让这一步`不可分割`,只能使用`代理模式`这种丑陋的方式解决
 - 框架只负责对框架注解标记的类以及自动装配机制引入的类进行管理,用户可编写自己的后置处理器干预BeanDefinition的生产
 - 如果你希望使用自动装配机制则需要在主类上加入`@EnableAutoConfiguration`注解来告知框架进行自动装配
-- 如果想实现Mybatis那样`扫描自定义注解`扫描为组件,则需要声明为postProcessBeanDefinitionRegistry,同时可以使用PriorityOrdered与Ordered接口声明优先级
+- 如果想实现Mybatis那样`扫描自定义注解`扫描为组件,则需要声明为postProcessBeanDefinitionRegistry
 - MineBatis现在只可以注册XmlMapper,注解注册的方式日后添加
 - 如果使用Idea可以在xml加入如下内容以获得Idea代码提示与跳转,但我`建议不加`因为会去外网下载这个DTD,会让框架启动很慢,这个问题当时排查了非常久
 ```html
@@ -854,7 +854,13 @@ public class JokePostProcessor implements BeanFactoryPostProcessor {
 ```java
 @Slf4j
 @Import({SqlSessionFactoryBean.class, JokePostProcessor.class})
-public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, PriorityOrdered {
+public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, PriorityOrdered, EarlyEnvironmentAware, EarlyBeanFactoryAware {
+
+
+  private AutumnBeanFactory beanFactory;
+
+  private Environment environment;
+
   static {
     Properties p = new Properties(System.getProperties());
     p.put("com.mchange.v2.log.MLog", "com.mchange.v2.log.FallbackMLog");
@@ -862,18 +868,15 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
     System.setProperties(p);
   }
 
-  private AutumnBeanFactory beanFactory;
-
   @Override
   public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
 
   }
 
-
+  @Override
   public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) {
     return () -> {
       try {
-
         SqlSession sqlSession = (SqlSession) beanFactory.getBean(SqlSession.class.getName());
         return sqlSession.getMapper(beanClass);
       } catch (Exception e) {
@@ -887,17 +890,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
   @Override
   public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
     log.info("{}从配置文件或自动装配机制加载,提前干预BeanDefinition的生成,优先级为PriorityOrdered,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
-    try {
-      Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
-      Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
-      getInstanceMethod.setAccessible(true);
-      beanFactory = (AutumnBeanFactory) getInstanceMethod.invoke(null);
-    } catch (Exception e) {
-      log.error(String.valueOf(e));
-      throw new RuntimeException(e);
-    }
-    String minebatisXml = beanFactory.getProperties().getProperty("MineBatis-configXML");
-
+    String minebatisXml = environment.getProperty("MineBatis-configXML");
     InputStream inputStream;
     if (minebatisXml == null || minebatisXml.isEmpty()) {
       inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
@@ -906,10 +899,6 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
     }
     SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
     inputStream.close();
-    MyBeanDefinition connectionManagerMb = new MyBeanDefinition();
-    connectionManagerMb.setName(ConnectionManagerMinebatisImpl.class.getName());
-    connectionManagerMb.setBeanClass(ConnectionManagerMinebatisImpl.class);
-    registry.registerBeanDefinition(ConnectionManager.class.getName(), connectionManagerMb);
     Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
     for (Class<?> clazz : classSet) {
       MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
@@ -920,13 +909,30 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
       registry.registerBeanDefinition(clazz.getName(), myBeanDefinition);
     }
     AnnotationScanner.findAnnotatedClasses((String) beanFactory.get("packageUrl"), TypeHandler.class).forEach(typeHandler -> {
-            MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
+      MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
       myBeanDefinition.setName(typeHandler.getName());
       myBeanDefinition.setBeanClass(typeHandler);
       registry.registerBeanDefinition(typeHandler.getName(), myBeanDefinition);
-        });
-    }
+    });
+  }
+
+  @Override
+  public int getOrder() {
+    return 4;
+  }
+
+
+  @Override
+  public void setEnvironment(Environment environment) {
+    this.environment = environment;
+  }
+
+  @Override
+  public void setBeanFactory(AutumnBeanFactory beanFactory) {
+    this.beanFactory = beanFactory;
+  }
 }
+
 ```
 
 ### InstantiationAwareBeanPostProcessor 在Bean被反射创建前后提供拓展 这个处理器用于Aop的底层实现,直接替换之前的实现类为代理类

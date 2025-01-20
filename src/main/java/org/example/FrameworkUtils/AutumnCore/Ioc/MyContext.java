@@ -12,6 +12,7 @@ import org.example.FrameworkUtils.AutumnCore.Aop.CgLibAop;
 import org.example.FrameworkUtils.AutumnCore.Aop.LazyBeanFactory;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
+import org.example.FrameworkUtils.AutumnCore.env.Environment;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.PropertiesReader.PropertiesReader;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
@@ -74,7 +75,10 @@ public class MyContext implements AutumnBeanFactory {
     private List<Class<?>> cycleSet=new ArrayList<>();
     private final Map<String,List<Class<?>>> beanDependencies=new HashMap<>();
 
+    private Environment environment;
+
     private int times=1;
+
 
     @Override
     public Object getBean(String beanName) {
@@ -122,7 +126,8 @@ public class MyContext implements AutumnBeanFactory {
         return singletonObject;
     }
 
-    public void initIocCache(Map<String, MyBeanDefinition> beanDefinitionMap) throws Exception {
+    public void initIocCache(Map<String, MyBeanDefinition> beanDefinitionMap, Environment environment) throws Exception {
+        this.environment = environment;
         List<MyBeanDefinition> sortedDefinitions = new ArrayList<>(beanDefinitionMap.values());
         sortedDefinitions.sort((def1, def2) -> {
             boolean isBP1 = BeanPostProcessor.class.isAssignableFrom(def1.getBeanClass()) || InstantiationAwareBeanPostProcessor.class.isAssignableFrom(def1.getBeanClass());
@@ -189,7 +194,7 @@ public class MyContext implements AutumnBeanFactory {
             if (continueWithInstantiation) {
                 if (bean instanceof BeanFactoryAware) {
                     //如果实现感知接口就注入BeanFactory给他
-                    ((BeanFactoryAware) bean).setBeanFactory(MyContext.getInstance());
+                    ((BeanFactoryAware) bean).setBeanFactory(this);
                 }
                 //xxx:对未成熟bean进行依赖注入
                 autowireBeanProperties(bean, myBeanDefinition);
@@ -259,7 +264,7 @@ public class MyContext implements AutumnBeanFactory {
         try {
             Object configInstance = getBean(mb.getConfigurationClass().getName());
             if (configInstance instanceof BeanFactoryAware) {
-                ((BeanFactoryAware) configInstance).setBeanFactory(MyContext.getInstance());
+                ((BeanFactoryAware) configInstance).setBeanFactory(this);
             }
             //xxx:对配置类进行依赖注入,得到成熟的bean
             autowireBeanProperties(configInstance, mb);
@@ -438,7 +443,7 @@ private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, Obje
                 MyCondition condition = (MyCondition) getBean(conditionClass.getName());
                 autowireBeanProperties(condition, mb);
                 condition.init();
-                if (!condition.matches(getInstance(),implClass)) {
+                if (!condition.matches(this, implClass)) {
                     classesToRemove.add(implClass);
                 }
                 condition.after();
@@ -557,6 +562,12 @@ private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, Obje
         }
         return beans;
     }
+
+    @Override
+    public Environment getEnvironment() {
+        return this.environment;
+    }
+
 
 
 }

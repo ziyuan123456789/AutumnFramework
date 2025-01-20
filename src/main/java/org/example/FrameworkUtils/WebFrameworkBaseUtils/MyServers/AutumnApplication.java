@@ -28,6 +28,8 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryPostProcessor;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanPostProcessor;
+import org.example.FrameworkUtils.AutumnCore.Ioc.EarlyBeanFactoryAware;
+import org.example.FrameworkUtils.AutumnCore.Ioc.EarlyEnvironmentAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.FactoryBean;
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.Ordered;
@@ -35,23 +37,20 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
 import org.example.FrameworkUtils.AutumnCore.Ioc.SimpleMyBeanDefinitionRegistry;
 import org.example.FrameworkUtils.AutumnCore.context.ApplicationContextInitializer;
 import org.example.FrameworkUtils.AutumnCore.env.ApplicationArguments;
-
 import org.example.FrameworkUtils.AutumnCore.env.DefaultApplicationArguments;
 import org.example.FrameworkUtils.AutumnCore.env.DefaultEnvironment;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Utils.AnnotationUtils;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
-
-
-
 import org.springframework.util.Assert;
 
 import java.lang.annotation.Annotation;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -67,7 +66,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class AutumnApplication {
 
-    private Class<?> primarySources;
+    private final Class<?> primarySources;
 
     private List<BootstrapRegistryInitializer> bootstrapRegistryInitializers;
 
@@ -82,9 +81,13 @@ public class AutumnApplication {
 
     private String[] sysArgs;
 
-    AutumnBeanFactory beanFactory ;
+    private AutumnBeanFactory beanFactory;
 
-    AnnotationScanner scanner = new AnnotationScanner();
+    private AnnotationScanner scanner = new AnnotationScanner();
+
+    private Environment environment;
+
+
 
 
     public AutumnApplication(Class<?> mainClass) {
@@ -96,60 +99,6 @@ public class AutumnApplication {
         this.setListeners(this.getAutumnFactoriesInstances(ApplicationListener.class));
     }
 
-    private void initAutumnSpi() {
-        try {
-            spiMap = AutumnFactoriesLoader.parseConfigurations();
-            autoConfigurationMap=AutumnFactoriesLoader.parseAutoConfigurations();
-        } catch (Exception e) {
-            log.error("加载spi配置文件失败", e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void setListeners(List<ApplicationListener> listeners) {
-        this.listeners = new ArrayList<>(listeners);
-    }
-
-    public void setInitializers(List<? extends ApplicationContextInitializer> initializers) {
-        this.initializers = new ArrayList<>(initializers);
-    }
-
-    public void addApplicationContextInitializer(ApplicationContextInitializer initializer) {
-        this.initializers.add(initializer);
-    }
-
-    public void addApplicationListener(ApplicationListener listener) {
-        this.listeners.add(listener);
-    }
-
-
-    public void addInitializers(BootstrapRegistryInitializer initializer) {
-        this.bootstrapRegistryInitializers.add(initializer);
-    }
-
-
-
-    private <T> List<T> getAutumnFactoriesInstances(Class<T> type) {
-        try{
-            List<String> initializers = new ArrayList<>(spiMap.get(type.getSimpleName()));
-            List<T> result = new ArrayList<>();
-            for (String className : initializers) {
-
-                    Class<?> clazz = Class.forName(className);
-                    if (type.isAssignableFrom(clazz)) {
-                        result.add((T) clazz.getDeclaredConstructor().newInstance());
-                    }
-
-            }
-            return result;
-        }catch (Exception e){
-            log.warn("装载失败");
-            return new ArrayList<>();
-        }
-
-
-    }
-
     public void run(String[] args) {
         this.sysArgs=args;
         DefaultBootstrapContext bootstrapContext = this.createBootstrapContext();
@@ -158,19 +107,7 @@ public class AutumnApplication {
             listener.starting(bootstrapContext, primarySources);
         }
         ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
-        Environment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
-
-
-        try {
-            //保证容器已经存在
-            Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
-            Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
-            getInstanceMethod.setAccessible(true);
-            beanFactory = (AutumnBeanFactory) getInstanceMethod.invoke(null);
-        } catch(Exception e){
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
 
         log.info("""
 
@@ -181,6 +118,19 @@ public class AutumnApplication {
                 \033[33m                  / ____ \\ |_| | |_| |_| | | | | | | | | | |  | |  \\  / | |____\s
                 \033[31m                 /_/    \\_\\__,_|\\__|\\__,_|_| |_| |_|_| |_|_|  |_|   \\/   \\_____|\033[0m"""
         );
+
+
+        try {
+            //保证容器已经存在
+            Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
+            Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
+            getInstanceMethod.setAccessible(true);
+            beanFactory = (AutumnBeanFactory) getInstanceMethod.invoke(null);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+
 
         //xxx:保存主类的包名,也就是默认扫描的包,以后会开放自定义扫包路径
         beanFactory.put("packageUrl", primarySources.getPackageName());
@@ -362,7 +312,7 @@ public class AutumnApplication {
             }
         }
         MyContext myContext1 = (MyContext) myContext;
-        myContext1.initIocCache(registry.getBeanDefinitionMap());
+        myContext1.initIocCache(registry.getBeanDefinitionMap(), environment);
         long endTime = System.currentTimeMillis();
         log.info("容器花费了：{} 毫秒实例化", endTime - startTime);
         Map<String, Object> iocContainer = myContext1.getIocContainer();
@@ -443,6 +393,12 @@ public class AutumnApplication {
     }
 
     private void invokePostProcessor(Object postProcessor, BeanDefinitionRegistry registry) throws Exception {
+        if (postProcessor instanceof EarlyEnvironmentAware) {
+            ((EarlyEnvironmentAware) postProcessor).setEnvironment(environment);
+        }
+        if (postProcessor instanceof EarlyBeanFactoryAware) {
+            ((EarlyBeanFactoryAware) postProcessor).setBeanFactory(beanFactory);
+        }
         if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
             ((BeanDefinitionRegistryPostProcessor) postProcessor).postProcessBeanDefinitionRegistry(scanner, registry);
         } else if (postProcessor instanceof BeanFactoryPostProcessor) {
@@ -502,5 +458,58 @@ public class AutumnApplication {
             }
         }
     }
+
+    private void initAutumnSpi() {
+        try {
+            spiMap = AutumnFactoriesLoader.parseConfigurations();
+            autoConfigurationMap = AutumnFactoriesLoader.parseAutoConfigurations();
+        } catch (Exception e) {
+            log.error("加载spi配置文件失败", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void setListeners(List<ApplicationListener> listeners) {
+        this.listeners = new ArrayList<>(listeners);
+    }
+
+    public void setInitializers(List<? extends ApplicationContextInitializer> initializers) {
+        this.initializers = new ArrayList<>(initializers);
+    }
+
+    public void addApplicationContextInitializer(ApplicationContextInitializer initializer) {
+        this.initializers.add(initializer);
+    }
+
+    public void addApplicationListener(ApplicationListener listener) {
+        this.listeners.add(listener);
+    }
+
+
+    public void addInitializers(BootstrapRegistryInitializer initializer) {
+        this.bootstrapRegistryInitializers.add(initializer);
+    }
+
+
+    private <T> List<T> getAutumnFactoriesInstances(Class<T> type) {
+        try {
+            List<String> initializers = new ArrayList<>(spiMap.get(type.getSimpleName()));
+            List<T> result = new ArrayList<>();
+            for (String className : initializers) {
+
+                Class<?> clazz = Class.forName(className);
+                if (type.isAssignableFrom(clazz)) {
+                    result.add((T) clazz.getDeclaredConstructor().newInstance());
+                }
+
+            }
+            return result;
+        } catch (Exception e) {
+            log.warn("装载失败");
+            return new ArrayList<>();
+        }
+
+    }
+
 
 }
