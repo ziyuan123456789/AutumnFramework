@@ -11,6 +11,12 @@ import java.util.List;
  * @author ziyuan
  * @since 2024.11
  */
+
+/**
+ * 什么事都要他发布
+ * 这岂不是很有权力
+ * 当然了,它也可以审查一切广播
+ */
 @MyComponent
 public class EventMulticaster implements EventPublisher {
     private final List<EventListener> listeners = new ArrayList<>();

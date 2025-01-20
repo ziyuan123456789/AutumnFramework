@@ -7,17 +7,16 @@ import org.example.FrameworkUtils.AutumnCore.Event.Event;
  * @author ziyuan
  * @since 2025.01
  */
-public class BaseApplicationListener implements EventListener<ApplicationEvent> {
+
+/**
+ * BaseApplicationListener,你是真没牌面
+ */
+public class BaseApplicationListener implements ApplicationListener<ApplicationEvent> {
+
 
 
     @Override
-    public void onEvent(ApplicationEvent event) {
-        System.out.println("成功接收到开机事件,开机耗费的时间为" + event.getTime());
-
-    }
-
-    @Override
-    public boolean supportsEvent(Event event) {
-        return event instanceof ApplicationEvent;
+    public void onApplicationEvent(ApplicationEvent event) {
+        System.out.println();
     }
 }

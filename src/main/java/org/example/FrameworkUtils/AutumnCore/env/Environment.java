@@ -6,6 +6,10 @@ import java.util.Properties;
  * @author ziyuan
  * @since 2025.01
  */
+
+/**
+ * 环境会改变程序改变人,你觉得对吗?
+ */
 public interface Environment {
 
 

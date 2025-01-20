@@ -9,6 +9,12 @@ import org.example.FrameworkUtils.AutumnCore.env.Environment;
  * @author ziyuan
  * @since 2025.01
  */
+
+/**
+ * 如果说ApplicationListener耳朵很尖,那么AutumnApplicationRunListener只会比她更厉害
+ * 据说是因为AutumnApplicationRunListener的老公在AutumnApplication上班
+ * 到时候我去查查内鬼
+ */
 public interface AutumnApplicationRunListener {
 
 

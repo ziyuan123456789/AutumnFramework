@@ -11,6 +11,10 @@ import java.util.Comparator;
  * @author ziyuan
  * @since 2025.01
  */
+
+/**
+ * 你是不是觉得你自己高人一等了?
+ */
 public class AnnotationInterfaceAwareOrderComparator implements Comparator<Object> {
 
     @Override

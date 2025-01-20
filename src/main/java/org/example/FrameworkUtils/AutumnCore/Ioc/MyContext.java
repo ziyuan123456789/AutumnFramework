@@ -39,6 +39,20 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author wsh
  */
+
+
+/**
+ * 孩子们,到这里MyContext的使命就已经走到尾声了
+ * 我依稀还记得这个类最开始的样子: Map<Class, Object>,那时我花了两天时间看B站网课,完成了依赖扫描和简陋的依赖注入,那种跑起来的成就感依然让我兴奋
+ * 虽然MyContext非常简陋,充满了各种不可名状的补丁,以至于我自己都很难看懂它,但它依然承载了我们一路走来的梦想,它实现了许多功能——
+ * 比如完整的生命周期,自动装配机制,解决循环依赖的能力,以及带AOP链的依赖注入等,SpringBoot的常见功能杂七杂八地实现了大半
+ * 然而,技术债,永远是那个无法绕过去的幽灵.不断在一个不稳定 不合理的架构上打补丁,终究是没有尽头的
+ * 于是,我决定让MyContext退场,迎接我们的新朋友——`AnnotationConfigApplicationContext`,它将代替MyContext继续走下去,继续承载这份沉甸甸的责任
+ * 俗话说：一将功成万骨枯 人人都知道AnnotationConfigApplicationContext的`refresh`和`doGetBean`,但背后默默无闻的基类`BeanFactory`又有谁真正研究过呢
+ * 日日夜夜的奋斗,成就了一个又一个看似平凡的瞬间.每一行代码,每一段逻辑,都有其不可言说的深意
+ * 让我们怀念MyContext,也让我们欢迎新的时代
+ * 2025/1/20
+ */
 @Slf4j
 public class MyContext implements AutumnBeanFactory {
     private static volatile MyContext instance;
@@ -233,7 +247,7 @@ public class MyContext implements AutumnBeanFactory {
             if (result == null) {
                 return bean;
             }
-            //xxx 如果处理器返回null，继续使用当前bean
+            //xxx 如果处理器返回null,继续使用当前bean
             bean = result;
         }
         return bean;
@@ -414,11 +428,11 @@ private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, Obje
         if (fieldType.isInterface()) {
             Object dependency = getBean(fieldType.getName());
             if (dependency == null) {
-                //xxx:如果容器中没有实例，进入查找实现类或第三方组件处理环节
+                //xxx:如果容器中没有实例,进入查找实现类或第三方组件处理环节
                 injectInterfaceTypeDependency(bean, field, mb);
 
             } else {
-                //xxx:如果容器中存在实例，直接注入
+                //xxx:如果容器中存在实例,直接注入
                 field.setAccessible(true);
                 field.set(bean, dependency);
             }

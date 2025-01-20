@@ -11,6 +11,12 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.CrossOrig
  * @author ziyuan
  * @since 2023.11
  */
+
+/**
+ * 世界上有个笑话
+ * 前端:我在前端配置一下跨域问题
+ * 但愿老天保佑他真的用了代理
+ */
 @MyConfig
 @MyConditional(MatchClassByInterface.class)
 public class AutumnMvcCrossOriginConfigImpl implements AutumnMvcCrossOriginConfig {

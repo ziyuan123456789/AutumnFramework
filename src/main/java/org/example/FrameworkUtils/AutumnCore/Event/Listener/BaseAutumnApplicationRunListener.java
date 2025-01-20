@@ -11,6 +11,11 @@ import java.util.Arrays;
  * @author ziyuan
  * @since 2025.01
  */
+
+/**
+ * 内鬼原来是她,但是他说怎么被加载进来的呢?
+ * 别研究了
+ */
 @Slf4j
 public class BaseAutumnApplicationRunListener implements AutumnApplicationRunListener {
 

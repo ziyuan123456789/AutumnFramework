@@ -13,6 +13,9 @@ import java.util.function.Supplier;
  * @since 2024.08
  */
 
+/**
+ * LazyBeanFactory这个人很懒,他常常问我:Autumn之神,为什么我自己不能懒加载
+ */
 public class LazyBeanFactory {
 
     public static Object createLazyBeanProxy(Class<?> beanClass, Supplier<Object> beanSupplier) {

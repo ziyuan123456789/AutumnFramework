@@ -17,6 +17,10 @@ import java.util.List;
  * @author ziyuan
  * @since 2024.05
  */
+/**
+ * 这位更是重量级,你AnnotationAwareAspectJAutoProxyCreator哥,来BeanFactory,指定有你好果子吃
+ * 代理类给你薅一地
+ */
 @MyComponent
 @Slf4j
 public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, InstantiationAwareBeanPostProcessor, BeanFactoryAware {

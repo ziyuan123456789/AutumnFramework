@@ -10,6 +10,11 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
  * @author ziyuan
  * @since 2023.11
  */
+
+/**
+ * 谁家小孩?这也配叫自动装配??,不过好歹这有个条件注解是不是
+ * 世界是一个草台班子,你说是不是,当你翻倒这个源码的时候我希望你别骂我,写的什么沟八
+ */
 @MyService
 @MyConditional(MatchClassByInterface.class)
 public class AutumnMvcConfigurationBaseImpl implements AutumnMvcConfiguration{

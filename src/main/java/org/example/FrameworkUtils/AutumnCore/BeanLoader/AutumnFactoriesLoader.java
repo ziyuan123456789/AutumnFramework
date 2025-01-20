@@ -18,6 +18,11 @@ import java.util.Map;
  * @author ziyuan
  * @since 2024.07
  */
+
+/**
+ * 宇宙大爆炸和SPI到底哪个更重要?
+ * 据一个活得很久的黑框眼镜长者说,当年上帝就是用SPI创造了宇宙,其实宇宙就是一个autumn.factories中的配置文件
+ */
 @Slf4j
 public class AutumnFactoriesLoader {
 

@@ -108,6 +108,6 @@ public class DependencyChecker {
         if(! enableCycleDependency  ){
             throw new BeanCreationException("当前禁止循环依赖\n启动循环依赖请在配置文件中添加:allow-circular-references=true");
         }
-        log.warn("由于配置了allow-circular-references=true,框架可以继续运行但是强烈建议不要使用循环依赖,否则会导致不可预知的问题");
+        log.warn("由于配置了allow-circular-references=true,框架可以继续运行");
     }
 }

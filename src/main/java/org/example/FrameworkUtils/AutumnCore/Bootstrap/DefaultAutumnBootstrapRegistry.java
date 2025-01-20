@@ -7,7 +7,10 @@ import java.util.Map;
  * @author ziyuan
  * @since 2025.01
  */
+
+
 public class DefaultAutumnBootstrapRegistry implements BootstrapRegistry {
+
     private final Map<Class<?>, InstanceSupplier<?>> registry = new HashMap<>();
 
     @Override

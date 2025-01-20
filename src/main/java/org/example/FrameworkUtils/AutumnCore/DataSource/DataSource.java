@@ -7,6 +7,10 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
  * @author ziyuan
  * @since 2024.09
  */
+
+/**
+ * 对Environment的拙劣模仿
+ */
 @MyComponent
 public class DataSource {
     @Value("autumn.datasource.url")

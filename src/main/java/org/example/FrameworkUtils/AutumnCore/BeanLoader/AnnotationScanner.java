@@ -20,6 +20,11 @@ import java.util.Set;
 /**
  * @author wsh
  */
+
+/**
+ * Scanner最近很苦恼,他觉得自己做了那么多事,你们都是我拉进来的,Scanner如是说
+ * 于是他理所当然的成为了一个Bean,继续被注入到其他人体内继续发光发热
+ */
 @MyComponent
 @Slf4j
 public class AnnotationScanner implements BeanFactoryAware {

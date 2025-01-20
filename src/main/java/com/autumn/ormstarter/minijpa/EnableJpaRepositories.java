@@ -14,6 +14,7 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2024.09
  */
+//引入JpaRepositoriesRegistrar和MiniJpaCglibFactory
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited

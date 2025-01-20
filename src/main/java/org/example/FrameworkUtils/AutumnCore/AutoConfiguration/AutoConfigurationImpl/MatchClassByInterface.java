@@ -17,6 +17,10 @@ import java.util.Set;
  * @author ziyuan
  * @since 2023.11
  */
+
+/**
+ * 混沌之初,有条件注解,有条件处理器,有条件处理器的实现类,"自动装配"也应该诞生了
+ */
 @MyComponent
 @Slf4j
 @Data

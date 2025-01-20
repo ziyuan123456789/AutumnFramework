@@ -10,6 +10,10 @@ import java.lang.reflect.Method;
  * @author ziyuan
  * @since 2024.1
  */
+
+/**
+ * 一个美丽的花瓶,什么东西都要有个包装更好,但愿你心爱的女孩也有
+ */
 @Data
 public class MyBeanDefinition {
     private  String name;
