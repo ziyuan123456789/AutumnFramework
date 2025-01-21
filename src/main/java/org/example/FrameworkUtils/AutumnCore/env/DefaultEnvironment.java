@@ -12,7 +12,7 @@ import java.util.Properties;
  */
 
 /**
- * 环境确实会改变人,特别你知道年终奖鸡毛没法的时候,你就想run了
+ * 环境确实会改变人,当你知道年终奖鸡毛没发的时候,你就想run了
  */
 @Slf4j
 public class DefaultEnvironment implements Environment {

@@ -7,7 +7,7 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.DataStructure.Tuple;
 import org.example.FrameworkUtils.Exception.NoAvailableUrlMappingException;
@@ -49,7 +49,7 @@ import java.util.concurrent.Executors;
 public class SocketServer implements MyServer, BeanFactoryAware {
     private ExecutorService threadPool;
     private ServerSocket serverSocket;
-    private AutumnBeanFactory beanFactory;
+    private ApplicationContext beanFactory;
     private  SessionManager sessionmanager ;
     @MyAutoWired
     SocketServerHtmlResponse socketServerHtmlResponse;
@@ -328,7 +328,7 @@ public class SocketServer implements MyServer, BeanFactoryAware {
 
 
     @Override
-    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+    public void setBeanFactory(ApplicationContext beanFactory) {
         this.beanFactory = beanFactory;
         this.sessionmanager= (SessionManager) beanFactory.getBean(SessionManager.class.getName());
     }

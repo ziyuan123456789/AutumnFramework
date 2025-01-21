@@ -11,7 +11,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse
 /**
  * RequestContext是一个任劳任怨的类,他总是忍气吞声的接受各种Holder
  * 但可悲的是,clear有bug,永远无法触发
- * 你们最好不要惹RequestContext,要不然OOM来了你们一个跑不了
+ * 你们最好不要让RequestContext知道这件事
  */
 public class RequestContext {
     private static final ThreadLocal<AutumnRequest> requestHolder = new ThreadLocal<>();

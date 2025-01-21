@@ -6,7 +6,7 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Aop.RequestContext;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.DataStructure.Tuple;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector.ControllerInjector;
@@ -46,7 +46,7 @@ import java.util.concurrent.Executors;
 @MyComponent
 public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
 
-    private AutumnBeanFactory myContext;
+    private ApplicationContext myContext;
 
     @MyAutoWired
     private TomCatHtmlResponse tomCatHtmlResponse;
@@ -268,7 +268,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
 
 
     @Override
-    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+    public void setBeanFactory(ApplicationContext beanFactory) {
         this.myContext = beanFactory;
     }
 }

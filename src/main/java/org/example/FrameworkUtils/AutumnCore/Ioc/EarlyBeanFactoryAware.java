@@ -6,5 +6,5 @@ package org.example.FrameworkUtils.AutumnCore.Ioc;
  */
 public interface EarlyBeanFactoryAware extends BeanFactoryAware {
     @Override
-    void setBeanFactory(AutumnBeanFactory beanFactory);
+    void setBeanFactory(ApplicationContext beanFactory);
 }

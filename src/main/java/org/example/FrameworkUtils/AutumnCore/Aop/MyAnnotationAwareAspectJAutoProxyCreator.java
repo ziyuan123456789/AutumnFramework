@@ -3,7 +3,7 @@ package org.example.FrameworkUtils.AutumnCore.Aop;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.InstantiationAwareBeanPostProcessor;
 import org.springframework.cglib.core.DebuggingClassWriter;
@@ -17,15 +17,12 @@ import java.util.List;
  * @author ziyuan
  * @since 2024.05
  */
-/**
- * 这位更是重量级,你AnnotationAwareAspectJAutoProxyCreator哥,来BeanFactory,指定有你好果子吃
- * 代理类给你薅一地
- */
+
 @MyComponent
 @Slf4j
 public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, InstantiationAwareBeanPostProcessor, BeanFactoryAware {
 
-    private AutumnBeanFactory beanFactory;
+    private ApplicationContext beanFactory;
 
     @Value("autumn.debug.cglibClassOutPut")
     boolean cglibClassOutPut;
@@ -148,7 +145,7 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
     }
 
     @Override
-    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+    public void setBeanFactory(ApplicationContext beanFactory) {
         this.beanFactory = beanFactory;
     }
 

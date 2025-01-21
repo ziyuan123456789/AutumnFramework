@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.Ordered;
 import org.springframework.cglib.proxy.MethodProxy;
 
@@ -23,7 +23,7 @@ public class AsyncAopProxyHandler implements AutumnAopFactory, Ordered {
     ExecutorService executorService;
 
     @Override
-    public boolean shouldNeedAop(Class clazz, AutumnBeanFactory myContext) {
+    public boolean shouldNeedAop(Class clazz, ApplicationContext myContext) {
         Method[] methods = clazz.getMethods();
         for (Method method : methods) {
             if (method.getAnnotation(Async.class) != null) {
@@ -34,7 +34,7 @@ public class AsyncAopProxyHandler implements AutumnAopFactory, Ordered {
     }
 
     @Override
-    public boolean shouldIntercept(Method method, Class clazz, AutumnBeanFactory myContext) {
+    public boolean shouldIntercept(Method method, Class clazz, ApplicationContext myContext) {
         return method.getAnnotation(Async.class) != null;
     }
 

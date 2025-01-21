@@ -11,6 +11,8 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
 import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
@@ -36,7 +38,10 @@ import java.util.Map;
  */
 @MyController
 @Slf4j
-public class AutumnTestController {
+public class AutumnTestController implements BeanFactoryAware {
+
+    private ApplicationContext beanFactory;
+
     //测试配置文件注入器
     @Value("url")
     private String sqlUrl;
@@ -83,10 +88,18 @@ public class AutumnTestController {
     private TransactionService transactionService;
 
     //测试事务
+    @MyRequestMapping("/refresh")
+    public void refresh() {
+        beanFactory.refresh();
+        log.warn("你有没有感觉到环境有点不一样了?");
+    }
+
+    //测试事务
     @MyRequestMapping("/transaction")
     public String transactionTest() throws SQLException {
         return transactionService.transactionTest();
     }
+
 
     //测试minebatis增删改查
     @MyRequestMapping("/crud")
@@ -217,4 +230,8 @@ public class AutumnTestController {
     }
 
 
+    @Override
+    public void setBeanFactory(ApplicationContext beanFactory) {
+        this.beanFactory = beanFactory;
+    }
 }

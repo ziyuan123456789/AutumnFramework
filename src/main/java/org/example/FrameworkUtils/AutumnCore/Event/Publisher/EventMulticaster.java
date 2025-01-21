@@ -32,6 +32,8 @@ public class EventMulticaster implements EventPublisher {
 
     @Override
     public void publishEvent(Event event) {
+//        我们可以在这里做一些审查,看看有没有什么不符合核心价值观的事件
+//        StackWalker stackWalker=StackWalker.getInstance();
         for (EventListener listener : listeners) {
             if (listener.supportsEvent(event)) {
                 listener.onEvent(event);

@@ -11,9 +11,7 @@ import java.util.Properties;
  * @since 2025.01
  */
 
-/**
- * 人人都知道ApplicationArguments,但是背后出力的DefaultApplicationArguments却没人知道
- */
+
 public class DefaultApplicationArguments implements ApplicationArguments {
     private String[] args;
     private Properties systemProperties;

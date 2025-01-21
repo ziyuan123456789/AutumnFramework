@@ -2,7 +2,7 @@ package org.example.Config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanPostProcessor;
 import org.example.FrameworkUtils.AutumnCore.Ioc.Ordered;
@@ -14,7 +14,7 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.Ordered;
 @MyComponent
 @Slf4j
 public class UserBeanPostProcessor implements BeanPostProcessor, Ordered , BeanFactoryAware {
-    private AutumnBeanFactory beanFactory;
+    private ApplicationContext beanFactory;
 
 
     @Override
@@ -30,7 +30,7 @@ public class UserBeanPostProcessor implements BeanPostProcessor, Ordered , BeanF
     }
 
     @Override
-    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+    public void setBeanFactory(ApplicationContext beanFactory) {
         this.beanFactory=beanFactory;
     }
 

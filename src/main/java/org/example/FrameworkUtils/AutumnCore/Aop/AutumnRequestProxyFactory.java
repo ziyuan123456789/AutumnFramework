@@ -11,8 +11,7 @@ import org.springframework.cglib.proxy.MethodInterceptor;
  */
 
 /**
- * 这是一个代理工厂,代理模式就是摩西十诫,不用代理模式的Java人就是异端,必须烧掉
- * 既然每个请求都是一个个独立的线程,于是采用ThreadLocal来存储
+ * 这是一个代理工厂,代理模式就是摩西十诫,不用代理模式的Java人就是异端,必须烧死
  */
 public class AutumnRequestProxyFactory {
     public static AutumnRequest createAutumnRequestProxy() {

@@ -8,7 +8,7 @@ import java.util.Properties;
  */
 
 /**
- * 环境会改变程序改变人,你觉得对吗?
+ * 环境会改变程序也会改变人,你觉得对吗?
  */
 public interface Environment {
 

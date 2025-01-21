@@ -23,7 +23,7 @@ import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.AutumnApplicationRunListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.EventListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Publisher.EventMulticaster;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryPostProcessor;
@@ -81,7 +81,7 @@ public class AutumnApplication {
 
     private String[] sysArgs;
 
-    private AutumnBeanFactory beanFactory;
+    private ApplicationContext beanFactory;
 
     private AnnotationScanner scanner = new AnnotationScanner();
 
@@ -125,7 +125,7 @@ public class AutumnApplication {
             Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
             Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
             getInstanceMethod.setAccessible(true);
-            beanFactory = (AutumnBeanFactory) getInstanceMethod.invoke(null);
+            beanFactory = (ApplicationContext) getInstanceMethod.invoke(null);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -181,7 +181,7 @@ public class AutumnApplication {
     }
 
 
-    private void componentScan(Class<?> mainClass, AutumnBeanFactory myContext) throws Exception {
+    private void componentScan(Class<?> mainClass, ApplicationContext myContext) throws Exception {
         //xml方式加载beans,弃用
         XMLBeansLoader xmlBeansLoader = new XMLBeansLoader();
         SimpleMyBeanDefinitionRegistry registry = new SimpleMyBeanDefinitionRegistry();

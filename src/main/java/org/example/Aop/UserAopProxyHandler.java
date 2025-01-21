@@ -5,7 +5,7 @@ import org.example.Annotations.CheckParameter;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -17,13 +17,13 @@ import java.lang.reflect.Method;
 @MyAspect
 public class UserAopProxyHandler implements AutumnAopFactory {
     @Override
-    public boolean shouldNeedAop(Class clazz, AutumnBeanFactory myContext) {
+    public boolean shouldNeedAop(Class clazz, ApplicationContext myContext) {
         return clazz.getAnnotation(MyService.class) != null;
 
     }
 
     @Override
-    public boolean shouldIntercept(Method method, Class clazz, AutumnBeanFactory myContext) {
+    public boolean shouldIntercept(Method method, Class clazz, ApplicationContext myContext) {
         return  true;
     }
 

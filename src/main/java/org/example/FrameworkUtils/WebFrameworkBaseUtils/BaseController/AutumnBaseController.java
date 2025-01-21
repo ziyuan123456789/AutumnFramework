@@ -5,7 +5,7 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.AutumnCore.AutoConfiguration.AutumnMvcConfiguration;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
@@ -22,7 +22,7 @@ public class AutumnBaseController implements BeanFactoryAware {
 
     @MyAutoWired
     private AutumnMvcConfiguration autumnMvcConfiguration;
-    private AutumnBeanFactory beanFactory;
+    private ApplicationContext beanFactory;
 
     @MyRequestMapping("/favicon.ico")
     public Icon getIcon() {
@@ -41,7 +41,7 @@ public class AutumnBaseController implements BeanFactoryAware {
 
 
     @Override
-    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+    public void setBeanFactory(ApplicationContext beanFactory) {
         this.beanFactory = beanFactory;
     }
 }

@@ -1,7 +1,7 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Session.MySession;
@@ -32,7 +32,7 @@ public class MyRequest {
     private MyContext myContext;
     private final SessionManager sessionManager = (SessionManager) myContext.getBean(SessionManager.class.getName());
 
-    public MyRequest(String payload, String body, Integer contentLength, AutumnBeanFactory myContext) {
+    public MyRequest(String payload, String body, Integer contentLength, ApplicationContext myContext) {
         this.myContext = (MyContext) myContext;
         this.payload = payload;
         this.body = body;

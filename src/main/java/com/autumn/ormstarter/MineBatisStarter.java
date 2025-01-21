@@ -7,7 +7,7 @@ import org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
 import org.example.FrameworkUtils.AutumnCore.Ioc.EarlyBeanFactoryAware;
@@ -59,7 +59,7 @@ import java.util.Set;
 public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, PriorityOrdered, EarlyEnvironmentAware, EarlyBeanFactoryAware {
 
 
-    private AutumnBeanFactory beanFactory;
+    private ApplicationContext beanFactory;
 
     private Environment environment;
 
@@ -130,7 +130,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
     }
 
     @Override
-    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+    public void setBeanFactory(ApplicationContext beanFactory) {
         this.beanFactory = beanFactory;
     }
 }

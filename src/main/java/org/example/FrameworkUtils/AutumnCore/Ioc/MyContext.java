@@ -44,17 +44,17 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 孩子们,到这里MyContext的使命就已经走到尾声了
  * 我依稀还记得这个类最开始的样子: Map<Class, Object>,那时我花了两天时间看B站网课,完成了依赖扫描和简陋的依赖注入,那种跑起来的成就感依然让我兴奋
- * 虽然MyContext非常简陋,充满了各种不可名状的补丁,以至于我自己都很难看懂它,但它依然承载了我们一路走来的梦想,它实现了许多功能——
+ * 虽然MyContext非常简陋,充满了各种不可名状的补丁,以至于我自己都很难看懂它,但它依然挺厉害的,它实现了许多功能——
  * 比如完整的生命周期,自动装配机制,解决循环依赖的能力,以及带AOP链的依赖注入等,SpringBoot的常见功能杂七杂八地实现了大半
  * 然而,技术债,永远是那个无法绕过去的幽灵.不断在一个不稳定 不合理的架构上打补丁,终究是没有尽头的
- * 于是,我决定让MyContext退场,迎接我们的新朋友——`AnnotationConfigApplicationContext`,它将代替MyContext继续走下去,继续承载这份沉甸甸的责任
+ * 于是,我决定让MyContext退场,迎接我们的新朋友——`AnnotationConfigApplicationContext`,它将代替MyContext继续走下去
  * 俗话说：一将功成万骨枯 人人都知道AnnotationConfigApplicationContext的`refresh`和`doGetBean`,但背后默默无闻的基类`BeanFactory`又有谁真正研究过呢
  * 日日夜夜的奋斗,成就了一个又一个看似平凡的瞬间.每一行代码,每一段逻辑,都有其不可言说的深意
  * 让我们怀念MyContext,也让我们欢迎新的时代
  * 2025/1/20
  */
 @Slf4j
-public class MyContext implements AutumnBeanFactory {
+public class MyContext implements ApplicationContext {
     private static volatile MyContext instance;
 
     private MyContext() {
@@ -140,6 +140,17 @@ public class MyContext implements AutumnBeanFactory {
         return singletonObject;
     }
 
+    @Override
+    public <T> T getBean(Class<T> requiredType) {
+        for (Object bean : singletonObjects.values()) {
+            if (requiredType.isInstance(bean)) {
+                return requiredType.cast(bean);
+            }
+        }
+        throw new BeanCreationException("找不到类型为" + requiredType.getName() + "的Bean");
+    }
+
+
     public void initIocCache(Map<String, MyBeanDefinition> beanDefinitionMap, Environment environment) throws Exception {
         this.environment = environment;
         List<MyBeanDefinition> sortedDefinitions = new ArrayList<>(beanDefinitionMap.values());
@@ -182,19 +193,8 @@ public class MyContext implements AutumnBeanFactory {
         //xxx: 检查循环依赖
         DependencyChecker dependencyChecker = (DependencyChecker) getBean(DependencyChecker.class.getName());
         dependencyChecker.checkForCyclicDependencies(beanDependencies);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.warn("进行关机清理....请稍后");
-            for (Map<Method, Object> afterMethod : afterMethods) {
-                for (Map.Entry<Method, Object> entry : afterMethod.entrySet()) {
-                    try {
-                        entry.getKey().invoke(entry.getValue());
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        log.error("调用销毁方法失败", e);
-                    }
-                }
-            }
-            log.warn("已成功停机");
-        }));
+        this.registerShutdownHook();
+
     }
 
 
@@ -530,10 +530,6 @@ private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, Obje
         return sharedMap.get(key);
     }
 
-    @Override
-    public <T> T get(Class<T> clazz) throws Exception {
-        return null;
-    }
 
     @Override
     public Map<String, Object> getIocContainer() {
@@ -578,10 +574,35 @@ private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, Obje
     }
 
     @Override
+    public void registerShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.warn("进行关机清理....请稍后");
+            for (Map<Method, Object> afterMethod : afterMethods) {
+                for (Map.Entry<Method, Object> entry : afterMethod.entrySet()) {
+                    try {
+                        entry.getKey().invoke(entry.getValue());
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        log.error("调用销毁方法失败", e);
+                    }
+                }
+            }
+            log.warn("已成功停机");
+        }));
+    }
+
+    @Override
     public Environment getEnvironment() {
         return this.environment;
     }
 
+    @Override
+    public void refresh() {
+        try {
+            initIocCache(beanDefinitions, environment);
+        } catch (Exception e) {
+            log.error("初始化IOC容器失败", e);
+        }
+    }
 
 
 }

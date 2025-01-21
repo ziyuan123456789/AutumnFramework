@@ -13,7 +13,7 @@ import java.util.Comparator;
  */
 
 /**
- * 你是不是觉得你自己高人一等了?
+ * 注解是一等公民
  */
 public class AnnotationInterfaceAwareOrderComparator implements Comparator<Object> {
 

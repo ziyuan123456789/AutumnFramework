@@ -11,17 +11,20 @@ import java.util.Properties;
  * @author ziyuan
  * @since 2024.06
  */
-public interface AutumnBeanFactory {
+
+/**
+ * 万恶之源
+ */
+public interface ApplicationContext extends BeanFactory {
 
     Environment getEnvironment();
 
-    Object getBean(String beanName);
+    void refresh();
 
     void put(String key, Object value);
 
     Object get(String key);
 
-    <T> T get(Class<T> clazz) throws Exception;
 
     Map<String, Object> getIocContainer();
 
@@ -32,4 +35,6 @@ public interface AutumnBeanFactory {
     void addBean(String name, Object bean);
 
     <T> List<T> getBeansOfType(Class<T> type);
+
+    void registerShutdownHook();
 }

@@ -8,7 +8,7 @@ import org.apache.catalina.startup.Tomcat;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ConditionCheck.TomCatConditionCheck;
 
@@ -22,7 +22,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ConditionCheck
 public class TomCatContainer implements MyServer, BeanFactoryAware {
     @Value("port")
     int port;
-    private AutumnBeanFactory beanFactory;
+    private ApplicationContext beanFactory;
 
     @Override
     public void init() throws Exception {
@@ -45,7 +45,7 @@ public class TomCatContainer implements MyServer, BeanFactoryAware {
     }
 
     @Override
-    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+    public void setBeanFactory(ApplicationContext beanFactory) {
         this.beanFactory = beanFactory;
     }
 }

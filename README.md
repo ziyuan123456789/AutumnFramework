@@ -39,6 +39,7 @@
 - Controller直接注入对象
 - 尝试手写TomCat 命名为Jerry mouse
 - 对启动类进行完整的重写,按照SpringBoot的初始化方式进行启动
+- 对IOC容器进行完整重构
 
 ## 注意事项:
 
@@ -49,12 +50,7 @@
 - 如果你希望使用自动装配机制则需要在主类上加入`@EnableAutoConfiguration`注解来告知框架进行自动装配
 - 如果想实现Mybatis那样`扫描自定义注解`扫描为组件,则需要声明为postProcessBeanDefinitionRegistry
 - MineBatis现在只可以注册XmlMapper,注解注册的方式日后添加
-- 如果使用Idea可以在xml加入如下内容以获得Idea代码提示与跳转,但我`建议不加`因为会去外网下载这个DTD,会让框架启动很慢,这个问题当时排查了非常久
-```html
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
- ```
 - 想使用注解处理器先执行`mvn install:install-file -Dfile=src/main/resources/libs/AutumnAnP.jar -DgroupId=org.AutumnAP -DartifactId=AutumnAnP -Dversion=1.0-SNAPSHOT -Dpackaging=jar `再执行`mvn clean install`
-
 
 ## 实验性内容:
 - 现在框架加入了一个`编译期`注解`@EnableAutumnFramework`,你只需要在主类上加入它然后一行代码也不用写,留一个空的main方法程序就会开始执行,想试试的改下pom文件开启
@@ -62,44 +58,7 @@
 ## 项目描述:
 不依赖TomCat,Servlet等技术实现的网络服务框架,参照了Mybatis,SpringMvc等设计思想从0手写了一个基于注解的仿SpringBoot框架
 
-## 已经实现:
 
-- Socket实现的网络服务,简单的支持网页输出,GET,POST方法传参,Controller声明形参直接注入
-- Url-Method映射,实现Url与Controller方法的路由表
-- 由三级缓存组成的Ioc容器,解决循环依赖的问题
-- 依赖注入实现,可以实现@Autowired标注的字段的自动注入,以及@Value注入配置文件,还可以注入接口的实现类
-- Cglib实现的Aop,稍微解决了代理类注解擦除的问题,可以正常依赖注入
-- Mybatis的简易实现,使用Jdk动态代理接口,实现参数映射以及实体类映射
-- 加入了过滤器
-- 实现@Bean功能,添加配置类,配置框架行为
-- 用户重写AutumnMvcConfig接口覆盖默认实现类,实现自定义首页面,Icon等
-- 简易的RedisTemplate加入,可以连接redis了
-- 加入了Json与JavaBean的转换,可以跟前端用Json通讯了
-- 类级别的条件注解的完整加入,用户可以自定义处理器了,只需要实现Condition接口覆盖Match逻辑
-- Response类加入,用户可以选择自己来控制返回头和内容,例如进行setCookie操作
-- Cookie,Session加入,自动为新用户setCookie,设置JSESSIONID
-- 依照JSESSIONID的Value查找对应的Session
-- 简易的Swagger加入
-- 循环依赖提示器加入
-- 简易的WebSocket加入,仿照Springboot写法可以处理协议升级与后续数据传递,此过程通过注解指定处理器
-- @Bean功能可以使用自定义名字了,使用@AutumnBean("beanName")与@MyAutowire("beanName")实现为同一个字段注入不同实例
-- @Bean功能可以自定义Init方法了,在依赖注入之后立刻调用
-- 用户可以自定义后置处理器,干预BeanDefinition的生产过程,例如Mapper的注入,框架在启动的时候会调用,现在只提供Xml读取的方式
-- Aop模块重写,实现了Aop处理器的复用,从现在开始@EnableAop注解降级为用户态注解,仅作为一个简单的标记,框架通过CgLibAop, InstantiationAwareBeanPostProcessor两个接口在Bean实例化之前替换实现类的方式完成代理类的替换,有关Aop的一切均开放给用户,拦不拦截,怎么拦截都是你说的算,只要你实现AutumnAopFactory接口并加入@MyAspect注解我们就会帮你代理
-- 运行时环境判定,可以选择用SocketServer启动或者拉起内嵌的TomCat,如果你喜欢Netty可以自行写适配器,转化为标准的AutumnRequest/Response接口实现
-- Aware接口加入,实现注入容器自身
-- 增加FactoryBean类,可指导复杂Bean生产
-- 自动装配机制加入,可以静默配置框架行为,只需要在主类上加入@EnableAutoConfiguration注解即可
-- 加入Import注解,支持递归调用
-- 增加了全局request/response对象,可以实现类似HTTP作用域的功能
-- 加入了一个粗糙的Lazy机制,你可以在被@AutoWired标记的字段上标记@Lazy注解,框架会注入一个代理并放行,等到真正使用这个对象自动进行GetBean
-- Aop模块再次重写,支持了Aop调用链,支持多个切面处理器同时处理一个方法而不会冲突
-- 异步功能加入,在任意类上引入@EnableAutumnAsync注解开启异步处理,在要处理的方法加入@Async注解声明为异步调用,不会阻塞主进程
-- 加入了一个只针对Controller层的自定义注入器,用户可以自定义注入方式,比如你可以方便的注入一个枚举,仿照的是SpringBoot的自定义`Converter`
-- 加入了方法级的缓存,在方法上加入`@Cache`以及加入`@EnableAutumnCache`引入服务
-- MineBatis增删改查完整加入,但是没测,明后天给好好整整
-- 加入了事件发布机制,自带了一个开机事件
-- 事务系统的加入,实现了基本的事务功能,在方法上加入`@Transactional`即可开启事务
 ## Bean的生命周期
 
 ```
@@ -129,7 +88,6 @@
 ## 代码示范 启动类
 
 ```java
-
 @EnableAutumnAsync
 @EnableAutumnCache
 @EnableAutumnTransactional
@@ -147,13 +105,6 @@ public class Main {
   }
 }
 
-@MyConfig
-@EnableAutoConfiguration
-@Target({ElementType.TYPE})
-@Inherited
-@Retention(RetentionPolicy.RUNTIME)
-public @interface AutumnBootApplication {
-}
 
 ```
 ## 代码示范 MVC章节
@@ -161,7 +112,10 @@ public @interface AutumnBootApplication {
 ```java
 @MyController
 @Slf4j
-public class AutumnTestController {
+public class AutumnTestController implements BeanFactoryAware {
+
+  private ApplicationContext beanFactory;
+
   //测试配置文件注入器
   @Value("url")
   private String sqlUrl;
@@ -208,10 +162,18 @@ public class AutumnTestController {
   private TransactionService transactionService;
 
   //测试事务
+  @MyRequestMapping("/refresh")
+  public void refresh() {
+    beanFactory.refresh();
+    log.warn("你有没有感觉到环境有点不一样了?");
+  }
+
+  //测试事务
   @MyRequestMapping("/transaction")
   public String transactionTest() throws SQLException {
     return transactionService.transactionTest();
   }
+
 
   //测试minebatis增删改查
   @MyRequestMapping("/crud")
@@ -340,8 +302,14 @@ public class AutumnTestController {
   public String getAll() {
     return userMapper.getAllUser(0).toString();
   }
-  
+
+
+  @Override
+  public void setBeanFactory(ApplicationContext beanFactory) {
+    this.beanFactory = beanFactory;
+  }
 }
+
 ```
 ### 拦截器
 ```java
@@ -1196,55 +1164,6 @@ public class AutumnMvcConfigurationBaseImpl implements AutumnMvcConfiguration{
     }
 }
 ```
-```java
-@MyComponent
-@Slf4j
-public class MatchClassByInterface implements MyCondition {
-
-    @MyAutoWired
-    private Reflections reflections;
-
-    @Override
-    public void init(){
-        log.info(this.getClass().getSimpleName() + "条件处理器中的初始化方法被执行");
-    }
-
-
-    @Override
-    public boolean matches(MyContext myContext, Class<?> clazz) {
-        Set<Class<?>> subTypesOf = (Set) reflections.getSubTypesOf(clazz.getInterfaces()[0]);
-        List<Class> injectImplList=new ArrayList<>();
-        if (subTypesOf.size() == 2) {
-            return false;
-        } else if (subTypesOf.size() > 2) {
-            for (Class<?> implClass : subTypesOf) {
-                if(implClass.equals(clazz)){
-                    continue;
-                }
-                MyConditional myCondition = implClass.getAnnotation(MyConditional.class);
-                if (myCondition != null) {
-                    Class<? extends MyCondition> otherCondition = myCondition.value();
-                    MyCondition myConditionImpl = myContext.getBean(otherCondition);
-                    myConditionImpl.init();
-                    if (myConditionImpl.matches(myContext, implClass)) {
-                        throw new IllegalStateException("多个条件处理器均被命中,请确认到底要注入哪一个"+injectImplList);
-                    }
-                    myConditionImpl.after();
-                }else{
-                    injectImplList.add(implClass);
-                }
-            }
-        }
-        if(injectImplList.size()==1){
-            return false;
-
-        }else{
-            throw new IllegalStateException("多个条件处理器均被命中,请确认到底要注入哪一个");
-        }
-
-    }
-}
-```
 ### 注解处理器示范:
 
 - 通过修改AST抽象语法树实现一个编译期的代码生成器,你只需要在主类上加入@EnableAutumnFramework注解并留一个空的main方法程序就会开始执行,注解处理器会在编译期间为你自动补齐代码,就像Lombok一样
@@ -1421,6 +1340,47 @@ C:.
   ![Main_main.jpg](pics/AutumnFrameworkRunner_run.jpg)
 - MineBatis 启动流程
   ![MineBatis](pics/Main_main.jpg)
+
+## 更新日志:
+
+- Socket实现的网络服务,简单的支持网页输出,GET,POST方法传参,Controller声明形参直接注入
+- Url-Method映射,实现Url与Controller方法的路由表
+- 由三级缓存组成的Ioc容器,解决循环依赖的问题
+- 依赖注入实现,可以实现@Autowired标注的字段的自动注入,以及@Value注入配置文件,还可以注入接口的实现类
+- Cglib实现的Aop,稍微解决了代理类注解擦除的问题,可以正常依赖注入
+- Mybatis的简易实现,使用Jdk动态代理接口,实现参数映射以及实体类映射
+- 加入了过滤器
+- 实现@Bean功能,添加配置类,配置框架行为
+- 用户重写AutumnMvcConfig接口覆盖默认实现类,实现自定义首页面,Icon等
+- 简易的RedisTemplate加入,可以连接redis了
+- 加入了Json与JavaBean的转换,可以跟前端用Json通讯了
+- 类级别的条件注解的完整加入,用户可以自定义处理器了,只需要实现Condition接口覆盖Match逻辑
+- Response类加入,用户可以选择自己来控制返回头和内容,例如进行setCookie操作
+- Cookie,Session加入,自动为新用户setCookie,设置JSESSIONID
+- 依照JSESSIONID的Value查找对应的Session
+- 简易的Swagger加入
+- 循环依赖提示器加入
+- 简易的WebSocket加入,仿照Springboot写法可以处理协议升级与后续数据传递,此过程通过注解指定处理器
+- @Bean功能可以使用自定义名字了,使用@AutumnBean("beanName")与@MyAutowire("beanName")实现为同一个字段注入不同实例
+- @Bean功能可以自定义Init方法了,在依赖注入之后立刻调用
+- 用户可以自定义后置处理器,干预BeanDefinition的生产过程,例如Mapper的注入,框架在启动的时候会调用,现在只提供Xml读取的方式
+- Aop模块重写,实现了Aop处理器的复用,从现在开始@EnableAop注解降级为用户态注解,仅作为一个简单的标记,框架通过CgLibAop,
+  InstantiationAwareBeanPostProcessor两个接口在Bean实例化之前替换实现类的方式完成代理类的替换,有关Aop的一切均开放给用户,拦不拦截,怎么拦截都是你说的算,只要你实现AutumnAopFactory接口并加入@MyAspect注解我们就会帮你代理
+- 运行时环境判定,可以选择用SocketServer启动或者拉起内嵌的TomCat,如果你喜欢Netty可以自行写适配器,转化为标准的AutumnRequest/Response接口实现
+- Aware接口加入,实现注入容器自身
+- 增加FactoryBean类,可指导复杂Bean生产
+- 自动装配机制加入,可以静默配置框架行为,只需要在主类上加入@EnableAutoConfiguration注解即可
+- 加入Import注解,支持递归调用
+- 增加了全局request/response对象,可以实现类似HTTP作用域的功能
+- 加入了一个粗糙的Lazy机制,你可以在被@AutoWired标记的字段上标记@Lazy注解,框架会注入一个代理并放行,等到真正使用这个对象自动进行GetBean
+- Aop模块再次重写,支持了Aop调用链,支持多个切面处理器同时处理一个方法而不会冲突
+- 异步功能加入,在任意类上引入@EnableAutumnAsync注解开启异步处理,在要处理的方法加入@Async注解声明为异步调用,不会阻塞主进程
+- 加入了一个只针对Controller层的自定义注入器,用户可以自定义注入方式,比如你可以方便的注入一个枚举,仿照的是SpringBoot的自定义
+  `Converter`
+- 加入了方法级的缓存,在方法上加入`@Cache`以及加入`@EnableAutumnCache`引入服务
+- MineBatis增删改查完整加入,但是没测,明后天给好好整整
+- 加入了事件发布机制,自带了一个开机事件
+- 事务系统的加入,实现了基本的事务功能,在方法上加入`@Transactional`即可开启事务
 
 ## 更新记录:
 

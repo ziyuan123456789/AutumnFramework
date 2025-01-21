@@ -4,11 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
-import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.TypeHandler;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
 
 import java.lang.reflect.Method;
@@ -20,7 +19,7 @@ import java.lang.reflect.Method;
 @Slf4j
 public class JpaRepositoriesRegistrar implements BeanDefinitionRegistryPostProcessor {
 
-    private AutumnBeanFactory beanFactory;
+    private ApplicationContext beanFactory;
 
     public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) {
         return () -> {
@@ -42,7 +41,7 @@ public class JpaRepositoriesRegistrar implements BeanDefinitionRegistryPostProce
             Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
             Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
             getInstanceMethod.setAccessible(true);
-            beanFactory = (AutumnBeanFactory) getInstanceMethod.invoke(null);
+            beanFactory = (ApplicationContext) getInstanceMethod.invoke(null);
         } catch (Exception e) {
             log.error(String.valueOf(e));
             throw new RuntimeException(e);

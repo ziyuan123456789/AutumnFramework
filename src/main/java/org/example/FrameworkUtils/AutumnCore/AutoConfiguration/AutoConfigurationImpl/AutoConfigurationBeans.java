@@ -3,7 +3,7 @@ package org.example.FrameworkUtils.AutumnCore.AutoConfiguration.AutoConfiguratio
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBean;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
@@ -13,12 +13,12 @@ import org.reflections.scanners.SubTypesScanner;
  */
 
 /**
- * 谁家小孩?这也配叫自动装配??
+ * 这也配叫自动装配??
  */
 @MyConfig
 @Slf4j
 public class AutoConfigurationBeans implements BeanFactoryAware {
-    private AutumnBeanFactory myContext;
+    private ApplicationContext myContext;
 
     @AutumnBean
     public Reflections getReflection() {
@@ -26,7 +26,7 @@ public class AutoConfigurationBeans implements BeanFactoryAware {
     }
 
     @Override
-    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+    public void setBeanFactory(ApplicationContext beanFactory) {
         this.myContext = beanFactory;
     }
 }

@@ -9,6 +9,10 @@ import java.util.Map;
  * @author ziyuan
  * @since 2024.05
  */
+
+/**
+ * BeanDefinition注册表接口
+ */
 public interface BeanDefinitionRegistry {
 
     //xxx: 注册一个新的BeanDefinition

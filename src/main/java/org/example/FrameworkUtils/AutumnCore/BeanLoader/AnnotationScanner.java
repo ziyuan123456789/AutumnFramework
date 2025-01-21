@@ -3,7 +3,7 @@ package org.example.FrameworkUtils.AutumnCore.BeanLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
@@ -28,7 +28,7 @@ import java.util.Set;
 @MyComponent
 @Slf4j
 public class AnnotationScanner implements BeanFactoryAware {
-    private static  AutumnBeanFactory beanFactory;
+    private static ApplicationContext beanFactory;
 
 
     public static List<Class> findImplByInterface(String packageName, Class interfaceClass){
@@ -84,7 +84,7 @@ public class AnnotationScanner implements BeanFactoryAware {
     }
 
     @Override
-    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+    public void setBeanFactory(ApplicationContext beanFactory) {
         AnnotationScanner.beanFactory =beanFactory;
     }
 }

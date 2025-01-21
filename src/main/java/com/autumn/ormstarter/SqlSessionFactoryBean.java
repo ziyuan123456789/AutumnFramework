@@ -2,7 +2,7 @@ package com.autumn.ormstarter;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanNameAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.FactoryBean;
@@ -20,7 +20,7 @@ import java.io.InputStream;
 @Data
 @Slf4j
 public class SqlSessionFactoryBean implements FactoryBean<SqlSession>, BeanFactoryAware, BeanNameAware {
-    private AutumnBeanFactory beanFactory;
+    private ApplicationContext beanFactory;
 
     @Override
     public SqlSession getObject() throws Exception {
@@ -43,7 +43,7 @@ public class SqlSessionFactoryBean implements FactoryBean<SqlSession>, BeanFacto
     }
 
     @Override
-    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+    public void setBeanFactory(ApplicationContext beanFactory) {
         this.beanFactory = beanFactory;
     }
 

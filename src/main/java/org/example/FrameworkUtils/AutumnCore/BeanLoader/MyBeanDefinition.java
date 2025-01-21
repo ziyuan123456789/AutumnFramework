@@ -12,6 +12,18 @@ import java.lang.reflect.Method;
  */
 
 /**
+ * 当你觉得自己没什么用的时候不妨想想Scope
+ */
+enum Scope {
+    SINGLETON,
+    PROTOTYPE,
+    REQUEST,
+    SESSION,
+    GLOBAL,
+    THREAD
+}
+
+/**
  * 一个美丽的花瓶,什么东西都要有个包装更好,但愿你心爱的女孩也有
  */
 @Data
@@ -25,6 +37,7 @@ public class MyBeanDefinition {
     private AutumnCommander commander;
 
     private ObjectFactory<?> starterMethod;
+
     //xxx:是谁成产了这个@bean
     private Class<?> configurationClass;
 
@@ -52,14 +65,5 @@ public class MyBeanDefinition {
     public MyBeanDefinition() {
 
     }
-}
-
-enum Scope {
-    SINGLETON,
-    PROTOTYPE,
-    REQUEST,
-    SESSION,
-    GLOBAL,
-    THREAD
 }
 

@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 
 import java.lang.reflect.Method;
 import java.sql.SQLException;
@@ -27,7 +27,7 @@ public class TransactionAspect implements AutumnAopFactory {
     private final Map<Class<?>, Boolean> cache = new ConcurrentHashMap<>();
 
     @Override
-    public boolean shouldNeedAop(Class clazz, AutumnBeanFactory myContext) {
+    public boolean shouldNeedAop(Class clazz, ApplicationContext myContext) {
         Method[] methods = clazz.getMethods();
         for (Method method : methods) {
             if (method.getAnnotation(AutumnTransactional.class) != null) {
@@ -37,7 +37,7 @@ public class TransactionAspect implements AutumnAopFactory {
         return false;
     }
     @Override
-    public boolean shouldIntercept(Method method, Class clazz, AutumnBeanFactory myContext) {
+    public boolean shouldIntercept(Method method, Class clazz, ApplicationContext myContext) {
         return cache.computeIfAbsent(clazz, cls -> {
             for (Method m : cls.getMethods()) {
                 if (m.getAnnotation(AutumnTransactional.class) != null) {

@@ -2,7 +2,7 @@ package com.autumn.swaggerstarter;
 
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ServletResponseAdapter;
@@ -25,7 +25,7 @@ import java.util.Map;
  */
 @MyController
 public class BaseController implements BeanFactoryAware {
-    private AutumnBeanFactory beanFactory;
+    private ApplicationContext beanFactory;
 
     @MyRequestMapping("/myswagger")
     public View myswagger() {
@@ -81,7 +81,7 @@ public class BaseController implements BeanFactoryAware {
     }
 
     @Override
-    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+    public void setBeanFactory(ApplicationContext beanFactory) {
         this.beanFactory = beanFactory;
     }
 }

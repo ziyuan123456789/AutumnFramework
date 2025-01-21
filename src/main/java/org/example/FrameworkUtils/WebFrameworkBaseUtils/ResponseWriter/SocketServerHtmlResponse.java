@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
-import org.example.FrameworkUtils.AutumnCore.Ioc.AutumnBeanFactory;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ResourceFinder;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
@@ -39,7 +39,7 @@ public class SocketServerHtmlResponse implements BeanFactoryAware {
     @MyAutoWired
     AnnotationScanner annotationScanner;
 
-    private AutumnBeanFactory beanFactory;
+    private ApplicationContext beanFactory;
 
 
 
@@ -359,7 +359,7 @@ public class SocketServerHtmlResponse implements BeanFactoryAware {
     }
 
     @Override
-    public void setBeanFactory(AutumnBeanFactory beanFactory) {
+    public void setBeanFactory(ApplicationContext beanFactory) {
         this.beanFactory = beanFactory;
     }
 }

@@ -6,7 +6,7 @@ package org.example.FrameworkUtils.AutumnCore.Bootstrap;
  */
 
 /**
- * 看看,写代码都不用那么着急,真正调用的时候再操心吧,相信后人的智慧
+ * 相信后人的智慧,到时候会有人帮我们解决问题
  */
 @FunctionalInterface
 public interface InstanceSupplier<T> {
