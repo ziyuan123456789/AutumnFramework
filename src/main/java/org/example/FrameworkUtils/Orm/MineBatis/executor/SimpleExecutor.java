@@ -176,7 +176,6 @@ public class SimpleExecutor implements Executor {
         }
         parameterMappingTokenHandler.resetParameterMappings();
         connection.close();
-        System.out.println(returnList);
         return (T) returnList;
 
     }

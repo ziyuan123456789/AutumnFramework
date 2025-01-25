@@ -14,16 +14,17 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnApplicat
   @author ziyuan
  * @since 2023.10
  */
+
+/*
+默认扫描Main方法所在的包也就是org.example
+你可以注意到com.autumn与org.example平级,用于模拟jar包,避免Bean发现机制扫描到
+ */
 @EnableAutumnAsync
 @EnableAutumnCache
 @EnableAutumnTransactional
 @EnableJpaRepositories
 @AutumnBootApplication
 @Slf4j
-/*
-默认扫描Main方法所在的包也就是org.example
-你可以注意到com.autumn与org.example平级,用于模拟jar包,避免Bean发现机制扫描到
- */
 public class Main {
 
     public static void main(String[] args) {

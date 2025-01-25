@@ -1,8 +1,8 @@
 package org.example.FrameworkUtils.AutumnCore.Event.Listener;
 
 import org.example.FrameworkUtils.AutumnCore.Bootstrap.BootstrapContext;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
-import org.example.FrameworkUtils.AutumnCore.env.Environment;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
+import org.example.FrameworkUtils.AutumnCore.env.ConfigurableEnvironment;
 
 
 /**
@@ -12,7 +12,6 @@ import org.example.FrameworkUtils.AutumnCore.env.Environment;
 
 /**
  * 如果说ApplicationListener耳朵很尖,那么AutumnApplicationRunListener只会比她更厉害
- * 据说是因为AutumnApplicationRunListener的老公在AutumnApplication上班
  */
 public interface AutumnApplicationRunListener {
 
@@ -20,16 +19,16 @@ public interface AutumnApplicationRunListener {
     void starting(BootstrapContext bootstrapContext, Class<?> mainApplicationClass);
 
 
-    void environmentPrepared(Environment environment);
+    void environmentPrepared(ConfigurableEnvironment environment);
 
 
-    void contextPrepared(MyContext context);
+    void contextPrepared(ApplicationContext context);
 
 
-    void contextLoaded(MyContext context);
+    void contextLoaded(ApplicationContext context);
 
 
-    void finished(MyContext application, Exception exception);
+    void finished(ApplicationContext application, Exception exception);
 
 }
 

@@ -36,10 +36,9 @@
 
 
 ## 近期准备更新的内容:
+- 对IOC容器与启动类进行重构,再次全部重写,按照SpringBoot的初始化方式进行启动
 - Controller直接注入对象
 - 尝试手写TomCat 命名为Jerry mouse
-- 对启动类进行完整的重写,按照SpringBoot的初始化方式进行启动
-- 对IOC容器进行完整重构
 
 ## 注意事项:
 
@@ -47,7 +46,7 @@
 - 目前仅支持调用字段的无参默认构创建实例,原则上来说构造器注入也实现了,但问题太多难以维护,不在代码中启用.另外构造器注入会让三级缓存部分失效,因为解决循环依赖的核心是
   `创建对象`与`注入对象`分离,但构造器让这一步`不可分割`,只能使用`代理模式`这种丑陋的方式解决
 - 框架只负责对框架注解标记的类以及自动装配机制引入的类进行管理,用户可编写自己的后置处理器干预BeanDefinition的生产
-- 如果你希望使用自动装配机制则需要在主类上加入`@EnableAutoConfiguration`注解来告知框架进行自动装配
+- 如果你希望使用自动装配机制则需要在主类上加入`@EnableAutoConfiguration`或者`@AutumnBootApplication`来告知框架进行自动装配
 - 如果想实现Mybatis那样`扫描自定义注解`扫描为组件,则需要声明为postProcessBeanDefinitionRegistry
 - MineBatis现在只可以注册XmlMapper,注解注册的方式日后添加
 - 想使用注解处理器先执行`mvn install:install-file -Dfile=src/main/resources/libs/AutumnAnP.jar -DgroupId=org.AutumnAP -DartifactId=AutumnAnP -Dversion=1.0-SNAPSHOT -Dpackaging=jar `再执行`mvn clean install`
@@ -91,20 +90,22 @@
 @EnableAutumnAsync
 @EnableAutumnCache
 @EnableAutumnTransactional
+@EnableJpaRepositories
 @AutumnBootApplication
 @Slf4j
 public class Main {
+
   public static void main(String[] args) {
-    AutumnApplication autumnApplication = new AutumnApplication();
-    autumnApplication.run(Main.class);
+    AutumnApplication autumnApplication = new AutumnApplication(Main.class);
+//        autumnApplication.addInitializers(new BaseBootstrapRegistryInitializer());
+    autumnApplication.run(args);
   }
 
   @MyPreDestroy
-  public void sayBay() {
+  public void sayBay(){
     log.info("再见孩子们");
   }
 }
-
 
 ```
 ## 代码示范 MVC章节
@@ -1383,6 +1384,14 @@ C:.
 - 事务系统的加入,实现了基本的事务功能,在方法上加入`@Transactional`即可开启事务
 
 ## 更新记录:
+### 2025/1/25
+- 重写启动类 增加ConfigurableEnvironment,SingletonBeanRegistry,对于ApplicationContext进行完善
+
+### 2025/1/21
+- 重写启动类 抽出Environment接口与BootstrapContext接口,用于在ApplicationContext没创建之前进行提前准备
+
+### 2025/1/20
+- 开始重写启动类 规划范AutumnSpi机制,加入了ApplicationListener生命周期监听器
 
 ### 2024/11/27
 

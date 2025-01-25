@@ -75,7 +75,6 @@ public class MyRequest {
 
     //xxx:解析Cookie
     private Cookie[] extractCookie(String httpRequest) {
-        System.out.println();
         String cookieHeader = "Cookie: ";
         int start = httpRequest.indexOf(cookieHeader);
         if (start == -1) {

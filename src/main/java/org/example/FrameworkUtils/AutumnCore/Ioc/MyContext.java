@@ -1,17 +1,14 @@
 package org.example.FrameworkUtils.AutumnCore.Ioc;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Annotation.Lazy;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
-import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
+import org.example.FrameworkUtils.AutumnCore.Annotation.*;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnRequestProxyFactory;
 import org.example.FrameworkUtils.AutumnCore.Aop.CgLibAop;
 import org.example.FrameworkUtils.AutumnCore.Aop.LazyBeanFactory;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
+import org.example.FrameworkUtils.AutumnCore.env.ApplicationArguments;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.PropertiesReader.PropertiesReader;
@@ -25,16 +22,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * @author wsh
@@ -56,6 +46,24 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class MyContext implements ApplicationContext {
     private static volatile MyContext instance;
+    private final Map<String, Object> sharedMap = new ConcurrentHashMap<>();
+    private final List<Map<Method, Object>> afterMethods = new ArrayList<>();
+    //xxx:一级缓存存储成熟bean
+    private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>();
+    //xxx: 二级缓存提前暴露的还未完全成熟的bean,用于解决循环依赖
+    private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>();
+    private final Map<String, MyBeanDefinition> beanDefinitions = new ConcurrentHashMap<>();
+    //xxx: 三级缓存：对象工厂,创建Jdk代理/CgLib代理/配置类Bean/普通Bean
+    private final Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();
+    private final PropertiesReader propertiesReader = new PropertiesReader();
+    private final Properties properties = propertiesReader.initProperties();
+    private final Map<String, List<Class<?>>> beanDependencies = new HashMap<>();
+    private final List<InstantiationAwareBeanPostProcessor> instantiationAwareProcessors = new ArrayList<>();
+    private final List<BeanPostProcessor> regularPostProcessors = new ArrayList<>();
+    private final List<AutumnAopFactory> aopFactories = new LinkedList<>();
+    private List<Class<?>> cycleSet = new ArrayList<>();
+    private Environment environment;
+    private int times = 1;
 
     private MyContext() {
     }
@@ -70,29 +78,6 @@ public class MyContext implements ApplicationContext {
         }
         return instance;
     }
-
-    private final Map<String, Object> sharedMap = new ConcurrentHashMap<>();
-    private List<InstantiationAwareBeanPostProcessor> instantiationAwareProcessors = new ArrayList<>();
-    private List<BeanPostProcessor> regularPostProcessors = new ArrayList<>();
-    private List<AutumnAopFactory> aopFactories = new LinkedList<>();
-    private final List<Map<Method,Object>> afterMethods=new ArrayList<>();
-    //xxx:一级缓存存储成熟bean
-    private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>();
-
-    //xxx: 二级缓存提前暴露的还未完全成熟的bean,用于解决循环依赖
-    private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>();
-    private final Map<String, MyBeanDefinition> beanDefinitions = new ConcurrentHashMap<>();
-    //xxx: 三级缓存：对象工厂,创建Jdk代理/CgLib代理/配置类Bean/普通Bean
-    private final Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();
-    private final PropertiesReader propertiesReader = new PropertiesReader();
-    private final Properties properties = propertiesReader.initProperties();
-    private List<Class<?>> cycleSet=new ArrayList<>();
-    private final Map<String,List<Class<?>>> beanDependencies=new HashMap<>();
-
-    private Environment environment;
-
-    private int times=1;
-
 
     @Override
     public Object getBean(String beanName) {
@@ -181,8 +166,7 @@ public class MyContext implements ApplicationContext {
                 instantiationAwareProcessors.add((InstantiationAwareBeanPostProcessor) bean);
             } else if (bean instanceof BeanPostProcessor) {
                 regularPostProcessors.add((BeanPostProcessor) bean);
-            }
-            else if (bean.getClass().getAnnotation(MyAspect.class) != null){
+            } else if (bean.getClass().getAnnotation(MyAspect.class) != null) {
                 aopFactories.add((AutumnAopFactory) bean);
             }
             if (!cycleSet.isEmpty()) {
@@ -198,13 +182,12 @@ public class MyContext implements ApplicationContext {
     }
 
 
-
     private Object initBean(MyBeanDefinition myBeanDefinition) throws Exception {
         //获取bean的实例
         Object bean = getBean(myBeanDefinition.getName());
         if (bean != null) {
             //因为后置处理器的干预,有些bean不需要依赖注入,所以进行询问
-            boolean continueWithInstantiation = doInstantiationAwareBeanPostProcessorAfter(bean,myBeanDefinition.getName());
+            boolean continueWithInstantiation = doInstantiationAwareBeanPostProcessorAfter(bean, myBeanDefinition.getName());
             if (continueWithInstantiation) {
                 if (bean instanceof BeanFactoryAware) {
                     //如果实现感知接口就注入BeanFactory给他
@@ -218,9 +201,9 @@ public class MyContext implements ApplicationContext {
             if (initMethod != null) {
                 initMethod.invoke(bean);
             }
-            Method  afterMethod=myBeanDefinition.getAfterMethod();
+            Method afterMethod = myBeanDefinition.getAfterMethod();
             if (afterMethod != null) {
-                afterMethods.add(Map.of(afterMethod,bean));
+                afterMethods.add(Map.of(afterMethod, bean));
             }
             bean = doBeanPostProcessorsAfter(bean, myBeanDefinition.getName());
         } else {
@@ -293,13 +276,12 @@ public class MyContext implements ApplicationContext {
         }
     }
 
-    //xxx:判断使用哪种工厂
+    //判断使用哪种工厂
     private ObjectFactory<?> createBeanFactory(MyBeanDefinition mb) {
-        //xxx:第三方实现
+        //第三方实现
         if (mb.isStarter()) {
             return () -> createStarterBeanInstance(mb);
-        }
-        else if (mb.getDoMethod() != null) {
+        } else if (mb.getDoMethod() != null) {
             return () -> createAutumnBeanInstance(mb);
         } else {
             return () -> createBeanInstance(mb.getBeanClass());
@@ -308,23 +290,21 @@ public class MyContext implements ApplicationContext {
     }
 
 
-private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, ObjectFactory<?> factory) throws Exception {
-    Object currentResult = null;
-    Class<?> beanClass = beanDefinitions.get(beanName).getBeanClass();
-    for (InstantiationAwareBeanPostProcessor processor : instantiationAwareProcessors) {
-        if (processor instanceof CgLibAop) {
-            currentResult = ((CgLibAop) processor).postProcessBeforeInstantiation(aopFactories, beanClass, beanName, currentResult);
-        } else {
-            Object result = processor.postProcessBeforeInstantiation(beanClass, beanName);
-            if (result != null) {
-                currentResult = result;
+    private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, ObjectFactory<?> factory) throws Exception {
+        Object currentResult = null;
+        Class<?> beanClass = beanDefinitions.get(beanName).getBeanClass();
+        for (InstantiationAwareBeanPostProcessor processor : instantiationAwareProcessors) {
+            if (processor instanceof CgLibAop) {
+                currentResult = ((CgLibAop) processor).postProcessBeforeInstantiation(aopFactories, beanClass, beanName, currentResult);
+            } else {
+                Object result = processor.postProcessBeforeInstantiation(beanClass, beanName);
+                if (result != null) {
+                    currentResult = result;
+                }
             }
         }
+        return currentResult != null ? currentResult : factory.getObject();
     }
-    return currentResult != null ? currentResult : factory.getObject();
-}
-
-
 
 
     private Object createStarterBeanInstance(MyBeanDefinition mb) {
@@ -376,19 +356,19 @@ private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, Obje
             //xxx:标记@auto wired进行对象/接口依赖注入
             if (field.isAnnotationPresent(MyAutoWired.class)) {
                 String myAutoWired = field.getAnnotation(MyAutoWired.class).value();
-                if(field.getType().equals(AutumnRequest.class)){
+                if (field.getType().equals(AutumnRequest.class)) {
                     field.setAccessible(true);
                     field.set(bean, AutumnRequestProxyFactory.createAutumnRequestProxy());
                     continue;
                 }
-                if(field.getType().equals(AutumnResponse.class)){
+                if (field.getType().equals(AutumnResponse.class)) {
                     field.setAccessible(true);
                     field.set(bean, AutumnRequestProxyFactory.createAutumnResponseProxy());
                     continue;
                 }
-                if (field.isAnnotationPresent(Lazy.class)){
+                if (field.isAnnotationPresent(Lazy.class)) {
                     field.setAccessible(true);
-                    field.set(bean, LazyBeanFactory.createLazyBeanProxy(field.getType(),()->{
+                    field.set(bean, LazyBeanFactory.createLazyBeanProxy(field.getType(), () -> {
                         log.info("延迟懒加载触发,现在开始获取对象");
                         return getBean(field.getType().getName());
                     }));
@@ -443,7 +423,6 @@ private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, Obje
     }
 
 
-
     //xxx:这个是依照接口找实现类
     private void injectInterfaceTypeDependency(Object bean, Field field, MyBeanDefinition mb) throws IllegalAccessException, NoSuchFieldException {
         String packageName = (String) get("packageUrl");
@@ -496,7 +475,6 @@ private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, Obje
     }
 
 
-
     //xxx:注入配置文件
     private void injectValueAnnotation(Object instance, Field field) {
         Value value = field.getAnnotation(Value.class);
@@ -537,7 +515,7 @@ private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, Obje
     }
 
     @Override
-    public Properties getProperties(){
+    public Properties getProperties() {
         return properties;
     }
 
@@ -596,12 +574,72 @@ private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, Obje
     }
 
     @Override
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
+    }
+
+    @Override
     public void refresh() {
         try {
             initIocCache(beanDefinitions, environment);
         } catch (Exception e) {
             log.error("初始化IOC容器失败", e);
         }
+    }
+
+
+    @Override
+    public ApplicationArguments getApplicationArguments() {
+        return environment.getApplicationArguments();
+    }
+
+    @Override
+    public String getProperty(String key) {
+        return environment.getProperty(key);
+    }
+
+    @Override
+    public Properties getAllProperties() {
+        return environment.getAllProperties();
+    }
+
+    @Override
+    public String[] getActiveProfiles() {
+        return environment.getActiveProfiles();
+    }
+
+    @Override
+    public String[] getDefaultProfiles() {
+        return environment.getDefaultProfiles();
+    }
+
+
+    @Override
+    public void registerSingleton(String beanName, Object singletonObject) {
+        if (singletonObjects.containsKey(beanName)) {
+            throw new IllegalStateException("单例BEAN" + beanName + "已经存在了");
+        }
+        singletonObjects.put(beanName, singletonObject);
+    }
+
+    @Override
+    public Object getSingleton(String beanName) {
+        return this.getBean(beanName);
+    }
+
+    @Override
+    public boolean containsSingleton(String beanName) {
+        return singletonObjects.containsKey(beanName);
+    }
+
+    @Override
+    public List<String> getSingletonNames() {
+        return new ArrayList<>(singletonObjects.keySet());
+    }
+
+    @Override
+    public int getSingletonCount() {
+        return singletonObjects.size();
     }
 
 

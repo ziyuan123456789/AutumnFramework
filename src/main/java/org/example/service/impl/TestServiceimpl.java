@@ -1,6 +1,7 @@
 package org.example.service.impl;
 
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.service.CycleService;
@@ -12,6 +13,7 @@ import org.example.service.TestService;
  * @since 2023.10
  */
 @MyService
+@Slf4j
 public class TestServiceimpl implements TestService {
 
     @MyAutoWired
@@ -22,13 +24,13 @@ public class TestServiceimpl implements TestService {
 
     @Override
     public String print(String s) {
-        System.out.println(s);
-        return  s;
+        log.info(s);
+        return s;
     }
 
     @Override
     public void cycle() {
-        System.out.println("循环依赖");
+        log.info("循环依赖");
     }
 
 

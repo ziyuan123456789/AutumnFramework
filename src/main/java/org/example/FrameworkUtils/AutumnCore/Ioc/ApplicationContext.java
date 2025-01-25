@@ -15,9 +15,13 @@ import java.util.Properties;
 /**
  * 万恶之源
  */
-public interface ApplicationContext extends BeanFactory {
+public interface ApplicationContext extends BeanFactory,Environment,SingletonBeanRegistry {
+
+    String BASE_CONTEXT ="AnnotationConfigApplicationContext";
 
     Environment getEnvironment();
+
+    void setEnvironment(Environment environment);
 
     void refresh();
 

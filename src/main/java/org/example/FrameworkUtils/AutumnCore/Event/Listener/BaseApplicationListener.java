@@ -12,6 +12,5 @@ public class BaseApplicationListener implements ApplicationListener<ApplicationE
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        System.out.println();
     }
 }

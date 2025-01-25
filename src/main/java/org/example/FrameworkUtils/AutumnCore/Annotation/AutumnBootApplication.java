@@ -11,10 +11,15 @@ import java.lang.annotation.Target;
  * @since 2025.01
  */
 
-@MyConfig
-@EnableAutoConfiguration
+/**
+ * 符合注解,标记启动类
+ * 这个注解相当于 @MyConfig与@EnableAutoConfiguration
+ */
 @Target({ElementType.TYPE})
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
+@MyConfig
+@EnableAutoConfiguration
+@ComponentScan
 public @interface AutumnBootApplication {
 }

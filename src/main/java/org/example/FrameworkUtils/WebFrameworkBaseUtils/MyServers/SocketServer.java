@@ -226,7 +226,6 @@ public class SocketServer implements MyServer, BeanFactoryAware {
 
                     } catch (InvocationTargetException | ClassNotFoundException | NoSuchMethodException |
                              IllegalAccessException | RuntimeException e) {
-                        System.out.println(e);
                         Throwable cause = e.getCause();
                         log.warn("异常来自" + methodName);
                         cause.printStackTrace(System.err);

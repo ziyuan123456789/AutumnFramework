@@ -1,17 +1,7 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBean;
-import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAutoConfiguration;
-import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyPostConstruct;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyPreDestroy;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
+import org.example.FrameworkUtils.AutumnCore.Annotation.*;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AutumnFactoriesLoader;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
@@ -23,23 +13,9 @@ import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.AutumnApplicationRunListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.EventListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Publisher.EventMulticaster;
-import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
-import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
-import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
-import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryPostProcessor;
-import org.example.FrameworkUtils.AutumnCore.Ioc.BeanPostProcessor;
-import org.example.FrameworkUtils.AutumnCore.Ioc.EarlyBeanFactoryAware;
-import org.example.FrameworkUtils.AutumnCore.Ioc.EarlyEnvironmentAware;
-import org.example.FrameworkUtils.AutumnCore.Ioc.FactoryBean;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
-import org.example.FrameworkUtils.AutumnCore.Ioc.Ordered;
-import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
-import org.example.FrameworkUtils.AutumnCore.Ioc.SimpleMyBeanDefinitionRegistry;
+import org.example.FrameworkUtils.AutumnCore.Ioc.*;
 import org.example.FrameworkUtils.AutumnCore.context.ApplicationContextInitializer;
-import org.example.FrameworkUtils.AutumnCore.env.ApplicationArguments;
-import org.example.FrameworkUtils.AutumnCore.env.DefaultApplicationArguments;
-import org.example.FrameworkUtils.AutumnCore.env.DefaultEnvironment;
-import org.example.FrameworkUtils.AutumnCore.env.Environment;
+import org.example.FrameworkUtils.AutumnCore.env.*;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Utils.AnnotationUtils;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
@@ -47,11 +23,9 @@ import org.springframework.util.Assert;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 /**
  * @author ziyuan
@@ -68,12 +42,15 @@ public class AutumnApplication {
 
     private final Class<?> primarySources;
 
-    private List<BootstrapRegistryInitializer> bootstrapRegistryInitializers;
+    private final AnnotationScanner scanner = new AnnotationScanner();
+
+    private final List<BootstrapRegistryInitializer> bootstrapRegistryInitializers;
+
+    private final Class<?> mainApplicationClass;
 
     private List<ApplicationContextInitializer> initializers;
 
     private List<ApplicationListener> listeners;
-
 
     private Map<String, List<String>> spiMap;
 
@@ -83,59 +60,39 @@ public class AutumnApplication {
 
     private ApplicationContext beanFactory;
 
-    private AnnotationScanner scanner = new AnnotationScanner();
-
-    private Environment environment;
+    private ConfigurableEnvironment environment;
 
 
-
-
-    public AutumnApplication(Class<?> mainClass) {
-        Assert.notNull(mainClass, "主类不得为空");
-        this.primarySources = mainClass;
+    public AutumnApplication(Class<?> primarySources) {
+        Assert.notNull(primarySources, "源不得为空");
+        this.primarySources = primarySources;
         this.initAutumnSpi();
         this.bootstrapRegistryInitializers = this.getAutumnFactoriesInstances(BootstrapRegistryInitializer.class);
         this.setInitializers(this.getAutumnFactoriesInstances(ApplicationContextInitializer.class));
         this.setListeners(this.getAutumnFactoriesInstances(ApplicationListener.class));
+        this.mainApplicationClass = deduceMainApplicationClass();
     }
 
+
     public void run(String[] args) {
-        this.sysArgs=args;
+        this.sysArgs = args;
         DefaultBootstrapContext bootstrapContext = this.createBootstrapContext();
         List<AutumnApplicationRunListener> listeners = getAutumnFactoriesInstances(AutumnApplicationRunListener.class);
         for (AutumnApplicationRunListener listener : listeners) {
-            listener.starting(bootstrapContext, primarySources);
+            listener.starting(bootstrapContext, mainApplicationClass);
         }
         ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
         environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
 
-        log.info("""
 
-                \033[35m                                _                         __  ____      _______\s
-                \033[36m                     /\\        | |                       |  \\/  \\ \\    / / ____|
-                \033[32m                    /  \\  _   _| |_ _   _ _ __ ___  _ __ | \\  / |\\ \\  / / |    \s
-                \033[34m                   / /\\ \\| | | | __| | | | '_ ` _ \\| '_ \\| |\\/| | \\ \\/ /| |    \s
-                \033[33m                  / ____ \\ |_| | |_| |_| | | | | | | | | | |  | |  \\  / | |____\s
-                \033[31m                 /_/    \\_\\__,_|\\__|\\__,_|_| |_| |_|_| |_|_|  |_|   \\/   \\_____|\033[0m"""
-        );
+        beanFactory = createApplicationContext();
+        prepareContext(bootstrapContext, beanFactory, environment, listeners, applicationArguments);
 
 
+        //:保存主类的包名,也就是默认扫描的包,以后会开放自定义扫包路径
+        beanFactory.put("packageUrl", mainApplicationClass.getPackageName());
         try {
-            //保证容器已经存在
-            Class<?> clazz = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext");
-            Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
-            getInstanceMethod.setAccessible(true);
-            beanFactory = (ApplicationContext) getInstanceMethod.invoke(null);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-
-
-        //xxx:保存主类的包名,也就是默认扫描的包,以后会开放自定义扫包路径
-        beanFactory.put("packageUrl", primarySources.getPackageName());
-        try {
-            componentScan(primarySources, beanFactory);
+            componentScan(mainApplicationClass, beanFactory);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -145,12 +102,12 @@ public class AutumnApplication {
         Map<String, Object> iocContainer = beanFactory.getIocContainer();
         //有些类在aop后置处理器会被替换,所以要检查是不是cglib代理类,是的话要去看他的父类也就是原生类,要不然扫描不到注解,因为注解不会继承
         for (String clazz : iocContainer.keySet()) {
-            try{
+            try {
                 Class<?> temp = Class.forName(clazz);
                 if (temp.getName().contains("$$EnhancerByCGLIB")) {
-                    processClassForMapping(temp.getSuperclass(),urlMap);
+                    processClassForMapping(temp.getSuperclass(), urlMap);
                 } else {
-                    processClassForMapping(temp,urlMap);
+                    processClassForMapping(temp, urlMap);
                 }
             } catch (Exception ignored) {
 
@@ -163,15 +120,53 @@ public class AutumnApplication {
         server.run();
     }
 
-    private Environment prepareEnvironment(List<AutumnApplicationRunListener> listeners, DefaultBootstrapContext bootstrapContext, ApplicationArguments applicationArguments) {
-        Environment environment = new DefaultEnvironment(applicationArguments);
-        environment.loadConfiguration("src/main/resources/test.properties");
+    private void prepareContext(DefaultBootstrapContext bootstrapContext, ApplicationContext context, ConfigurableEnvironment environment, List<AutumnApplicationRunListener> listeners, ApplicationArguments applicationArguments) {
+        context.setEnvironment(environment);
+
+        for (ApplicationContextInitializer initializer : initializers) {
+            initializer.initialize(context);
+        }
+        for (AutumnApplicationRunListener listener : listeners) {
+            listener.contextPrepared(context);
+        }
+
+        log.info("""
+                
+                \033[35m                                _                         __  ____      _______\s
+                \033[36m                     /\\        | |                       |  \\/  \\ \\    / / ____|
+                \033[32m                    /  \\  _   _| |_ _   _ _ __ ___  _ __ | \\  / |\\ \\  / / |    \s
+                \033[34m                   / /\\ \\| | | | __| | | | '_ ` _ \\| '_ \\| |\\/| | \\ \\/ /| |    \s
+                \033[33m                  / ____ \\ |_| | |_| |_| | | | | | | | | | |  | |  \\  / | |____\s
+                \033[31m                 /_/    \\_\\__,_|\\__|\\__,_|_| |_| |_|_| |_|_|  |_|   \\/   \\_____|\033[0m"""
+        );
+
+
+
+    }
+
+    private ApplicationContext createApplicationContext() {
+
+        if (ApplicationContext.BASE_CONTEXT.equals(environment.getProperty("autumn.beanFactory"))) {
+            return new AnnotationConfigApplicationContext();
+        } else {
+            try {
+                Method getInstanceMethod = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext").getDeclaredMethod("getInstance");
+                getInstanceMethod.setAccessible(true);
+                return (ApplicationContext) getInstanceMethod.invoke(null);
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+    }
+
+    private ConfigurableEnvironment prepareEnvironment(List<AutumnApplicationRunListener> listeners, DefaultBootstrapContext bootstrapContext, ApplicationArguments applicationArguments) {
+        DefaultEnvironment environment = new DefaultEnvironment(applicationArguments);
+        environment.loadConfiguration("src/main/resources/test.properties",ConfigurableEnvironment.DEFAULT_PROFILE);
         for (AutumnApplicationRunListener listener : listeners) {
             listener.environmentPrepared(environment);
         }
         bootstrapContext.setEnvironment(environment);
         return environment;
-
     }
 
     private DefaultBootstrapContext createBootstrapContext() {
@@ -179,6 +174,41 @@ public class AutumnApplication {
         this.bootstrapRegistryInitializers.forEach((initializer) -> initializer.initialize(bootstrapContext));
         return bootstrapContext;
     }
+
+    private static MyBeanDefinition getMyBeanDefinition(Class clazz, Method method) {
+        Class<?> returnType = method.getReturnType();
+        if (returnType.equals(void.class)) {
+            throw new BeanCreationException("用AutumnBean注解标记的方法返回值不能为void");
+        }
+        MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
+        myBeanDefinition.setDoMethod(method);
+        myBeanDefinition.setConfigurationClass(clazz);
+        for (Method returnTypeMethod : returnType.getDeclaredMethods()) {
+            if (returnTypeMethod.isAnnotationPresent(MyPostConstruct.class)) {
+                myBeanDefinition.setInitMethodName(returnTypeMethod.getName());
+                myBeanDefinition.setInitMethod(returnTypeMethod);
+            }
+            if (returnTypeMethod.isAnnotationPresent(MyPreDestroy.class)) {
+                myBeanDefinition.setAfterMethodName(returnTypeMethod.getName());
+                myBeanDefinition.setAfterMethod(returnTypeMethod);
+            }
+        }
+        AutumnBean annotation = method.getAnnotation(AutumnBean.class);
+        if (annotation == null && FactoryBean.class.isAssignableFrom(clazz)) {
+            myBeanDefinition.setName(returnType.getName());
+
+        } else {
+            if (method.getAnnotation(AutumnBean.class).value().isEmpty()) {
+                myBeanDefinition.setName(returnType.getName());
+            } else {
+                myBeanDefinition.setName(method.getAnnotation(AutumnBean.class).value());
+            }
+        }
+        myBeanDefinition.setBeanClass(returnType);
+        return myBeanDefinition;
+
+    }
+
 
 
     private void componentScan(Class<?> mainClass, ApplicationContext myContext) throws Exception {
@@ -197,12 +227,8 @@ public class AutumnApplication {
         List<Class<BeanFactoryPostProcessor>> beanFactoryPostProcessorsClassList = new ArrayList<>();
         //现在开始魔法时间,引入starter,实际上注解本身没有意义,其实应该是复合注解import一个大爹来调度bean的装配
         if (!AnnotationUtils.findAllClassAnnotations(mainClass, EnableAutoConfiguration.class).isEmpty()) {
-//        if (mainClass.getAnnotation(EnableAutoConfiguration.class) != null) {
-            // 加载自动配置类
-
             List<String> allProcessors = new ArrayList<>(autoConfigurationMap.get("BeanDefinitionRegistryPostProcessor"));
             allProcessors.addAll(autoConfigurationMap.get("BeanFactoryPostProcessor"));
-
             // 处理所有处理器类，并且检查它们是否是 BeanFactoryPostProcessor 类型的子类
             for (String className : allProcessors) {
                 try {
@@ -305,9 +331,9 @@ public class AutumnApplication {
 
         //xxx:  处理BeanFactoryPostProcessor
         invokePostProcessors(regularPostProcessors, registry);
-        for(MyBeanDefinition mb:registry.getBeanDefinitionMap().values()){
+        for (MyBeanDefinition mb : registry.getBeanDefinitionMap().values()) {
 
-            if(mb.getBeanClass().isAssignableFrom(BeanPostProcessor.class)){
+            if (mb.getBeanClass().isAssignableFrom(BeanPostProcessor.class)) {
 
             }
         }
@@ -351,11 +377,11 @@ public class AutumnApplication {
     }
 
     private void getInitOrAfterMethod(MyBeanDefinition myBeanDefinition, Method method) {
-        if(method.getAnnotation(MyPostConstruct.class)!=null){
+        if (method.getAnnotation(MyPostConstruct.class) != null) {
             myBeanDefinition.setInitMethodName(method.getName());
             myBeanDefinition.setInitMethod(method);
         }
-        if(method.getAnnotation(MyPreDestroy.class)!=null){
+        if (method.getAnnotation(MyPreDestroy.class) != null) {
             myBeanDefinition.setAfterMethodName(method.getName());
             myBeanDefinition.setAfterMethod(method);
         }
@@ -406,43 +432,6 @@ public class AutumnApplication {
         }
     }
 
-
-    private static MyBeanDefinition getMyBeanDefinition(Class clazz, Method method) {
-        Class<?> returnType = method.getReturnType();
-        if (returnType.equals(void.class)) {
-            throw new BeanCreationException("用AutumnBean注解标记的方法返回值不能为void");
-        }
-        MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
-        myBeanDefinition.setDoMethod(method);
-        myBeanDefinition.setConfigurationClass(clazz);
-        for (Method returnTypeMethod : returnType.getDeclaredMethods()) {
-            if (returnTypeMethod.isAnnotationPresent(MyPostConstruct.class)) {
-                myBeanDefinition.setInitMethodName(returnTypeMethod.getName());
-                myBeanDefinition.setInitMethod(returnTypeMethod);
-            }
-            if (returnTypeMethod.isAnnotationPresent(MyPreDestroy.class)) {
-                myBeanDefinition.setAfterMethodName(returnTypeMethod.getName());
-                myBeanDefinition.setAfterMethod(returnTypeMethod);
-            }
-        }
-        AutumnBean annotation = method.getAnnotation(AutumnBean.class);
-        if (annotation == null && FactoryBean.class.isAssignableFrom(clazz) ) {
-            myBeanDefinition.setName(returnType.getName());
-            myBeanDefinition.setBeanClass(returnType);
-            return myBeanDefinition;
-
-        } else {
-            if (method.getAnnotation(AutumnBean.class).value().isEmpty()) {
-                myBeanDefinition.setName(returnType.getName());
-            } else {
-                myBeanDefinition.setName(method.getAnnotation(AutumnBean.class).value());
-            }
-            myBeanDefinition.setBeanClass(returnType);
-            return myBeanDefinition;
-        }
-
-    }
-
     private void processClassForMapping(Class<?> clazz, Map<String, String> urlMap) {
         if (clazz.isAnnotationPresent(MyController.class)) {
             for (Method method : clazz.getDeclaredMethods()) {
@@ -488,6 +477,18 @@ public class AutumnApplication {
 
     public void addInitializers(BootstrapRegistryInitializer initializer) {
         this.bootstrapRegistryInitializers.add(initializer);
+    }
+
+    private Class<?> deduceMainApplicationClass() {
+        return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+                .walk(this::findMainClass)
+                .orElse(null);
+    }
+
+    private Optional<Class<?>> findMainClass(Stream<StackWalker.StackFrame> stack) {
+        return stack.filter((frame) -> Objects.equals(frame.getMethodName(), "main"))
+                .findFirst()
+                .map(StackWalker.StackFrame::getDeclaringClass);
     }
 
 

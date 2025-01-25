@@ -1,5 +1,6 @@
 package org.example.FrameworkUtils.AutumnCore.Bootstrap;
 
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
 
 /**
@@ -17,4 +18,5 @@ public interface BootstrapContext {
     <T> void register(Class<T> type, T instance);
 
     void setEnvironment(Environment environment);
+
 }

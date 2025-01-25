@@ -12,15 +12,14 @@ import java.util.Properties;
  */
 public interface Environment {
 
-
     ApplicationArguments getApplicationArguments();
-
 
     String getProperty(String key);
 
-
-    void loadConfiguration(String filename);
-
-
     Properties getAllProperties();
+
+    String[] getActiveProfiles();
+
+    String[] getDefaultProfiles();
+
 }

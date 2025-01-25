@@ -1,5 +1,6 @@
 package org.example.FrameworkUtils.AutumnCore.context;
 
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 
 /**
@@ -8,5 +9,5 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
  */
 @FunctionalInterface
 public interface ApplicationContextInitializer{
-    void initialize(MyContext context);
+    void initialize(ApplicationContext context);
 }

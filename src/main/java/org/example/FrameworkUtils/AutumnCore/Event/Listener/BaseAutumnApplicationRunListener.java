@@ -2,7 +2,8 @@ package org.example.FrameworkUtils.AutumnCore.Event.Listener;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Bootstrap.BootstrapContext;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
+import org.example.FrameworkUtils.AutumnCore.env.ConfigurableEnvironment;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
 
 /**
@@ -24,26 +25,26 @@ public class BaseAutumnApplicationRunListener implements AutumnApplicationRunLis
     }
 
     @Override
-    public void environmentPrepared(Environment environment) {
+    public void environmentPrepared(ConfigurableEnvironment environment) {
         log.info("BaseAutumnApplicationRunListener感知到现在处于environmentPrepared状态");
         environment.getApplicationArguments().getVmProperties().forEach(log::info);
     }
 
     @Override
-    public void contextPrepared(MyContext context) {
+    public void contextPrepared(ApplicationContext context) {
         log.info("BaseAutumnApplicationRunListener感知到现在处于contextPrepared状态");
 
     }
 
 
     @Override
-    public void contextLoaded(MyContext context) {
+    public void contextLoaded(ApplicationContext context) {
         log.info("BaseAutumnApplicationRunListener感知到现在处于contextLoaded状态");
 
     }
 
     @Override
-    public void finished(MyContext application, Exception exception) {
+    public void finished(ApplicationContext application, Exception exception) {
 
         log.info("BaseAutumnApplicationRunListener感知到现在处于finished状态");
     }
