@@ -2,6 +2,7 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ConditionChec
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyCondition;
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 
@@ -14,7 +15,7 @@ public class TomCatConditionCheck  implements MyCondition  {
     }
 
     @Override
-    public boolean matches(MyContext myContext, Class<?> clazz) {
+    public boolean matches(ApplicationContext myContext, Class<?> clazz) {
         return true;
 //        try {
 //            Class.forName("org.apache.catalina.startup.Tomcat");

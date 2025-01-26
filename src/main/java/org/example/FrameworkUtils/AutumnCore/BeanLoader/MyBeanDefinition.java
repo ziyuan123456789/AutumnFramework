@@ -28,7 +28,10 @@ enum Scope {
  */
 @Data
 public class MyBeanDefinition {
-    private  String name;
+
+    private  AnnotationMetadata metadata;
+
+    private String name;
 
     private Class<?> beanClass;
 
@@ -57,13 +60,21 @@ public class MyBeanDefinition {
 
     private Scope scope;
 
-    public MyBeanDefinition(String name, Class<?> beanClass){
+    public MyBeanDefinition(String name, Class<?> beanClass) {
+        this.metadata = new AnnotationMetadata(beanClass);
         this.name = name;
         this.beanClass = beanClass;
     }
 
-    public MyBeanDefinition() {
+    public MyBeanDefinition(Class<?> beanClass) {
+        this.metadata = new AnnotationMetadata(beanClass);
+        this.name = beanClass.getName();
+        this.beanClass = beanClass;
+    }
+
+    public MyBeanDefinition( ){
 
     }
+
 }
 

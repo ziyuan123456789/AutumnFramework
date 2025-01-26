@@ -16,5 +16,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface MyConditional {
-    Class<? extends MyCondition> value();
+    Class<? extends MyCondition>[] value();
 }

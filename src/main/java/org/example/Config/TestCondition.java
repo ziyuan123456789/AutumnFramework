@@ -1,6 +1,7 @@
 package org.example.Config;
 
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyCondition;
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 
@@ -11,7 +12,7 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 @MyComponent
 public class TestCondition implements MyCondition {
     @Override
-    public boolean matches(MyContext myContext, Class<?> clazz) {
+    public boolean matches(ApplicationContext myContext, Class<?> clazz) {
         return false;
     }
 }

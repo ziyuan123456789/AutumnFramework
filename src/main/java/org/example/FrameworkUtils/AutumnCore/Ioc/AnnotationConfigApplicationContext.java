@@ -4,12 +4,11 @@ import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
 import org.example.FrameworkUtils.AutumnCore.env.ApplicationArguments;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
+import org.example.FrameworkUtils.Exception.BeanCreationException;
+import org.example.FrameworkUtils.Exception.BeanDefinitionCreationException;
 
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -31,6 +30,9 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     private final Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();
 
     private Environment environment;
+
+    private final Map<String, MyBeanDefinition> beanDefinitionMap = new LinkedHashMap<>();
+
 
     @Override
     public Environment getEnvironment() {
@@ -150,4 +152,52 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
         return singletonObjects.size();
     }
 
+    @Override
+    public void registerBeanDefinition(String beanName, MyBeanDefinition beanDefinition) throws BeanCreationException {
+        if (beanDefinitionMap.containsKey(beanName)) {
+            throw new BeanCreationException("Bean名称 '" + beanName + "' 已经被使用。");
+        }
+        beanDefinitionMap.put(beanName, beanDefinition);
+    }
+
+    @Override
+    public void removeBeanDefinition(String beanName) throws BeanCreationException {
+        MyBeanDefinition beanDefinition = beanDefinitionMap.remove(beanName);
+        if (beanDefinition == null) {
+            throw new BeanCreationException("没有找到Bean定义: " + beanName);
+        }
+    }
+
+    @Override
+    public MyBeanDefinition getBeanDefinition(String beanName) throws BeanCreationException {
+        MyBeanDefinition beanDefinition = beanDefinitionMap.get(beanName);
+        if (beanDefinition == null) {
+            throw new BeanCreationException("没有找到Bean定义: " + beanName);
+        }
+        return beanDefinition;
+    }
+
+    @Override
+    public boolean containsBeanDefinition(String beanName) {
+        return beanDefinitionMap.containsKey(beanName);
+    }
+
+    @Override
+    public String[] getBeanDefinitionNames() {
+        return beanDefinitionMap.keySet().toArray(new String[0]);
+    }
+
+    @Override
+    public int getBeanDefinitionCount() {
+        return beanDefinitionMap.size();
+    }
+
+    @Override
+    public boolean isBeanNameInUse(String beanName) {
+        return beanDefinitionMap.containsKey(beanName);
+    }
+    @Override
+    public Map<String, MyBeanDefinition> getBeanDefinitionMap() {
+        return beanDefinitionMap;
+    }
 }

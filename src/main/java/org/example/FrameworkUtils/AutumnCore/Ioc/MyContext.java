@@ -24,7 +24,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * @author wsh
@@ -52,7 +51,7 @@ public class MyContext implements ApplicationContext {
     private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>();
     //xxx: 二级缓存提前暴露的还未完全成熟的bean,用于解决循环依赖
     private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>();
-    private final Map<String, MyBeanDefinition> beanDefinitions = new ConcurrentHashMap<>();
+    private final Map<String, MyBeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>();
     //xxx: 三级缓存：对象工厂,创建Jdk代理/CgLib代理/配置类Bean/普通Bean
     private final Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();
     private final PropertiesReader propertiesReader = new PropertiesReader();
@@ -64,6 +63,7 @@ public class MyContext implements ApplicationContext {
     private List<Class<?>> cycleSet = new ArrayList<>();
     private Environment environment;
     private int times = 1;
+//    private final Map<String, MyBeanDefinition> beanDefinitionMap = new LinkedHashMap<>();
 
     private MyContext() {
     }
@@ -136,7 +136,7 @@ public class MyContext implements ApplicationContext {
     }
 
 
-    public void initIocCache(Map<String, MyBeanDefinition> beanDefinitionMap, Environment environment) throws Exception {
+    public void initIocCache(Environment environment) throws Exception {
         this.environment = environment;
         List<MyBeanDefinition> sortedDefinitions = new ArrayList<>(beanDefinitionMap.values());
         sortedDefinitions.sort((def1, def2) -> {
@@ -247,8 +247,8 @@ public class MyContext implements ApplicationContext {
 
     //xxx:遍历set去填充第三缓存
     private void registerBeanDefinition(Map<String, MyBeanDefinition> beanDefinitionMaps) {
-        this.beanDefinitions.putAll(beanDefinitionMaps);
-        for (MyBeanDefinition beanDefinition : beanDefinitions.values()) {
+        this.beanDefinitionMap.putAll(beanDefinitionMaps);
+        for (MyBeanDefinition beanDefinition : beanDefinitionMap.values()) {
             //xxx:先看看用哪个工厂
             ObjectFactory<?> beanFactory = createBeanFactory(beanDefinition);
             //xxx:然后填充到第三级缓存中
@@ -292,7 +292,7 @@ public class MyContext implements ApplicationContext {
 
     private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, ObjectFactory<?> factory) throws Exception {
         Object currentResult = null;
-        Class<?> beanClass = beanDefinitions.get(beanName).getBeanClass();
+        Class<?> beanClass = beanDefinitionMap.get(beanName).getBeanClass();
         for (InstantiationAwareBeanPostProcessor processor : instantiationAwareProcessors) {
             if (processor instanceof CgLibAop) {
                 currentResult = ((CgLibAop) processor).postProcessBeforeInstantiation(aopFactories, beanClass, beanName, currentResult);
@@ -432,14 +432,17 @@ public class MyContext implements ApplicationContext {
         for (Class<?> implClass : subTypesOf) {
             MyConditional myConditionalAnnotation = implClass.getAnnotation(MyConditional.class);
             if (myConditionalAnnotation != null) {
-                Class<? extends MyCondition> conditionClass = myConditionalAnnotation.value();
-                MyCondition condition = (MyCondition) getBean(conditionClass.getName());
-                autowireBeanProperties(condition, mb);
-                condition.init();
-                if (!condition.matches(this, implClass)) {
-                    classesToRemove.add(implClass);
+                Class<? extends MyCondition>[] conditionClass = myConditionalAnnotation.value();
+                for(Class<? extends MyCondition> c : conditionClass) {
+                    MyCondition condition = (MyCondition) getBean(c.getName());
+                    autowireBeanProperties(condition, mb);
+                    condition.init();
+                    if (!condition.matches(this, implClass)) {
+                        classesToRemove.add(implClass);
+                    }
+                    condition.after();
                 }
-                condition.after();
+
             }
         }
         subTypesOf.removeAll(classesToRemove);
@@ -581,7 +584,7 @@ public class MyContext implements ApplicationContext {
     @Override
     public void refresh() {
         try {
-            initIocCache(beanDefinitions, environment);
+            initIocCache( environment);
         } catch (Exception e) {
             log.error("初始化IOC容器失败", e);
         }
@@ -643,4 +646,52 @@ public class MyContext implements ApplicationContext {
     }
 
 
+    @Override
+    public void registerBeanDefinition(String beanName, MyBeanDefinition beanDefinition) throws BeanCreationException {
+        if (beanDefinitionMap.containsKey(beanName)) {
+            throw new BeanCreationException("Bean名称 '" + beanName + "' 已经被使用。");
+        }
+        beanDefinitionMap.put(beanName, beanDefinition);
+    }
+
+    @Override
+    public void removeBeanDefinition(String beanName) throws BeanCreationException {
+        MyBeanDefinition beanDefinition = beanDefinitionMap.remove(beanName);
+        if (beanDefinition == null) {
+            throw new BeanCreationException("没有找到Bean定义: " + beanName);
+        }
+    }
+
+    @Override
+    public MyBeanDefinition getBeanDefinition(String beanName) throws BeanCreationException {
+        MyBeanDefinition beanDefinition = beanDefinitionMap.get(beanName);
+        if (beanDefinition == null) {
+            throw new BeanCreationException("没有找到Bean定义: " + beanName);
+        }
+        return beanDefinition;
+    }
+
+    @Override
+    public boolean containsBeanDefinition(String beanName) {
+        return beanDefinitionMap.containsKey(beanName);
+    }
+
+    @Override
+    public String[] getBeanDefinitionNames() {
+        return beanDefinitionMap.keySet().toArray(new String[0]);
+    }
+
+    @Override
+    public int getBeanDefinitionCount() {
+        return beanDefinitionMap.size();
+    }
+
+    @Override
+    public boolean isBeanNameInUse(String beanName) {
+        return beanDefinitionMap.containsKey(beanName);
+    }
+    @Override
+    public Map<String, MyBeanDefinition> getBeanDefinitionMap() {
+        return beanDefinitionMap;
+    }
 }

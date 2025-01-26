@@ -9,7 +9,7 @@ public interface MyCondition {
     default void init() {
     }
 
-    boolean matches(MyContext myContext, Class<?> clazz);
+    boolean matches(ApplicationContext myContext, Class<?> clazz);
     default void after(){
 
     }

@@ -15,7 +15,7 @@ import java.util.Properties;
 /**
  * 万恶之源
  */
-public interface ApplicationContext extends BeanFactory,Environment,SingletonBeanRegistry {
+public interface ApplicationContext extends BeanFactory,Environment,SingletonBeanRegistry,BeanDefinitionRegistry {
 
     String BASE_CONTEXT ="AnnotationConfigApplicationContext";
 

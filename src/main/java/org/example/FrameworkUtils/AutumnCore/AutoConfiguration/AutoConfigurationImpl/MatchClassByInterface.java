@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyCondition;
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 import org.reflections.Reflections;
@@ -36,7 +37,7 @@ public class MatchClassByInterface implements MyCondition {
 
 
     @Override
-    public boolean matches(MyContext myContext, Class<?> clazz) {
+    public boolean matches(ApplicationContext myContext, Class<?> clazz) {
         Set<Class<?>> subTypesOf = (Set) reflections.getSubTypesOf(clazz.getInterfaces()[0]);
         List<Class> injectImplList=new ArrayList<>();
         if (subTypesOf.size() == 2) {
@@ -48,13 +49,16 @@ public class MatchClassByInterface implements MyCondition {
                 }
                 MyConditional myCondition = implClass.getAnnotation(MyConditional.class);
                 if (myCondition != null) {
-                    Class<? extends MyCondition> otherCondition = myCondition.value();
-                    MyCondition myConditionImpl = (MyCondition) myContext.getBean(otherCondition.getName());
-                    myConditionImpl.init();
-                    if (myConditionImpl.matches(myContext, implClass)) {
-                        throw new IllegalStateException("多个条件处理器均被命中,请确认到底要注入哪一个"+injectImplList);
+                    Class<? extends MyCondition>[] otherConditions = myCondition.value();
+                    for (Class<? extends MyCondition> o : otherConditions) {
+                        MyCondition myConditionImpl = (MyCondition) myContext.getBean(o.getName());
+                        myConditionImpl.init();
+                        if (myConditionImpl.matches(myContext, implClass)) {
+                            throw new IllegalStateException("多个条件处理器均被命中,请确认到底要注入哪一个"+injectImplList);
+                        }
+                        myConditionImpl.after();
                     }
-                    myConditionImpl.after();
+
                 }else{
                     injectImplList.add(implClass);
                 }

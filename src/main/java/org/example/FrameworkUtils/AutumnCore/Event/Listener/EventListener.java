@@ -2,7 +2,7 @@ package org.example.FrameworkUtils.AutumnCore.Event.Listener;
 
 import org.example.FrameworkUtils.AutumnCore.Event.Event;
 
-/**
+/*
  * @author ziyuan
  * @since 2024.07
  */

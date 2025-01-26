@@ -13,6 +13,22 @@ import java.util.Set;
  */
 public class AnnotationUtils {
 
+    public static List<Annotation> findAllClassAnnotations(Class<?> clazz) {
+        if (clazz == null) {
+            return new ArrayList<>();
+        }
+
+        List<Annotation> foundAnnotations = new ArrayList<>();
+
+        Set<Class<? extends Annotation>> visitedAnnotations = new HashSet<>();
+
+        for (Annotation annotation : clazz.getAnnotations()) {
+            findAnnotationsRecursively(annotation, annotation.annotationType(), foundAnnotations, visitedAnnotations);
+        }
+
+        return foundAnnotations;
+    }
+
     public static <A extends Annotation> List<A> findAllClassAnnotations(Class<?> clazz, Class<A> annotationClass) {
         Set<Annotation> visited = new HashSet<>();
         List<A> annotations = new ArrayList<>();

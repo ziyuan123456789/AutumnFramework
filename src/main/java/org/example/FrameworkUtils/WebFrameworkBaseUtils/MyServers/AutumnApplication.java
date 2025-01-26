@@ -2,10 +2,7 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.*;
-import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
-import org.example.FrameworkUtils.AutumnCore.BeanLoader.AutumnFactoriesLoader;
-import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
-import org.example.FrameworkUtils.AutumnCore.BeanLoader.XMLBeansLoader;
+import org.example.FrameworkUtils.AutumnCore.BeanLoader.*;
 import org.example.FrameworkUtils.AutumnCore.Bootstrap.BootstrapRegistryInitializer;
 import org.example.FrameworkUtils.AutumnCore.Bootstrap.DefaultBootstrapContext;
 import org.example.FrameworkUtils.AutumnCore.Event.IocInitEvent;
@@ -15,7 +12,10 @@ import org.example.FrameworkUtils.AutumnCore.Event.Listener.EventListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Publisher.EventMulticaster;
 import org.example.FrameworkUtils.AutumnCore.Ioc.*;
 import org.example.FrameworkUtils.AutumnCore.context.ApplicationContextInitializer;
-import org.example.FrameworkUtils.AutumnCore.env.*;
+import org.example.FrameworkUtils.AutumnCore.env.ApplicationArguments;
+import org.example.FrameworkUtils.AutumnCore.env.ConfigurableEnvironment;
+import org.example.FrameworkUtils.AutumnCore.env.DefaultApplicationArguments;
+import org.example.FrameworkUtils.AutumnCore.env.DefaultEnvironment;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Utils.AnnotationUtils;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
@@ -40,7 +40,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class AutumnApplication {
 
-    private final Class<?> primarySources;
+    private final Set<Class<?>> primarySources;
 
     private final AnnotationScanner scanner = new AnnotationScanner();
 
@@ -63,9 +63,9 @@ public class AutumnApplication {
     private ConfigurableEnvironment environment;
 
 
-    public AutumnApplication(Class<?> primarySources) {
+    public AutumnApplication(Class<?>... primarySources) {
         Assert.notNull(primarySources, "源不得为空");
-        this.primarySources = primarySources;
+        this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
         this.initAutumnSpi();
         this.bootstrapRegistryInitializers = this.getAutumnFactoriesInstances(BootstrapRegistryInitializer.class);
         this.setInitializers(this.getAutumnFactoriesInstances(ApplicationContextInitializer.class));
@@ -73,6 +73,39 @@ public class AutumnApplication {
         this.mainApplicationClass = deduceMainApplicationClass();
     }
 
+    private static MyBeanDefinition getMyBeanDefinition(Class clazz, Method method) {
+        Class<?> returnType = method.getReturnType();
+        if (returnType.equals(void.class)) {
+            throw new BeanCreationException("用AutumnBean注解标记的方法返回值不能为void");
+        }
+        MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
+        myBeanDefinition.setDoMethod(method);
+        myBeanDefinition.setConfigurationClass(clazz);
+        for (Method returnTypeMethod : returnType.getDeclaredMethods()) {
+            if (returnTypeMethod.isAnnotationPresent(MyPostConstruct.class)) {
+                myBeanDefinition.setInitMethodName(returnTypeMethod.getName());
+                myBeanDefinition.setInitMethod(returnTypeMethod);
+            }
+            if (returnTypeMethod.isAnnotationPresent(MyPreDestroy.class)) {
+                myBeanDefinition.setAfterMethodName(returnTypeMethod.getName());
+                myBeanDefinition.setAfterMethod(returnTypeMethod);
+            }
+        }
+        AutumnBean annotation = method.getAnnotation(AutumnBean.class);
+        if (annotation == null && FactoryBean.class.isAssignableFrom(clazz)) {
+            myBeanDefinition.setName(returnType.getName());
+
+        } else {
+            if (method.getAnnotation(AutumnBean.class).value().isEmpty()) {
+                myBeanDefinition.setName(returnType.getName());
+            } else {
+                myBeanDefinition.setName(method.getAnnotation(AutumnBean.class).value());
+            }
+        }
+        myBeanDefinition.setBeanClass(returnType);
+        return myBeanDefinition;
+
+    }
 
     public void run(String[] args) {
         this.sysArgs = args;
@@ -139,7 +172,13 @@ public class AutumnApplication {
                 \033[33m                  / ____ \\ |_| | |_| |_| | | | | | | | | | |  | |  \\  / | |____\s
                 \033[31m                 /_/    \\_\\__,_|\\__|\\__,_|_| |_| |_|_| |_|_|  |_|   \\/   \\_____|\033[0m"""
         );
-
+        beanFactory.registerSingleton("applicationArguments", applicationArguments);
+        beanFactory.registerSingleton("environment", environment);
+        Set<Object> sources = getAllSources();
+        load(context, sources.toArray(new Object[0]));
+        for (AutumnApplicationRunListener listener : listeners) {
+            listener.contextLoaded(context);
+        }
 
 
     }
@@ -161,7 +200,7 @@ public class AutumnApplication {
 
     private ConfigurableEnvironment prepareEnvironment(List<AutumnApplicationRunListener> listeners, DefaultBootstrapContext bootstrapContext, ApplicationArguments applicationArguments) {
         DefaultEnvironment environment = new DefaultEnvironment(applicationArguments);
-        environment.loadConfiguration("src/main/resources/test.properties",ConfigurableEnvironment.DEFAULT_PROFILE);
+        environment.loadConfiguration("src/main/resources/test.properties", ConfigurableEnvironment.DEFAULT_PROFILE);
         for (AutumnApplicationRunListener listener : listeners) {
             listener.environmentPrepared(environment);
         }
@@ -175,46 +214,10 @@ public class AutumnApplication {
         return bootstrapContext;
     }
 
-    private static MyBeanDefinition getMyBeanDefinition(Class clazz, Method method) {
-        Class<?> returnType = method.getReturnType();
-        if (returnType.equals(void.class)) {
-            throw new BeanCreationException("用AutumnBean注解标记的方法返回值不能为void");
-        }
-        MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
-        myBeanDefinition.setDoMethod(method);
-        myBeanDefinition.setConfigurationClass(clazz);
-        for (Method returnTypeMethod : returnType.getDeclaredMethods()) {
-            if (returnTypeMethod.isAnnotationPresent(MyPostConstruct.class)) {
-                myBeanDefinition.setInitMethodName(returnTypeMethod.getName());
-                myBeanDefinition.setInitMethod(returnTypeMethod);
-            }
-            if (returnTypeMethod.isAnnotationPresent(MyPreDestroy.class)) {
-                myBeanDefinition.setAfterMethodName(returnTypeMethod.getName());
-                myBeanDefinition.setAfterMethod(returnTypeMethod);
-            }
-        }
-        AutumnBean annotation = method.getAnnotation(AutumnBean.class);
-        if (annotation == null && FactoryBean.class.isAssignableFrom(clazz)) {
-            myBeanDefinition.setName(returnType.getName());
-
-        } else {
-            if (method.getAnnotation(AutumnBean.class).value().isEmpty()) {
-                myBeanDefinition.setName(returnType.getName());
-            } else {
-                myBeanDefinition.setName(method.getAnnotation(AutumnBean.class).value());
-            }
-        }
-        myBeanDefinition.setBeanClass(returnType);
-        return myBeanDefinition;
-
-    }
-
-
-
     private void componentScan(Class<?> mainClass, ApplicationContext myContext) throws Exception {
         //xml方式加载beans,弃用
         XMLBeansLoader xmlBeansLoader = new XMLBeansLoader();
-        SimpleMyBeanDefinitionRegistry registry = new SimpleMyBeanDefinitionRegistry();
+//        SimpleMyBeanDefinitionRegistry registry = new SimpleMyBeanDefinitionRegistry();
         List<Class<? extends Annotation>> annotations = new ArrayList<>();
         annotations.add(MyController.class);
         annotations.add(MyService.class);
@@ -274,14 +277,14 @@ public class AutumnApplication {
                 MyBeanDefinition myConfigBeanDefinition = new MyBeanDefinition();
                 myConfigBeanDefinition.setName(clazz.getName());
                 myConfigBeanDefinition.setBeanClass(clazz);
-                registry.registerBeanDefinition(myConfigBeanDefinition.getName(), myConfigBeanDefinition);
+                myContext.registerBeanDefinition(myConfigBeanDefinition.getName(), myConfigBeanDefinition);
                 Method[] methods = clazz.getDeclaredMethods();
                 for (Method method : methods) {
                     getInitOrAfterMethod(myConfigBeanDefinition, method);
                     if (method.getAnnotation(AutumnBean.class) != null) {
                         //xxx: 当这个方法有bean注解则创建一个MyBeanDefinition
                         MyBeanDefinition myBeanDefinition = getMyBeanDefinition(clazz, method);
-                        registry.registerBeanDefinition(myBeanDefinition.getName(), myBeanDefinition);
+                        myContext.registerBeanDefinition(myBeanDefinition.getName(), myBeanDefinition);
                     }
 
                 }
@@ -290,7 +293,7 @@ public class AutumnApplication {
                     try {
                         Method getObjectMethod = clazz.getMethod("getObject");
                         MyBeanDefinition myBeanDefinition = getMyBeanDefinition(clazz, getObjectMethod);
-                        registry.registerBeanDefinition(myBeanDefinition.getName(), myBeanDefinition);
+                        myContext.registerBeanDefinition(myBeanDefinition.getName(), myBeanDefinition);
                     } catch (NoSuchMethodException e) {
                         System.err.println("FactoryBean实现中没有找到getObject方法: " + clazz.getName());
                     }
@@ -306,7 +309,7 @@ public class AutumnApplication {
                 }
                 myBeanDefinition.setName(clazz.getName());
                 myBeanDefinition.setBeanClass(clazz);
-                registry.registerBeanDefinition(myBeanDefinition.getName(), myBeanDefinition);
+                myContext.registerBeanDefinition(myBeanDefinition.getName(), myBeanDefinition);
             }
         }
 
@@ -327,18 +330,18 @@ public class AutumnApplication {
         }
 
         //xxx:  处理BeanDefinitionRegistryPostProcessor
-        invokePostProcessors(registryPostProcessors, registry);
+        invokePostProcessors(registryPostProcessors, myContext);
 
         //xxx:  处理BeanFactoryPostProcessor
-        invokePostProcessors(regularPostProcessors, registry);
-        for (MyBeanDefinition mb : registry.getBeanDefinitionMap().values()) {
+        invokePostProcessors(regularPostProcessors, myContext);
+        for (MyBeanDefinition mb : myContext.getBeanDefinitionMap().values()) {
 
             if (mb.getBeanClass().isAssignableFrom(BeanPostProcessor.class)) {
 
             }
         }
         MyContext myContext1 = (MyContext) myContext;
-        myContext1.initIocCache(registry.getBeanDefinitionMap(), environment);
+        myContext1.initIocCache(environment);
         long endTime = System.currentTimeMillis();
         log.info("容器花费了：{} 毫秒实例化", endTime - startTime);
         Map<String, Object> iocContainer = myContext1.getIocContainer();
@@ -387,7 +390,7 @@ public class AutumnApplication {
         }
     }
 
-    private void invokePostProcessors(List<?> postProcessors, SimpleMyBeanDefinitionRegistry registry) throws Exception {
+    private void invokePostProcessors(List<?> postProcessors, BeanDefinitionRegistry registry) throws Exception {
         //xxx:  处理实现了PriorityOrdered接口的
         List<Object> priorityOrderedPostProcessors = new ArrayList<>();
         for (Object postProcessor : postProcessors) {
@@ -510,6 +513,15 @@ public class AutumnApplication {
             return new ArrayList<>();
         }
 
+    }
+
+    public Set<Object> getAllSources() {
+        return new LinkedHashSet<>(this.primarySources);
+    }
+
+    protected void load(ApplicationContext context, Object[] sources) {
+        BeanDefinitionLoader loader = new BeanDefinitionLoader(context, sources);
+        loader.load();
     }
 
 
