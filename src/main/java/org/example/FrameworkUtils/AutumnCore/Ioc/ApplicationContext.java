@@ -41,4 +41,6 @@ public interface ApplicationContext extends BeanFactory,Environment,SingletonBea
     <T> List<T> getBeansOfType(Class<T> type);
 
     void registerShutdownHook();
+
+    void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor);
 }

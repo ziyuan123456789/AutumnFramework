@@ -33,7 +33,7 @@ public class AnnotatedBeanDefinitionReader {
         MyBeanDefinition abd = new MyBeanDefinition(beanClass);
         if (!this.conditionEvaluator.shouldSkip(abd.getMetadata())) {
             BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd);
-            this.registry.registerBeanDefinition("我草饲你的吗", definitionHolder.getBeanDefinition());
+            this.registry.registerBeanDefinition(definitionHolder.getBeanName(), definitionHolder.getBeanDefinition());
         }
     }
 }

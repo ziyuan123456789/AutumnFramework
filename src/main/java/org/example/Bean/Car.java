@@ -16,7 +16,7 @@ public class Car {
 
     @MyPostConstruct
     public void init() {
-        log.warn("{}{} 孩子们,我复活了", this.getClass().getSimpleName(), name);
+        log.info("{}{} 孩子们,我复活了", this.getClass().getSimpleName(), name);
     }
 
     @MyPreDestroy

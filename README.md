@@ -404,25 +404,6 @@ public interface UpdateMapper {
   </delete>
 </mapper>
 ```
-```xml
-<configuration>
-    <dataSource>
-        <property name="driverClass" value="com.mysql.cj.jdbc.Driver"/>
-        <property name="jdbcUrl"
-                  value="jdbc:mysql://localhost:3306/demo?serverTimezone=UTC&amp;useUnicode=true&amp;characterEncoding=utf-8&amp;useSSL=false&amp;allowPublicKeyRetrieval=true"/>
-        <property name="username" value="root"/>
-        <property name="password" value="root"/>
-    </dataSource>
-
-    <mappers>
-        <mapper resource="mapper/UserMapper.xml"/>
-    </mappers>
-
-    <myConfig>
-    </myConfig>
-</configuration>
-```
-
 如果你不想自动接管Mapper的生成,你也可以使用@Bean的方式注册一个SqlSession自己手动管理
 ```java
 @AutumnBean
@@ -516,33 +497,6 @@ public class TransactionImplService implements TransactionService {
 
 ORM与框架为互相隔离的状态,ORM感知不到框架的存在,框架也不会感知到ORM的存在  
 事务本身由手搓的 ORM 提供,框架本身是上层服务调用方.如果你希望使用其他的 ORM 请自己写适配器,保证可以主动注册到事务管理器中
-
-```java
-@Override
-public int update(Configuration configuration, MappedStatement mappedStatement, Method method, Object[] params) throws SQLException {
-  Connection connection = TransactionContext.getCurrentConnection();
-  String sql = mappedStatement.getSql();
-  BoundSql boundSql = getBoundSql(sql);
-  Map<String, Object> paramValueMapping = new HashMap<>();
-  Parameter[] parameters = method.getParameters();
-  for (int i = 0; i < parameters.length; i++) {
-    paramValueMapping.put(parameters[i].getName(), params[i]);
-  }
-  String jdbcSql = boundSql.getJdbcsqlText();
-  PreparedStatement statement = connection.prepareStatement(jdbcSql);
-  List<ParameterMapping> parameterMappings = parameterMappingTokenHandler.getParameterMapping();
-  for (int i = 0; i < parameterMappings.size(); i++) {
-    String argName = parameterMappings.get(i).getProperty();
-    Object argValue = paramValueMapping.get(argName);
-    Class<?> argClass = argValue.getClass();
-    typeHandlerRegistry.getTypeHandlers().get(argClass).setParameter(statement, i + 1, argValue);
-  }
-  int affectedRows = statement.executeUpdate();
-  parameterMappingTokenHandler.resetParameterMappings();
-  statement.close();
-  return affectedRows;
-}
-```
 
 ### Service层,你可以选择注入实现类或声明接口,框架会为你注入合适地实现类
 ```java
@@ -858,7 +812,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
 
   @Override
   public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
-    log.info("{}从配置文件或自动装配机制加载,提前干预BeanDefinition的生成,优先级为PriorityOrdered,实现了BeanDefinitionRegistryPostProcessor接口", this.getClass().getSimpleName());
+    log.info("{}开始加载,提前干预BeanDefinition的生成", this.getClass().getSimpleName());
     String minebatisXml = environment.getProperty("MineBatis-configXML");
     InputStream inputStream;
     if (minebatisXml == null || minebatisXml.isEmpty()) {
@@ -1384,6 +1338,13 @@ C:.
 - 事务系统的加入,实现了基本的事务功能,在方法上加入`@Transactional`即可开启事务
 
 ## 更新记录:
+
+### 2025/1/29
+
+- 过年好!作者在这里祝大家新年快乐,身体健康,万事如意,新年放假不写代码
+- 重写了BeanDefinition的部分API
+- 开始重写IOC容器
+
 ### 2025/1/25
 - 重写启动类 增加ConfigurableEnvironment,SingletonBeanRegistry,对于ApplicationContext进行完善
 
@@ -1615,13 +1576,21 @@ public String requestTestWithMethodParma(AutumnRequest autumn) {
 ### 2022/?
 - 了解到了Java反射
 
+以下是格式化后的规范显示：
 
+### 感谢
 
+- B站
+  - Java小小刀
+  - 猿人林克
 
+- 实体书籍
+  - 异步图书：《Spring Boot源码解读与原理分析》
+  - 机械工业出版社：《看透Spring MVC源代码分析与实践》
+  - 异步图书：《Effective Java》
+  - 黑皮书系列：《Java编程思想》、《计算机网络》
 
+- IDE/插件
+  - **Jetbrains** 提供的开源支持：IDEA / PyCharm / Rider / CLion License
+  - **GitHub** 提供的学生免费 Copilot
 
-
-### 感谢:
-- 没有Gpt4写代码寸步难行
-- 感谢Jetbrains提供的开源支持idea/pycharm/rider/clion license
-- 感谢GitHub提供的学生免费copilot

@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutorService;
 @Slf4j
 @MyAspect
 public class AsyncAopProxyHandler implements AutumnAopFactory, Ordered {
+
     @MyAutoWired
     ExecutorService executorService;
 

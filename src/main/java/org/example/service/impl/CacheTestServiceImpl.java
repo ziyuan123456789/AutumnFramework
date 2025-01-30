@@ -12,6 +12,7 @@ import org.example.service.CacheTestService;
 @MyService
 @Slf4j
 public class CacheTestServiceImpl implements CacheTestService {
+
     @Cache
     @Override
     public String cacheTest(String name) {

@@ -1,8 +1,22 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Annotation.*;
-import org.example.FrameworkUtils.AutumnCore.BeanLoader.*;
+import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBean;
+import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAutoConfiguration;
+import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyPostConstruct;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyPreDestroy;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
+import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
+import org.example.FrameworkUtils.AutumnCore.BeanLoader.AutumnFactoriesLoader;
+import org.example.FrameworkUtils.AutumnCore.BeanLoader.BeanDefinitionLoader;
+import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
+import org.example.FrameworkUtils.AutumnCore.BeanLoader.XMLBeansLoader;
 import org.example.FrameworkUtils.AutumnCore.Bootstrap.BootstrapRegistryInitializer;
 import org.example.FrameworkUtils.AutumnCore.Bootstrap.DefaultBootstrapContext;
 import org.example.FrameworkUtils.AutumnCore.Event.IocInitEvent;
@@ -10,7 +24,18 @@ import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.AutumnApplicationRunListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.EventListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Publisher.EventMulticaster;
-import org.example.FrameworkUtils.AutumnCore.Ioc.*;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AnnotationConfigApplicationContext;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryPostProcessor;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanPostProcessor;
+import org.example.FrameworkUtils.AutumnCore.Ioc.EarlyBeanFactoryAware;
+import org.example.FrameworkUtils.AutumnCore.Ioc.EarlyEnvironmentAware;
+import org.example.FrameworkUtils.AutumnCore.Ioc.FactoryBean;
+import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
+import org.example.FrameworkUtils.AutumnCore.Ioc.Ordered;
+import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
 import org.example.FrameworkUtils.AutumnCore.context.ApplicationContextInitializer;
 import org.example.FrameworkUtils.AutumnCore.env.ApplicationArguments;
 import org.example.FrameworkUtils.AutumnCore.env.ConfigurableEnvironment;
@@ -23,7 +48,14 @@ import org.springframework.util.Assert;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -73,84 +105,29 @@ public class AutumnApplication {
         this.mainApplicationClass = deduceMainApplicationClass();
     }
 
+
     private static MyBeanDefinition getMyBeanDefinition(Class clazz, Method method) {
         Class<?> returnType = method.getReturnType();
         if (returnType.equals(void.class)) {
             throw new BeanCreationException("用AutumnBean注解标记的方法返回值不能为void");
         }
-        MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
-        myBeanDefinition.setDoMethod(method);
-        myBeanDefinition.setConfigurationClass(clazz);
-        for (Method returnTypeMethod : returnType.getDeclaredMethods()) {
-            if (returnTypeMethod.isAnnotationPresent(MyPostConstruct.class)) {
-                myBeanDefinition.setInitMethodName(returnTypeMethod.getName());
-                myBeanDefinition.setInitMethod(returnTypeMethod);
-            }
-            if (returnTypeMethod.isAnnotationPresent(MyPreDestroy.class)) {
-                myBeanDefinition.setAfterMethodName(returnTypeMethod.getName());
-                myBeanDefinition.setAfterMethod(returnTypeMethod);
-            }
-        }
+        String beanName;
         AutumnBean annotation = method.getAnnotation(AutumnBean.class);
         if (annotation == null && FactoryBean.class.isAssignableFrom(clazz)) {
-            myBeanDefinition.setName(returnType.getName());
+            beanName = returnType.getName();
 
         } else {
             if (method.getAnnotation(AutumnBean.class).value().isEmpty()) {
-                myBeanDefinition.setName(returnType.getName());
+                beanName = returnType.getName();
             } else {
-                myBeanDefinition.setName(method.getAnnotation(AutumnBean.class).value());
+                beanName = method.getAnnotation(AutumnBean.class).value();
             }
         }
-        myBeanDefinition.setBeanClass(returnType);
+        MyBeanDefinition myBeanDefinition = new MyBeanDefinition(beanName, returnType);
+        myBeanDefinition.setDoMethod(method);
+        myBeanDefinition.setConfigurationClass(clazz);
         return myBeanDefinition;
 
-    }
-
-    public void run(String[] args) {
-        this.sysArgs = args;
-        DefaultBootstrapContext bootstrapContext = this.createBootstrapContext();
-        List<AutumnApplicationRunListener> listeners = getAutumnFactoriesInstances(AutumnApplicationRunListener.class);
-        for (AutumnApplicationRunListener listener : listeners) {
-            listener.starting(bootstrapContext, mainApplicationClass);
-        }
-        ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
-        environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
-
-
-        beanFactory = createApplicationContext();
-        prepareContext(bootstrapContext, beanFactory, environment, listeners, applicationArguments);
-
-
-        //:保存主类的包名,也就是默认扫描的包,以后会开放自定义扫包路径
-        beanFactory.put("packageUrl", mainApplicationClass.getPackageName());
-        try {
-            componentScan(mainApplicationClass, beanFactory);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-        //这一步是在配置路由表
-        Map<String, String> urlMap = new ConcurrentHashMap<>();
-        Map<String, Object> iocContainer = beanFactory.getIocContainer();
-        //有些类在aop后置处理器会被替换,所以要检查是不是cglib代理类,是的话要去看他的父类也就是原生类,要不然扫描不到注解,因为注解不会继承
-        for (String clazz : iocContainer.keySet()) {
-            try {
-                Class<?> temp = Class.forName(clazz);
-                if (temp.getName().contains("$$EnhancerByCGLIB")) {
-                    processClassForMapping(temp.getSuperclass(), urlMap);
-                } else {
-                    processClassForMapping(temp, urlMap);
-                }
-            } catch (Exception ignored) {
-
-            }
-
-        }
-        beanFactory.put("urlmapping", urlMap);
-        //运行时判断环境,依照自定义的条件注解选择运行容器,有我写的socketserver和tomcat
-        ServerRunner server = (ServerRunner) beanFactory.getBean(ServerRunner.class.getName());
-        server.run();
     }
 
     private void prepareContext(DefaultBootstrapContext bootstrapContext, ApplicationContext context, ConfigurableEnvironment environment, List<AutumnApplicationRunListener> listeners, ApplicationArguments applicationArguments) {
@@ -214,6 +191,54 @@ public class AutumnApplication {
         return bootstrapContext;
     }
 
+    public void run(String[] args) {
+        this.sysArgs = args;
+        DefaultBootstrapContext bootstrapContext = this.createBootstrapContext();
+        List<AutumnApplicationRunListener> listeners = getAutumnFactoriesInstances(AutumnApplicationRunListener.class);
+        for (AutumnApplicationRunListener listener : listeners) {
+            listener.starting(bootstrapContext, mainApplicationClass);
+        }
+        ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+        environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
+
+
+        beanFactory = createApplicationContext();
+        prepareContext(bootstrapContext, beanFactory, environment, listeners, applicationArguments);
+
+//        beanFactory.refresh();
+
+
+        //:保存主类的包名,也就是默认扫描的包,以后会开放自定义扫包路径
+        beanFactory.put("packageUrl", mainApplicationClass.getPackageName());
+        try {
+            componentScan(mainApplicationClass, beanFactory);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+        //这一步是在配置路由表
+        Map<String, String> urlMap = new ConcurrentHashMap<>();
+        Map<String, Object> iocContainer = beanFactory.getIocContainer();
+        //有些类在aop后置处理器会被替换,所以要检查是不是cglib代理类,是的话要去看他的父类也就是原生类,要不然扫描不到注解,因为注解不会继承
+        for (String clazz : iocContainer.keySet()) {
+            try {
+                Class<?> temp = Class.forName(clazz);
+                if (temp.getName().contains("$$EnhancerByCGLIB")) {
+                    processClassForMapping(temp.getSuperclass(), urlMap);
+                } else {
+                    processClassForMapping(temp, urlMap);
+                }
+            } catch (Exception ignored) {
+
+            }
+
+        }
+        beanFactory.put("urlmapping", urlMap);
+        //运行时判断环境,依照自定义的条件注解选择运行容器,有我写的socketserver和tomcat
+        ServerRunner server = (ServerRunner) beanFactory.getBean(ServerRunner.class.getName());
+        server.run();
+    }
+
     private void componentScan(Class<?> mainClass, ApplicationContext myContext) throws Exception {
         //xml方式加载beans,弃用
         XMLBeansLoader xmlBeansLoader = new XMLBeansLoader();
@@ -266,7 +291,6 @@ public class AutumnApplication {
 
 //        List<Class<BeanFactoryPostProcessor>> starterRegisterer = xmlBeansLoader.loadStarterClasses("plugins");
         long startTime = System.currentTimeMillis();
-        log.info("IOC容器开始初始化");
         for (Class<?> clazz : annotatedClasses) {
             List<MyConfig> allClassAnnotations = AnnotationUtils.findAllClassAnnotations(clazz, MyConfig.class);
 //            MyConfig myConfig = clazz.getAnnotation(MyConfig.class);
@@ -274,13 +298,11 @@ public class AutumnApplication {
                 if (clazz.isAnnotation()) {
                     continue;
                 }
-                MyBeanDefinition myConfigBeanDefinition = new MyBeanDefinition();
-                myConfigBeanDefinition.setName(clazz.getName());
-                myConfigBeanDefinition.setBeanClass(clazz);
+                MyBeanDefinition myConfigBeanDefinition = new MyBeanDefinition(clazz.getName(), clazz);
                 myContext.registerBeanDefinition(myConfigBeanDefinition.getName(), myConfigBeanDefinition);
                 Method[] methods = clazz.getDeclaredMethods();
                 for (Method method : methods) {
-                    getInitOrAfterMethod(myConfigBeanDefinition, method);
+//                    getInitOrAfterMethod(myConfigBeanDefinition, method);
                     if (method.getAnnotation(AutumnBean.class) != null) {
                         //xxx: 当这个方法有bean注解则创建一个MyBeanDefinition
                         MyBeanDefinition myBeanDefinition = getMyBeanDefinition(clazz, method);
@@ -302,13 +324,7 @@ public class AutumnApplication {
                 if (clazz.isAnnotation()) {
                     continue;
                 }
-                MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
-                Method[] methods = clazz.getDeclaredMethods();
-                for (Method method : methods) {
-                    getInitOrAfterMethod(myBeanDefinition, method);
-                }
-                myBeanDefinition.setName(clazz.getName());
-                myBeanDefinition.setBeanClass(clazz);
+                MyBeanDefinition myBeanDefinition = new MyBeanDefinition(clazz);
                 myContext.registerBeanDefinition(myBeanDefinition.getName(), myBeanDefinition);
             }
         }
@@ -366,7 +382,7 @@ public class AutumnApplication {
                     if (importClass.isInterface() || importClass.isAnnotation()) {
                         throw new RuntimeException("Import注解不能引入接口或注解: " + importClass.getName());
                     }
-                    log.warn("通过Import机制导入了{}", importClass.getName());
+                    log.info("通过Import机制导入了{}", importClass.getName());
                     annotatedClasses.add(importClass);
 
                     if (BeanFactoryPostProcessor.class.isAssignableFrom(importClass)) {
@@ -376,17 +392,6 @@ public class AutumnApplication {
                     processImports(annotatedClasses, importClass, beanFactoryPostProcessorsClassList);
                 }
             }
-        }
-    }
-
-    private void getInitOrAfterMethod(MyBeanDefinition myBeanDefinition, Method method) {
-        if (method.getAnnotation(MyPostConstruct.class) != null) {
-            myBeanDefinition.setInitMethodName(method.getName());
-            myBeanDefinition.setInitMethod(method);
-        }
-        if (method.getAnnotation(MyPreDestroy.class) != null) {
-            myBeanDefinition.setAfterMethodName(method.getName());
-            myBeanDefinition.setAfterMethod(method);
         }
     }
 
@@ -523,6 +528,20 @@ public class AutumnApplication {
         BeanDefinitionLoader loader = new BeanDefinitionLoader(context, sources);
         loader.load();
     }
+
+    private void getInitOrAfterMethod(MyBeanDefinition myBeanDefinition, Method method) {
+        if (method.getAnnotation(MyPostConstruct.class) != null) {
+            myBeanDefinition.getInitMethodName().add(method.getName());
+            myBeanDefinition.getInitMethod().add(method);
+        }
+        if (method.getAnnotation(MyPreDestroy.class) != null) {
+            myBeanDefinition.getAfterMethodName().add(method.getName());
+            myBeanDefinition.getAfterMethod().add(method);
+        }
+    }
+
+
+
 
 
 }

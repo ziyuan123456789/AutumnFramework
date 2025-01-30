@@ -27,7 +27,7 @@ public class UserBeanPostProcessor implements BeanPostProcessor, Ordered, EventL
     public Object postProcessBeforeInitialization(Object bean, String beanName) {
         long startTime = System.currentTimeMillis();
         beanStartTimes.put(beanName, startTime);
-        log.info("before -- {}", beanName);
+        log.info("Bean: {} 开始初始化", beanName);
         return bean;
     }
 
@@ -37,7 +37,6 @@ public class UserBeanPostProcessor implements BeanPostProcessor, Ordered, EventL
         long startTime = beanStartTimes.get(beanName);
         long initializationTime = endTime - startTime;
         beanInitializationTimes.put(beanName, initializationTime);
-        log.info("after -- {} (花费 {} ms)", beanName, initializationTime);
         return bean;
     }
 
@@ -49,6 +48,7 @@ public class UserBeanPostProcessor implements BeanPostProcessor, Ordered, EventL
     public List<Map.Entry<String, Long>> getTop10LongestInitializationBeans() {
         return beanInitializationTimes.entrySet().stream()
                 .sorted((entry, entry2) -> Long.compare(entry2.getValue(), entry.getValue()))
+                .filter(entry -> entry.getValue() != 0)
                 .limit(10)
                 .toList();
     }
@@ -57,7 +57,7 @@ public class UserBeanPostProcessor implements BeanPostProcessor, Ordered, EventL
     @Override
     public void onEvent(IocInitEvent event) {
         List<Map.Entry<String, Long>> top10Beans = getTop10LongestInitializationBeans();
-        log.info("=====耗时最长的10个BEAN======");
+        log.info("=====耗时最长的BEAN======");
         top10Beans.forEach(entry -> log.info("Bean: {} 花费 {} ms", entry.getKey(), entry.getValue()));
         log.info("==========================");
     }

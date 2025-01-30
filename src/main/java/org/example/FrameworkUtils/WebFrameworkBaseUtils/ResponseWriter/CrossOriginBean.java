@@ -16,12 +16,12 @@ public class CrossOriginBean {
 
     @MyPostConstruct
     public void init() {
-        log.warn("CrossOriginBean Init");
+        log.info("CrossOriginBean Init");
     }
 
     @MyPreDestroy
     public void destroy() {
-        log.warn("CrossOriginBean Destroy");
+        log.info("CrossOriginBean Destroy");
     }
 
 }

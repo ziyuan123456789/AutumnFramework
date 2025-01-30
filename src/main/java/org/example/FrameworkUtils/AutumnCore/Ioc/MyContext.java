@@ -1,7 +1,11 @@
 package org.example.FrameworkUtils.AutumnCore.Ioc;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Annotation.*;
+import org.example.FrameworkUtils.AutumnCore.Annotation.Lazy;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
+import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnRequestProxyFactory;
 import org.example.FrameworkUtils.AutumnCore.Aop.CgLibAop;
@@ -22,7 +26,16 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -51,7 +64,7 @@ public class MyContext implements ApplicationContext {
     private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>();
     //xxx: 二级缓存提前暴露的还未完全成熟的bean,用于解决循环依赖
     private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>();
-    private final Map<String, MyBeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>();
+    private final Map<String, MyBeanDefinition> beanDefinitionMap = new LinkedHashMap<>();
     //xxx: 三级缓存：对象工厂,创建Jdk代理/CgLib代理/配置类Bean/普通Bean
     private final Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();
     private final PropertiesReader propertiesReader = new PropertiesReader();
@@ -197,13 +210,15 @@ public class MyContext implements ApplicationContext {
                 autowireBeanProperties(bean, myBeanDefinition);
             }
             bean = doBeanPostProcessorsBefore(bean, myBeanDefinition.getName());
-            Method initMethod = myBeanDefinition.getInitMethod();
-            if (initMethod != null) {
-                initMethod.invoke(bean);
+            List<Method> initMethod = myBeanDefinition.getInitMethod();
+            for (Method method : initMethod) {
+                method.invoke(bean);
             }
-            Method afterMethod = myBeanDefinition.getAfterMethod();
-            if (afterMethod != null) {
-                afterMethods.add(Map.of(afterMethod, bean));
+            List<Method> afterMethod = myBeanDefinition.getAfterMethod();
+            for (Method method : afterMethod) {
+                Map<Method, Object> result = new HashMap<>();
+                result.put(method, bean);
+                afterMethods.add(result);
             }
             bean = doBeanPostProcessorsAfter(bean, myBeanDefinition.getName());
         } else {
@@ -252,6 +267,7 @@ public class MyContext implements ApplicationContext {
             //xxx:先看看用哪个工厂
             ObjectFactory<?> beanFactory = createBeanFactory(beanDefinition);
             //xxx:然后填充到第三级缓存中
+            //错误的做法,在新版工厂会修复
             singletonFactories.put(beanDefinition.getName(), beanFactory);
         }
     }
@@ -315,8 +331,8 @@ public class MyContext implements ApplicationContext {
             }
             Object beanInstance = factory.getObject();
 
-            if (mb.getInitMethod() != null) {
-                mb.getInitMethod().invoke(beanInstance);
+            for (Method method : mb.getInitMethod()) {
+                method.invoke(beanInstance);
             }
             return beanInstance;
 
@@ -376,7 +392,7 @@ public class MyContext implements ApplicationContext {
                 }
 
                 if (myAutoWired.isEmpty()) {
-                    log.warn("开始依赖注入,被处理的类是{}处理的字段是{}", bean.getClass().getSimpleName(), field.getName());
+                    log.info("开始依赖注入,被处理的类是{}处理的字段是{}", bean.getClass().getSimpleName(), field.getName());
                     injectDependencies(bean, field, mb);
                 } else {
                     Object dependency = getBean(myAutoWired);
@@ -572,6 +588,11 @@ public class MyContext implements ApplicationContext {
     }
 
     @Override
+    public void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor) {
+
+    }
+
+    @Override
     public Environment getEnvironment() {
         return this.environment;
     }
@@ -648,9 +669,9 @@ public class MyContext implements ApplicationContext {
 
     @Override
     public void registerBeanDefinition(String beanName, MyBeanDefinition beanDefinition) throws BeanCreationException {
-        if (beanDefinitionMap.containsKey(beanName)) {
-            throw new BeanCreationException("Bean名称 '" + beanName + "' 已经被使用。");
-        }
+//        if (beanDefinitionMap.containsKey(beanName)) {
+//            throw new BeanCreationException("Bean名称 '" + beanName + "' 已经被使用。");
+//        }
         beanDefinitionMap.put(beanName, beanDefinition);
     }
 

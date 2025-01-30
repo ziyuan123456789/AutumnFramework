@@ -6,6 +6,7 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
 
 import java.lang.annotation.Annotation;
 import java.util.Comparator;
+import java.util.List;
 
 /**
  * @author ziyuan
@@ -16,6 +17,25 @@ import java.util.Comparator;
  * 注解是一等公民
  */
 public class AnnotationInterfaceAwareOrderComparator implements Comparator<Object> {
+
+    private static AnnotationInterfaceAwareOrderComparator annotationInterfaceAwareOrderComparator;
+
+
+    private AnnotationInterfaceAwareOrderComparator() {
+    }
+
+    public static AnnotationInterfaceAwareOrderComparator getInstance() {
+        if (annotationInterfaceAwareOrderComparator == null) {
+            annotationInterfaceAwareOrderComparator = new AnnotationInterfaceAwareOrderComparator();
+        }
+        return annotationInterfaceAwareOrderComparator;
+    }
+
+    public <T> List<T> compare(List<T> list) {
+        list.sort(this);
+        return list;
+    }
+
 
     @Override
     public int compare(Object o1, Object o2) {

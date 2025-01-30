@@ -18,8 +18,8 @@ import java.util.List;
  * @since 2024.05
  */
 
-@MyComponent
 @Slf4j
+@MyComponent
 public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, InstantiationAwareBeanPostProcessor, BeanFactoryAware {
 
     private ApplicationContext beanFactory;
@@ -125,8 +125,7 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
     public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName, Object currentResult) {
         List<AutumnAopFactory> neededFactories = shouldCreateProxy(factories, beanClass);
         if (!neededFactories.isEmpty()) {
-            log.warn("多个代理工厂,如果你没有处理好invokeSuper的条件那么很可能会出现问题");
-            log.info("创建代理 {}", beanClass.getName());
+            log.warn("多个代理工厂,如果你没有处理好invokeSuper的条件那么很可能会出现问题,多个处理器同时处理{}", beanClass.getName());
             currentResult = create(neededFactories, beanClass, currentResult);
         }
         return currentResult;

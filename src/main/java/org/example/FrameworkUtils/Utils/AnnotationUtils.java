@@ -17,6 +17,9 @@ public class AnnotationUtils {
         if (clazz == null) {
             return new ArrayList<>();
         }
+        if (clazz.getName().contains("$$EnhancerByCGLIB")) {
+            clazz = clazz.getSuperclass();
+        }
 
         List<Annotation> foundAnnotations = new ArrayList<>();
 
@@ -30,6 +33,9 @@ public class AnnotationUtils {
     }
 
     public static <A extends Annotation> List<A> findAllClassAnnotations(Class<?> clazz, Class<A> annotationClass) {
+        if (clazz.getName().contains("$$EnhancerByCGLIB")) {
+            clazz = clazz.getSuperclass();
+        }
         Set<Annotation> visited = new HashSet<>();
         List<A> annotations = new ArrayList<>();
         findAllClassAnnotationsRecursive(clazz, annotationClass, visited, annotations);

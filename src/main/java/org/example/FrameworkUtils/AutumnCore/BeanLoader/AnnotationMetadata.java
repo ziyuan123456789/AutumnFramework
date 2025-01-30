@@ -1,6 +1,6 @@
 package org.example.FrameworkUtils.AutumnCore.BeanLoader;
 
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyCondition;
+import lombok.Getter;
 import org.example.FrameworkUtils.Utils.AnnotationUtils;
 
 import java.lang.annotation.Annotation;
@@ -14,16 +14,13 @@ import java.util.Optional;
  */
 public class AnnotationMetadata {
 
+    @Getter
     private final Class<?> clazz;
 
     private List<Annotation> cache;
 
     public AnnotationMetadata(Class<?> clazz) {
         this.clazz = clazz;
-    }
-
-    public Class<?> getClazz() {
-        return clazz;
     }
 
     public boolean isProxyClass() {

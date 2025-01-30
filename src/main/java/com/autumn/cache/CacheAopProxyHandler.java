@@ -22,7 +22,7 @@ public class CacheAopProxyHandler implements AutumnAopFactory, Ordered {
 
     @Override
     public boolean shouldNeedAop(Class clazz, ApplicationContext myContext) {
-        Method[] methods = clazz.getMethods();
+        Method[] methods = clazz.getDeclaredMethods();
         for (Method method : methods) {
             if (method.getAnnotation(Cache.class) != null) {
                 return true;
