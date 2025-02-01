@@ -6,6 +6,7 @@ import com.autumn.ormstarter.minijpa.EnableJpaRepositories;
 import com.autumn.ormstarter.transaction.annotation.EnableAutumnTransactional;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBootApplication;
+import org.example.FrameworkUtils.AutumnCore.Annotation.ComponentScan;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyPreDestroy;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnApplication;
 
@@ -24,6 +25,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnApplicat
 @EnableAutumnCache
 @EnableAutumnTransactional
 @EnableJpaRepositories
+@ComponentScan({"org.example", "annotation.scan.test"})
 @AutumnBootApplication
 public class Main {
 

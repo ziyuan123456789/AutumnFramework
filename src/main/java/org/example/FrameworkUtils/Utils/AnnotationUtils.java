@@ -42,6 +42,19 @@ public class AnnotationUtils {
         return annotations;
     }
 
+    public static <A extends Annotation> List<A> findAllClassAnnotations(String clazzName, Class<A> annotationClass) {
+        Class clazz;
+        try {
+            clazz = Class.forName(clazzName);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        Set<Annotation> visited = new HashSet<>();
+        List<A> annotations = new ArrayList<>();
+        findAllClassAnnotationsRecursive(clazz, annotationClass, visited, annotations);
+        return annotations;
+    }
+
     private static <A extends Annotation> void findAllClassAnnotationsRecursive(Class<?> clazz, Class<A> annotationClass, Set<Annotation> visited, List<A> result) {
         A annotation = clazz.getAnnotation(annotationClass);
         if (annotation != null) {

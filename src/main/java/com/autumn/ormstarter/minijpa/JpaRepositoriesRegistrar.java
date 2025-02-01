@@ -7,6 +7,8 @@ import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
+import org.example.FrameworkUtils.AutumnCore.Ioc.EarlyBeanFactoryAware;
+import org.example.FrameworkUtils.AutumnCore.env.Environment;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
 
@@ -17,9 +19,11 @@ import java.lang.reflect.Method;
  * @since 2024.09
  */
 @Slf4j
-public class JpaRepositoriesRegistrar implements BeanDefinitionRegistryPostProcessor {
+public class JpaRepositoriesRegistrar implements BeanDefinitionRegistryPostProcessor, EarlyBeanFactoryAware {
 
     private ApplicationContext beanFactory;
+
+    private Environment environment;
 
     public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) {
         return () -> {
@@ -48,7 +52,7 @@ public class JpaRepositoriesRegistrar implements BeanDefinitionRegistryPostProce
         }
 
 
-        AnnotationScanner.findImplByInterface((String) beanFactory.get("packageUrl"), JpaRepository.class).forEach(jpaRepository -> {
+        AnnotationScanner.findImplByInterface(environment.getProperty("autumn.main.package"), JpaRepository.class).forEach(jpaRepository -> {
             MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
             log.info("注册JpaRepository:{}", jpaRepository.getName());
             myBeanDefinition.setName(jpaRepository.getName());
@@ -63,6 +67,16 @@ public class JpaRepositoriesRegistrar implements BeanDefinitionRegistryPostProce
     @Override
     public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
 
+    }
+
+//
+//    public void setEnvironment(Environment environment) {
+//        this.environment=environment;
+//    }
+
+    @Override
+    public void setBeanFactory(ApplicationContext beanFactory) {
+        this.environment = beanFactory;
     }
 }
 

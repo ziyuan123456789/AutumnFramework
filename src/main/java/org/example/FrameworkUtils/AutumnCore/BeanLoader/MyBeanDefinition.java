@@ -10,6 +10,7 @@ import org.example.FrameworkUtils.Exception.BeanDefinitionCreationException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,18 +19,6 @@ import java.util.List;
   @author ziyuan
  * @since 2024.1
  */
-
-/**
- * 当你觉得自己没什么用的时候不妨想想Scope
- */
-enum Scope {
-    SINGLETON,
-    PROTOTYPE,
-    REQUEST,
-    SESSION,
-    GLOBAL,
-    THREAD
-}
 
 /**
  * 一个美丽的花瓶,什么东西都要有个包装更好,但愿你心爱的女孩也有
@@ -63,7 +52,11 @@ public class MyBeanDefinition {
 
     private Method doMethod;
 
+
+    //其实这个构造器和参数可以包装一下,成为一个新的容器类 但是懒得搞了
     private Constructor<?> constructor;
+
+    private List<Parameter> parameters = new ArrayList<>();
 
     private List<String> initMethodName = new ArrayList<>();
 
@@ -73,7 +66,9 @@ public class MyBeanDefinition {
 
     private List<Method> afterMethod = new ArrayList<>();
 
-    private Scope scope;
+    private Scope scope = Scope.SINGLETON;
+
+    private boolean isFactoryBean;
 
     public MyBeanDefinition(String name, Class<?> beanClass) {
         this.metadata = new AnnotationMetadata(beanClass);
@@ -117,37 +112,39 @@ public class MyBeanDefinition {
 
 
     private void scanBeanDependsOn(Class<?> beanClass) {
+
         if (beanClass.isInterface() || Modifier.isAbstract(beanClass.getModifiers())) {
             return;
         }
+
         if (beanClass.getName().contains("$$EnhancerByCGLIB")) {
             beanClass = beanClass.getSuperclass();
         }
-        Constructor<?>[] constructors = beanClass.getDeclaredConstructors();
-        boolean mark = false;
 
-        for (Constructor<?> constructor : constructors) {
-            if (constructor.getParameterCount() == 0) {
-                mark = true;
-                break;
-            }
-        }
-        //我要求必须在构造器上添加AutoWired来显示声明,如果没有则认为是字段注入,那我需要一个无参构造器,没有则报错
-        if (!mark) {
-            throw new BeanDefinitionCreationException("Class " + beanClass.getName() + " 必须提供一个无参构造器,否则请在构造器上添加AutoWired注解");
-        }
-
-        for (Constructor<?> constructor : constructors) {
-            MyAutoWired constructorAnnotation = constructor.getAnnotation(MyAutoWired.class);
-            if (constructorAnnotation != null) {
-                this.constructor = constructor;
-                break;
-            }
-        }
         DependsOn depends = beanClass.getAnnotation(DependsOn.class);
         if (depends != null) {
             Collections.addAll(dependsOn, depends.value());
         }
+
+        Constructor<?>[] constructors = beanClass.getDeclaredConstructors();
+
+        for (Constructor<?> constructor : constructors) {
+            if (constructor.isAnnotationPresent(MyAutoWired.class)) {
+                this.constructor = constructor;
+                return;
+            }
+
+            if (constructor.getParameterCount() == 0) {
+                this.constructor = constructor;
+            }
+        }
+
+        if (this.constructor == null) {
+            throw new BeanDefinitionCreationException("Class " + beanClass.getName() + " 必须提供一个无参构造器,否则请在构造器上添加 @MyAutoWired 注解"
+            );
+        }
+        Collections.addAll(this.parameters, this.constructor.getParameters());
+
     }
 
 

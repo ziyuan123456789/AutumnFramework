@@ -53,13 +53,15 @@ public class AnnotationScanner implements BeanFactoryAware {
         return annotatedClasses;
     }
 
-    public Set<Class<?>> findAnnotatedClassesList(String basePackage, List<Class<? extends Annotation>> annotationClasses) {
+    public Set<Class<?>> findAnnotatedClassesList(List<Class<? extends Annotation>> annotationClasses, String... basePackages) {
         Set<Class<?>> annotatedClasses = new HashSet<>();
-        Reflections reflections = new Reflections(basePackage);
-        for (Class<? extends Annotation> annotationClass : annotationClasses) {
-            Set<Class<?>> annotatedTypes = reflections.getTypesAnnotatedWith(annotationClass);
 
-            annotatedClasses.addAll(annotatedTypes);
+        for (String basePackage : basePackages) {
+            Reflections reflections = new Reflections(basePackage);
+            for (Class<? extends Annotation> annotationClass : annotationClasses) {
+                Set<Class<?>> annotatedTypes = reflections.getTypesAnnotatedWith(annotationClass);
+                annotatedClasses.addAll(annotatedTypes);
+            }
         }
         return annotatedClasses;
     }

@@ -27,7 +27,6 @@ public class UserBeanPostProcessor implements BeanPostProcessor, Ordered, EventL
     public Object postProcessBeforeInitialization(Object bean, String beanName) {
         long startTime = System.currentTimeMillis();
         beanStartTimes.put(beanName, startTime);
-        log.info("Bean: {} 开始初始化", beanName);
         return bean;
     }
 

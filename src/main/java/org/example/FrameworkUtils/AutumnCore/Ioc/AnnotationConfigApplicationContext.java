@@ -3,20 +3,28 @@ package org.example.FrameworkUtils.AutumnCore.Ioc;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
 import org.example.FrameworkUtils.AutumnCore.Aop.CgLibAop;
+import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
+import org.example.FrameworkUtils.AutumnCore.BeanLoader.Scope;
 import org.example.FrameworkUtils.AutumnCore.compare.AnnotationInterfaceAwareOrderComparator;
 import org.example.FrameworkUtils.AutumnCore.env.ApplicationArguments;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -45,12 +53,20 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
 
     private final List<BeanFactoryPostProcessor> beanFactoryPostProcessors = new ArrayList<>();
 
-    private final List<BeanDefinitionRegistryPostProcessor> beanDefinitionRegistryPostProcessors = new ArrayList<>();
-
 
     private final List<InstantiationAwareBeanPostProcessor> instantiationAwareProcessors = new ArrayList<>();
 
+    private final Set<String> singletonsCurrentlyInCreation = new HashSet<>();
+
     private final List<AutumnAopFactory> aopFactories = new LinkedList<>();
+
+    private final Map<String, Object> factoryBeanObjectCache = new ConcurrentHashMap<>();
+
+    private final Map<String, Set<String>> dependentBeanMap = new ConcurrentHashMap<>();
+
+    private final Map<String, Set<String>> dependenciesForBeanMap = new ConcurrentHashMap<>();
+
+    private final Set<String> registeredSingletons = Collections.synchronizedSet(new LinkedHashSet<>(256));
 
 
     @Override
@@ -65,24 +81,81 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
 
     @Override
     public void refresh() {
-        invokeBeanFactoryPostProcessors();
+        try {
+            invokeBeanFactoryPostProcessors();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
 
 
     }
 
-    private void invokeBeanFactoryPostProcessors() {
+    /**
+     * springboot中这个方法实现的太麻烦了,这一块我简化了一下,不和他写一样了
+     * 本质上来说就是允许BeanDefinitionRegistryPostProcessor继续引入BeanDefinitionRegistryPostProcessor 其他的BeanDefinitionRegistryPostProcessor也可以继续引入..以此类推
+     * 而且还得保证顺序的准确
+     */
+
+    private void invokeBeanFactoryPostProcessors() throws Exception {
+        AnnotationScanner scanner = new AnnotationScanner();
+
+        Queue<BeanDefinitionRegistryPostProcessor> processingQueue = new LinkedList<>();
+        Set<BeanDefinitionRegistryPostProcessor> processedRegistryPostProcessors = new HashSet<>();
         for (BeanFactoryPostProcessor bfp : beanFactoryPostProcessors) {
             if (bfp instanceof BeanDefinitionRegistryPostProcessor bdp) {
-                beanDefinitionRegistryPostProcessors.add(bdp);
+                processingQueue.add(bdp);
             }
         }
+
+        for (Map.Entry<String, MyBeanDefinition> entry : beanDefinitionMap.entrySet()) {
+            Class<?> beanClass = entry.getValue().getBeanClass();
+            if (BeanDefinitionRegistryPostProcessor.class.isAssignableFrom(beanClass)) {
+                processingQueue.add((BeanDefinitionRegistryPostProcessor) getBean(entry.getKey()));
+            }
+            if (BeanFactoryPostProcessor.class.isAssignableFrom(beanClass)) {
+                beanFactoryPostProcessors.add((BeanFactoryPostProcessor) getBean(entry.getKey()));
+            }
+        }
+
         AnnotationInterfaceAwareOrderComparator.getInstance().compare(beanFactoryPostProcessors);
-        AnnotationInterfaceAwareOrderComparator.getInstance().compare(beanDefinitionRegistryPostProcessors);
+        AnnotationInterfaceAwareOrderComparator.getInstance().compare(processingQueue);
 
+        boolean newPostProcessorsAdded = true;
 
+        while (newPostProcessorsAdded) {
+            newPostProcessorsAdded = false;
+            int size = processingQueue.size();
+            for (int i = 0; i < size; i++) {
+                BeanDefinitionRegistryPostProcessor postProcessor = processingQueue.poll();
+                if (!processedRegistryPostProcessors.contains(postProcessor)) {
+                    processedRegistryPostProcessors.add(postProcessor);
+                    if (postProcessor != null) {
+                        postProcessor.postProcessBeanDefinitionRegistry(scanner, this);
+                    }
+                    for (Map.Entry<String, MyBeanDefinition> entry : beanDefinitionMap.entrySet()) {
+                        Class<?> beanClass = entry.getValue().getBeanClass();
+                        if (BeanDefinitionRegistryPostProcessor.class.isAssignableFrom(beanClass)) {
+                            BeanDefinitionRegistryPostProcessor newPostProcessor = (BeanDefinitionRegistryPostProcessor) getBean(entry.getKey());
+                            if (!processedRegistryPostProcessors.contains(newPostProcessor)) {
+                                AnnotationInterfaceAwareOrderComparator.getInstance().compare(processingQueue);
+                                processingQueue.add(newPostProcessor);
+                                newPostProcessorsAdded = true;
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+
+        for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
+            postProcessor.postProcessBeanFactory(scanner, this);
+        }
 
 
     }
+
 
     @Override
     public void put(String key, Object value) {
@@ -135,42 +208,210 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     }
 
     private Object doGetBean(String beanName) {
+        Object beanInstance = null;
         Object sharedInstance = getSingleton(beanName, true);
-        return sharedInstance;
+        if (sharedInstance != null) {
+            //看看是不是factoryBean
+            beanInstance = getObjectForBeanInstance(sharedInstance, beanName);
+        } else {
+            try {
+                MyBeanDefinition mbd = getBeanDefinition(beanName);
+                List<String> dependsOn = mbd.getDependsOn();
+                if (dependsOn != null) {
+                    for (String dep : dependsOn) {
+                        registerDependentBean(dep, beanName);
+                        doGetBean(dep);
+                    }
+                }
 
+                if (Scope.SINGLETON.equals(mbd.getScope())) {
+                    sharedInstance = getSingleton(beanName, () -> createBean(beanName, mbd, null));
+                    beanInstance = getObjectForBeanInstance(sharedInstance, beanName);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return adaptBeanInstance(beanName, beanInstance);
     }
 
 
-    private Object getSingleton(String beanName, boolean allowEarlyReference) {
-        Object singletonObject = singletonObjects.get(beanName);
-        //一级缓存找不到
+    public Object getSingleton(String beanName, ObjectFactory<?> singletonFactory) {
+        Object singletonObject = this.singletonObjects.get(beanName);
         if (singletonObject == null) {
-//            log.debug("一级缓存中找不到Bean,前往二级缓存查找: {}", beanName);
-            singletonObject = earlySingletonObjects.get(beanName);
-            if (singletonObject == null) {
-//                log.debug("二级缓存中找不到Bean,前往三级缓存查找: {}", beanName);
-                ObjectFactory<?> singletonFactory = singletonFactories.get(beanName);
-                if (singletonFactory != null) {
-                    try {
-                        //在对象实例化之前给最后一次机会,可替换实现类,例如Aop的实现
-                        singletonObject = doInstantiationAwareBeanPostProcessorBefore(beanName, singletonFactory);
-                        //生产对象后更新缓存
-                        earlySingletonObjects.put(beanName, singletonObject);
-                        singletonFactories.remove(beanName);
-                    } catch (Exception e) {
-                        log.error(String.valueOf(e));
-                        throw new BeanCreationException("创建Bean实例失败: " + beanName, e);
-                    }
+            beforeSingletonCreation(beanName);
+            try {
+                singletonObject = singletonFactory.getObject();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            addSingleton(beanName, singletonObject);
+        }
+
+        afterSingletonCreation(beanName);
+
+
+        return singletonObject;
+    }
+
+    protected void addSingleton(String beanName, Object singletonObject) {
+        Object oldObject = this.singletonObjects.putIfAbsent(beanName, singletonObject);
+        if (oldObject != null) {
+            throw new IllegalStateException("Could not register object [" + singletonObject + "] under bean name '" + beanName + "': there is already object [" + oldObject + "] bound");
+        }
+        this.singletonFactories.remove(beanName);
+        this.earlySingletonObjects.remove(beanName);
+        this.registeredSingletons.add(beanName);
+    }
+
+
+    private Object createBean(String beanName, MyBeanDefinition mbd, Object[] args) {
+
+        Object bean = resolveBeforeInstantiation(beanName, mbd);
+        if (bean != null) {
+            return bean;
+        }
+
+        try {
+            return doCreateBean(beanName, mbd, args);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Object doCreateBean(String beanName, MyBeanDefinition mbd, Object[] args) {
+        Object instance = createBeanInstance(beanName, mbd, args);
+        invokeAwareMethods(beanName, instance);
+//        populateBean(beanName, mbd, instanceWrapper);
+//        exposedObject = initializeBean(beanName, exposedObject, mbd);
+        return instance;
+    }
+
+    private void invokeAwareMethods(String beanName, Object bean) {
+
+        if (bean instanceof BeanNameAware beanNameAware) {
+            beanNameAware.setBeanName(beanName);
+        }
+        if (bean instanceof EnvironmentAware environmentAware) {
+            environmentAware.setEnvironment(environment);
+        }
+        if (bean instanceof BeanFactoryAware beanFactoryAware) {
+            beanFactoryAware.setBeanFactory(this);
+        }
+
+    }
+
+    private Object createBeanInstance(String beanName, MyBeanDefinition mbd, Object[] args) {
+        if (mbd.getConstructor() != null) {
+            Constructor<?> constructor = mbd.getConstructor();
+            try {
+                return constructor.newInstance(args);
+            } catch (Exception e) {
+                try {
+                    return constructor.newInstance(mbd.getParameters());
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
                 }
             }
-            if (singletonObject != null) {
-                //更新一级缓存
-                singletonObjects.put(beanName, singletonObject);
-                //从二级缓存移除
-                earlySingletonObjects.remove(beanName);
+
+        }
+        throw new RuntimeException();
+    }
+
+    <T> T adaptBeanInstance(String name, Object bean) {
+//        if (requiredType != null && !requiredType.isInstance(bean)) {
+//            try {
+//                Object convertedBean = getTypeConverter().convertIfNecessary(bean, requiredType);
+//                if (convertedBean == null) {
+//                    throw new RuntimeException();
+//                }
+//                return (T) convertedBean;
+//            } catch (Exception ex) {
+//                throw new RuntimeException();
+//            }
+//        }
+        return (T) bean;
+    }
+
+
+    public void registerDependentBean(String beanName, String dependentBeanName) {
+        Set<String> dependentBeans = this.dependentBeanMap.computeIfAbsent(beanName, k -> new LinkedHashSet<>(8));
+        if (!dependentBeans.add(dependentBeanName)) {
+            return;
+        }
+
+        Set<String> dependenciesForBean = this.dependenciesForBeanMap.computeIfAbsent(dependentBeanName, k -> new LinkedHashSet<>(8));
+        dependenciesForBean.add(beanName);
+
+    }
+
+    protected Object getObjectForBeanInstance(Object beanInstance, String beanName) {
+
+        if (!(beanInstance instanceof FactoryBean<?> factoryBean)) {
+            return beanInstance;
+        }
+
+        try {
+            return factoryBean.getObject();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    protected Object getSingleton(String beanName, boolean allowEarlyReference) {
+        Object singletonObject = this.singletonObjects.get(beanName);
+        //一级缓存找不到
+        if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
+            singletonObject = this.earlySingletonObjects.get(beanName);
+            if (singletonObject == null) {
+                beforeSingletonCreation(beanName);
+                singletonObject = this.earlySingletonObjects.get(beanName);
+                if (singletonObject == null) {
+                    try {
+                        ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
+                        if (singletonFactory != null) {
+                            singletonObject = singletonFactory.getObject();
+                            if (this.singletonFactories.remove(beanName) != null) {
+                                this.earlySingletonObjects.put(beanName, singletonObject);
+                            } else {
+                                singletonObject = this.singletonObjects.get(beanName);
+                            }
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        afterSingletonCreation(beanName);
+                    }
+
+
+                }
+                return singletonObject;
             }
         }
         return singletonObject;
+    }
+
+
+    protected Object resolveBeforeInstantiation(String beanName, MyBeanDefinition mbd) {
+        Object bean = null;
+        Class<?> targetType = mbd.getBeanClass();
+        for (InstantiationAwareBeanPostProcessor processor : instantiationAwareProcessors) {
+            if (processor instanceof CgLibAop) {
+                bean = ((CgLibAop) processor).postProcessBeforeInstantiation(aopFactories, targetType, beanName, bean);
+            } else {
+                Object result = processor.postProcessBeforeInstantiation(targetType, beanName);
+                if (result != null) {
+                    bean = result;
+                }
+            }
+        }
+
+        return bean;
+    }
+
+
+    public boolean isSingletonCurrentlyInCreation(String beanName) {
+        return this.singletonsCurrentlyInCreation.contains(beanName);
     }
 
     private Object doInstantiationAwareBeanPostProcessorBefore(String beanName, ObjectFactory<?> factory) throws Exception {
@@ -178,9 +419,6 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
         Class<?> beanClass = beanDefinitionMap.get(beanName).getBeanClass();
         for (InstantiationAwareBeanPostProcessor processor : instantiationAwareProcessors) {
             if (processor instanceof CgLibAop) {
-                if (beanName.contains("org.example.service.impl")) {
-                    System.out.println(1);
-                }
                 currentResult = ((CgLibAop) processor).postProcessBeforeInstantiation(aopFactories, beanClass, beanName, currentResult);
             } else {
                 Object result = processor.postProcessBeforeInstantiation(beanClass, beanName);
@@ -300,5 +538,14 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     @Override
     public Map<String, MyBeanDefinition> getBeanDefinitionMap() {
         return beanDefinitionMap;
+    }
+
+    private void beforeSingletonCreation(String beanName) {
+        this.singletonsCurrentlyInCreation.add(beanName);
+    }
+
+
+    private void afterSingletonCreation(String beanName) {
+        this.singletonsCurrentlyInCreation.remove(beanName);
     }
 }

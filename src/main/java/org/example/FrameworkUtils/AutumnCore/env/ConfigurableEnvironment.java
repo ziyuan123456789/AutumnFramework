@@ -1,7 +1,5 @@
 package org.example.FrameworkUtils.AutumnCore.env;
 
-import org.springframework.core.env.MutablePropertySources;
-
 import java.util.Map;
 
 /**
@@ -13,9 +11,9 @@ public interface ConfigurableEnvironment extends Environment{
 
     void setActiveProfiles(String... profiles);
 
-    void addActiveProfile(String profile);
-
     void setDefaultProfiles(String... profiles);
+
+    void addActiveProfile(String profile);
 
     PropertySources getPropertySources();
 

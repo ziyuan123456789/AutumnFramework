@@ -68,12 +68,16 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
     public void init() throws ServletException {
         super.init();
         int threadNums = 10;
-        Set<Class<?>> temp=scanner.findAnnotatedClassesList((String) myContext.get("packageUrl"), List.of(Injector.class));
-        for(Class c:temp){
+        Set<Class<?>> temp = scanner.findAnnotatedClassesList(List.of(Injector.class), (String) myContext.get("packageUrl"));
+        for (Class<?> c : temp) {
             try {
-                controllerInjectors.add((ControllerInjector) c.newInstance());
+                controllerInjectors.add((ControllerInjector) c.getConstructor().newInstance());
             } catch (InstantiationException | IllegalAccessException e) {
                 e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
             }
         }
         handlerMap = (Map<String, String>) myContext.get("urlmapping");

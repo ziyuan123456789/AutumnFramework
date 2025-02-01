@@ -20,6 +20,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @MyConfig
 @EnableAutoConfiguration
-@ComponentScan
 public @interface AutumnBootApplication {
 }

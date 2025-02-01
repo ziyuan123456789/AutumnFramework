@@ -44,10 +44,10 @@ import org.example.FrameworkUtils.AutumnCore.env.DefaultEnvironment;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Utils.AnnotationUtils;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
-import org.springframework.util.Assert;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -96,39 +96,15 @@ public class AutumnApplication {
 
 
     public AutumnApplication(Class<?>... primarySources) {
-        Assert.notNull(primarySources, "源不得为空");
         this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
         this.initAutumnSpi();
         this.bootstrapRegistryInitializers = this.getAutumnFactoriesInstances(BootstrapRegistryInitializer.class);
         this.setInitializers(this.getAutumnFactoriesInstances(ApplicationContextInitializer.class));
         this.setListeners(this.getAutumnFactoriesInstances(ApplicationListener.class));
         this.mainApplicationClass = deduceMainApplicationClass();
+        this.checkEnv();
     }
 
-
-    private static MyBeanDefinition getMyBeanDefinition(Class clazz, Method method) {
-        Class<?> returnType = method.getReturnType();
-        if (returnType.equals(void.class)) {
-            throw new BeanCreationException("用AutumnBean注解标记的方法返回值不能为void");
-        }
-        String beanName;
-        AutumnBean annotation = method.getAnnotation(AutumnBean.class);
-        if (annotation == null && FactoryBean.class.isAssignableFrom(clazz)) {
-            beanName = returnType.getName();
-
-        } else {
-            if (method.getAnnotation(AutumnBean.class).value().isEmpty()) {
-                beanName = returnType.getName();
-            } else {
-                beanName = method.getAnnotation(AutumnBean.class).value();
-            }
-        }
-        MyBeanDefinition myBeanDefinition = new MyBeanDefinition(beanName, returnType);
-        myBeanDefinition.setDoMethod(method);
-        myBeanDefinition.setConfigurationClass(clazz);
-        return myBeanDefinition;
-
-    }
 
     private void prepareContext(DefaultBootstrapContext bootstrapContext, ApplicationContext context, ConfigurableEnvironment environment, List<AutumnApplicationRunListener> listeners, ApplicationArguments applicationArguments) {
         context.setEnvironment(environment);
@@ -178,6 +154,8 @@ public class AutumnApplication {
     private ConfigurableEnvironment prepareEnvironment(List<AutumnApplicationRunListener> listeners, DefaultBootstrapContext bootstrapContext, ApplicationArguments applicationArguments) {
         DefaultEnvironment environment = new DefaultEnvironment(applicationArguments);
         environment.loadConfiguration("src/main/resources/test.properties", ConfigurableEnvironment.DEFAULT_PROFILE);
+        environment.getAllProperties().put("autumn.main.sources", mainApplicationClass.getName());
+        environment.getAllProperties().put("autumn.main.package", mainApplicationClass.getPackageName());
         for (AutumnApplicationRunListener listener : listeners) {
             listener.environmentPrepared(environment);
         }
@@ -250,7 +228,7 @@ public class AutumnApplication {
         annotations.add(MyConfig.class);
         annotations.add(MyWebSocketConfig.class);
         annotations.add(MyAspect.class);
-        Set<Class<?>> annotatedClasses = scanner.findAnnotatedClassesList(mainClass.getPackageName(), annotations);
+        Set<Class<?>> annotatedClasses = scanner.findAnnotatedClassesList(annotations, mainClass.getPackageName());
         //首先我们检测main方法的包下符合注解要求的类
         List<Class<BeanFactoryPostProcessor>> beanFactoryPostProcessorsClassList = new ArrayList<>();
         //现在开始魔法时间,引入starter,实际上注解本身没有意义,其实应该是复合注解import一个大爹来调度bean的装配
@@ -539,6 +517,53 @@ public class AutumnApplication {
             myBeanDefinition.getAfterMethod().add(method);
         }
     }
+
+
+    private MyBeanDefinition getMyBeanDefinition(Class clazz, Method method) {
+        Class<?> returnType = method.getReturnType();
+        if (returnType.equals(void.class)) {
+            throw new BeanCreationException("用AutumnBean注解标记的方法返回值不能为void");
+        }
+        String beanName;
+        AutumnBean annotation = method.getAnnotation(AutumnBean.class);
+        if (annotation == null && FactoryBean.class.isAssignableFrom(clazz)) {
+            beanName = returnType.getName();
+
+        } else {
+            if (method.getAnnotation(AutumnBean.class).value().isEmpty()) {
+                beanName = returnType.getName();
+            } else {
+                beanName = method.getAnnotation(AutumnBean.class).value();
+            }
+        }
+        MyBeanDefinition myBeanDefinition = new MyBeanDefinition(beanName, returnType);
+        myBeanDefinition.setDoMethod(method);
+        myBeanDefinition.setConfigurationClass(clazz);
+        return myBeanDefinition;
+
+    }
+
+
+    private void checkEnv() {
+        try {
+            Parameter[] parameters = AutumnApplication.class.getDeclaredMethod("test", String.class, String.class).getParameters();
+            String[] expectedParamNames = {"test", "test2"};
+            for (int i = 0; i < parameters.length; i++) {
+                String paramName = parameters[i].getName();
+                if (!paramName.equals(expectedParamNames[i])) {
+                    log.error("你应该打开编译参数: -parameters,现在框架无法获取真实的方法参数名");
+                }
+
+            }
+        } catch (NoSuchMethodException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    private void test(String test, String test2) {
+
+    }
+
 
 
 

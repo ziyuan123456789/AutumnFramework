@@ -5,8 +5,10 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.Ordered;
 import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Queue;
 
 /**
  * @author ziyuan
@@ -34,6 +36,14 @@ public class AnnotationInterfaceAwareOrderComparator implements Comparator<Objec
     public <T> List<T> compare(List<T> list) {
         list.sort(this);
         return list;
+    }
+
+    public <T> Queue<T> compare(Queue<T> queue) {
+        List<T> list = new ArrayList<>(queue);
+        list.sort(this);
+        queue.clear();
+        queue.addAll(list);
+        return queue;
     }
 
 
