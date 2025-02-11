@@ -1,7 +1,6 @@
 package org.example.FrameworkUtils.AutumnCore.BeanLoader;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Event.Listener.AutumnApplicationRunListener;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,9 +9,9 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author ziyuan
@@ -31,7 +30,7 @@ public class AutumnFactoriesLoader {
     private static final String AUTOCONFIGURATION_RESOURCE_LOCATION = "META-INF/autumn/AutoConfiguration.imports";
 
     public static Map<String, List<String>> parseConfigurations() throws IOException {
-        Map<String, List<String>> configMap = new HashMap<>();
+        Map<String, List<String>> configMap = new ConcurrentHashMap<>();
         configMap.put("BeanFactoryPostProcessor", new ArrayList<>());
         configMap.put("BootstrapRegistryInitializer", new ArrayList<>());
         configMap.put("ApplicationContextInitializer", new ArrayList<>());
@@ -69,7 +68,7 @@ public class AutumnFactoriesLoader {
     }
 
     public static Map<String, List<String>> parseAutoConfigurations() throws IOException {
-        Map<String, List<String>> configMap = new HashMap<>();
+        Map<String, List<String>> configMap = new ConcurrentHashMap<>();
         configMap.put("BeanDefinitionRegistryPostProcessor", new ArrayList<>());
         configMap.put("BeanFactoryPostProcessor", new ArrayList<>());
 

@@ -2,8 +2,6 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
@@ -13,7 +11,6 @@ import org.example.FrameworkUtils.DataStructure.Tuple;
 import org.example.FrameworkUtils.Exception.NoAvailableUrlMappingException;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Json.JsonFormatter;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ConditionCheck.SocketServerConditionCheck;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.SocketServerHtmlResponse;
@@ -44,8 +41,8 @@ import java.util.concurrent.Executors;
  * @since 2023.10
  */
 @Slf4j
-@MyComponent
-@MyConditional(SocketServerConditionCheck.class)
+//@MyComponent
+//@MyConditional(SocketServerConditionCheck.class)
 public class SocketServer implements MyServer, BeanFactoryAware {
     private ExecutorService threadPool;
     private ServerSocket serverSocket;

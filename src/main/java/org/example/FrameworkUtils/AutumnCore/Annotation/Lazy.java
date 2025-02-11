@@ -10,6 +10,11 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2024.05
  */
+
+/**
+ * 用于声明懒加载,框架会生成代理进行注入
+ * 当第一次调用的时候才会进行实例化
+ */
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited

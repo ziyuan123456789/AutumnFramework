@@ -7,8 +7,15 @@ package org.example.FrameworkUtils.AutumnCore.Ioc;
 public interface FactoryBean<T> {
 
 
+    String FACTORY_BEAN_PREFIX = "&";
+
+
     T getObject() throws Exception;
 
     Class<?> getObjectType();
+
+    default boolean isSingleton() {
+        return true;
+    }
 
 }

@@ -50,11 +50,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * 比如完整的生命周期,自动装配机制,解决循环依赖的能力,以及带AOP链的依赖注入等,SpringBoot的常见功能杂七杂八地实现了大半
  * 然而,技术债,永远是那个无法绕过去的幽灵.不断在一个不稳定 不合理的架构上打补丁,终究是没有尽头的
  * 于是,我决定让MyContext退场,迎接我们的新朋友——`AnnotationConfigApplicationContext`,它将代替MyContext继续走下去
- * 俗话说：一将功成万骨枯 人人都知道AnnotationConfigApplicationContext的`refresh`和`doGetBean`,但背后默默无闻的基类`BeanFactory`又有谁真正研究过呢
+ * 俗话说：一将功成万骨枯 人人都知道AnnotationConfigApplicationContext的`refresh`和`doGetBean`,但背后默默无闻的其他类又有谁真正研究过呢
  * 日日夜夜的奋斗,成就了一个又一个看似平凡的瞬间.每一行代码,每一段逻辑,都有其不可言说的深意
  * 让我们怀念MyContext,也让我们欢迎新的时代
  * 2025/1/20
  */
+@Deprecated
 @Slf4j
 public class MyContext implements ApplicationContext {
     private static volatile MyContext instance;
@@ -245,7 +246,6 @@ public class MyContext implements ApplicationContext {
             if (result == null) {
                 return bean;
             }
-            //xxx 如果处理器返回null,继续使用当前bean
             bean = result;
         }
         return bean;
@@ -452,11 +452,9 @@ public class MyContext implements ApplicationContext {
                 for(Class<? extends MyCondition> c : conditionClass) {
                     MyCondition condition = (MyCondition) getBean(c.getName());
                     autowireBeanProperties(condition, mb);
-                    condition.init();
                     if (!condition.matches(this, implClass)) {
                         classesToRemove.add(implClass);
                     }
-                    condition.after();
                 }
 
             }
@@ -560,15 +558,20 @@ public class MyContext implements ApplicationContext {
     }
 
     @Override
-    public <T> List<T> getBeansOfType(Class<T> type) {
-        List<T> beans = new ArrayList<>();
-        for (Object bean : singletonObjects.values()) {
-            if (type.isInstance(bean)) {
-                beans.add(type.cast(bean));
-            }
-        }
-        return beans;
+    public <T> Map<String, T> getBeansOfType(Class<T> type) throws BeanCreationException {
+        return Map.of();
     }
+
+//    @Override
+//    public <T> List<T> getBeansOfType(Class<T> type) {
+//        List<T> beans = new ArrayList<>();
+//        for (Object bean : singletonObjects.values()) {
+//            if (type.isInstance(bean)) {
+//                beans.add(type.cast(bean));
+//            }
+//        }
+//        return beans;
+//    }
 
     @Override
     public void registerShutdownHook() {
@@ -590,6 +593,11 @@ public class MyContext implements ApplicationContext {
     @Override
     public void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor) {
 
+    }
+
+    @Override
+    public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
+        regularPostProcessors.add(beanPostProcessor);
     }
 
     @Override
@@ -714,5 +722,10 @@ public class MyContext implements ApplicationContext {
     @Override
     public Map<String, MyBeanDefinition> getBeanDefinitionMap() {
         return beanDefinitionMap;
+    }
+
+    @Override
+    public Set<BeanPostProcessor> getAllBeanPostProcessors() {
+        return new HashSet<>();
     }
 }

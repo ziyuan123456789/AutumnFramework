@@ -25,15 +25,30 @@ public class AnnotatedBeanDefinitionReader {
 
     public void register(Class<?> componentClasses) {
         this.doRegisterBean(componentClasses);
+    }
 
-
+    public void register(String beanName, Class<?> componentClasses) {
+        this.doRegisterBean(beanName, componentClasses);
     }
 
     private <T> void doRegisterBean(Class<T> beanClass) {
         MyBeanDefinition abd = new MyBeanDefinition(beanClass);
         if (!this.conditionEvaluator.shouldSkip(abd.getMetadata())) {
+//            if (!registry.containsBeanDefinition(abd.getName())) {
             BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd);
             this.registry.registerBeanDefinition(definitionHolder.getBeanName(), definitionHolder.getBeanDefinition());
+//            }
+        }
+    }
+
+    private <T> void doRegisterBean(String beanName, Class<T> beanClass) {
+        MyBeanDefinition abd = new MyBeanDefinition(beanName, beanClass);
+        if (!this.conditionEvaluator.shouldSkip(abd.getMetadata())) {
+//            if (!registry.containsBeanDefinition(abd.getName())) {
+            BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd, beanName);
+            this.registry.registerBeanDefinition(definitionHolder.getBeanName(), definitionHolder.getBeanDefinition());
+//            }
+
         }
     }
 }

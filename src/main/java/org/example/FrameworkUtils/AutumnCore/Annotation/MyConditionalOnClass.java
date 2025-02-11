@@ -10,6 +10,10 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2024.07
  */
+
+/**
+ * 用于条件注解,当类存在时才会加载,未启用
+ */
 @Target({ElementType.METHOD,ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited

@@ -12,12 +12,14 @@ import java.lang.annotation.Target;
  */
 
 /**
- * 符合注解,标记启动类
- * 这个注解相当于 @MyConfig与@EnableAutoConfiguration
+ * 复合注解,标记启动类
+ * 这个注解相当于 @MyConfig与@EnableAutoConfiguration与@ComponentScan
+ * 其实符合注解里的@ComponentScan没什么用
  */
 @Target({ElementType.TYPE})
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
+@ComponentScan
 @MyConfig
 @EnableAutoConfiguration
 public @interface AutumnBootApplication {

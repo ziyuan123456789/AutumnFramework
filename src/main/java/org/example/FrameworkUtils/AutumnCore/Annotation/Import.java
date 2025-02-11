@@ -10,6 +10,11 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2024.05
  */
+
+/**
+ * 用于导入非受管对象,使其成为受管对象
+ * 在框架层使用,用户层很少用得到
+ */
 @Target({ElementType.PARAMETER,ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited

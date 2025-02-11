@@ -4,7 +4,11 @@ package org.example.FrameworkUtils.Exception;
  * @author ziyuan
  * @since 2023.11
  */
-public class BeanCreationException extends RuntimeException{
+
+/**
+ * BeanCreationException人缘真的很差
+ */
+public class BeanCreationException extends RuntimeException {
     public BeanCreationException() {
         super("Bean制造时出现问题");
     }
@@ -16,5 +20,9 @@ public class BeanCreationException extends RuntimeException{
     public BeanCreationException(String s, Exception e) {
         super(s, e);
 
+    }
+
+    public BeanCreationException(Exception e) {
+        super(e);
     }
 }

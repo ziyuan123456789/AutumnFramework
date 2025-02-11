@@ -1,10 +1,15 @@
 package org.example.FrameworkUtils.AutumnCore.BeanLoader;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.util.ClasspathHelper;
@@ -29,6 +34,8 @@ import java.util.Set;
 @Slf4j
 public class AnnotationScanner implements BeanFactoryAware {
     private static ApplicationContext beanFactory;
+
+    private final static List<Class<? extends Annotation>> defaultAnnotation = List.of(MyController.class, MyService.class, MyComponent.class, MyConfig.class, MyWebSocketConfig.class, MyAspect.class);
 
 
     public static List<Class> findImplByInterface(String packageName, Class interfaceClass){
@@ -66,6 +73,7 @@ public class AnnotationScanner implements BeanFactoryAware {
         return annotatedClasses;
     }
 
+    //错误写法,过一阵弃用
     public static  Class<?> initFilterChain() throws ClassNotFoundException {
         Map<String, Object> iocContainer = beanFactory.getIocContainer();
         for (Map.Entry<String, Object> entry : iocContainer.entrySet()) {
@@ -83,6 +91,19 @@ public class AnnotationScanner implements BeanFactoryAware {
 
         }
         return null;
+    }
+
+    public Set<Class<?>> findDefaultAnnotatedClassesList(String... basePackages) {
+        Set<Class<?>> annotatedClasses = new HashSet<>();
+
+        for (String basePackage : basePackages) {
+            Reflections reflections = new Reflections(basePackage);
+            for (Class<? extends Annotation> annotationClass : defaultAnnotation) {
+                Set<Class<?>> annotatedTypes = reflections.getTypesAnnotatedWith(annotationClass);
+                annotatedClasses.addAll(annotatedTypes);
+            }
+        }
+        return annotatedClasses;
     }
 
     @Override

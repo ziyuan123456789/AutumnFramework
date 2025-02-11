@@ -6,7 +6,7 @@ package org.example.FrameworkUtils.AutumnCore.Event;
  */
 
 
-public class ApplicationEvent implements Event {
+public abstract class ApplicationEvent implements Event {
     private final Object source;
     private final Long time;
 

@@ -1,11 +1,13 @@
 package org.example.FrameworkUtils.AutumnCore.Ioc;
 
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
+import org.example.FrameworkUtils.Exception.BeanCreationException;
 
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * @author ziyuan
@@ -15,9 +17,9 @@ import java.util.Properties;
 /**
  * 万恶之源
  */
-public interface ApplicationContext extends BeanFactory,Environment,SingletonBeanRegistry,BeanDefinitionRegistry {
+public interface ApplicationContext extends BeanFactory, Environment, SingletonBeanRegistry, BeanDefinitionRegistry {
 
-    String BASE_CONTEXT ="AnnotationConfigApplicationContext";
+    String BASE_CONTEXT = "AnnotationConfigApplicationContext";
 
     Environment getEnvironment();
 
@@ -38,9 +40,13 @@ public interface ApplicationContext extends BeanFactory,Environment,SingletonBea
 
     void addBean(String name, Object bean);
 
-    <T> List<T> getBeansOfType(Class<T> type);
+    <T> Map<String, T> getBeansOfType(Class<T> type) throws BeanCreationException;
 
     void registerShutdownHook();
 
     void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor);
+
+    void addBeanPostProcessor(BeanPostProcessor beanPostProcessor);
+
+    Set<BeanPostProcessor> getAllBeanPostProcessors();
 }

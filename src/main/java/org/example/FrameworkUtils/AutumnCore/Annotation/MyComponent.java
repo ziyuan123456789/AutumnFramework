@@ -9,6 +9,10 @@ import java.lang.annotation.Target;
 /**
  * @author wsh
  */
+
+/**
+ * 用于标记组件
+ */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited

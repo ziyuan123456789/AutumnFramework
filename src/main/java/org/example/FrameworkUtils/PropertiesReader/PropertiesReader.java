@@ -28,7 +28,7 @@ public class PropertiesReader {
     }
 
     //xxx:配置文件编码器
-    public Object convertStringToType(String value, Class<?> type) {
+    public static Object convertStringToType(String value, Class<?> type) {
         if (Integer.TYPE.equals(type) || Integer.class.equals(type)) {
             return Integer.parseInt(value);
         } else if (Float.TYPE.equals(type) || Float.class.equals(type)) {

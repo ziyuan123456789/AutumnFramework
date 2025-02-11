@@ -12,6 +12,10 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2023.11
  */
+
+/**
+ * 用于条件注解,在满足条件的情况下才会生效
+ */
 @Target({ElementType.METHOD,ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited

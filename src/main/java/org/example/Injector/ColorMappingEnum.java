@@ -8,7 +8,7 @@ public enum ColorMappingEnum {
 
     RED("Red", "Red"),
     GREEN("Green", "Green"),
-    BLUE("#Blue", "Blue");
+    BLUE("Blue", "Blue");
 
 
     private final String hexCode;

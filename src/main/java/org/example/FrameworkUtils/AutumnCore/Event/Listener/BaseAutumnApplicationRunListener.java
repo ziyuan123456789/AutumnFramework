@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Bootstrap.BootstrapContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.env.ConfigurableEnvironment;
-import org.example.FrameworkUtils.AutumnCore.env.Environment;
 
 /**
  * @author ziyuan

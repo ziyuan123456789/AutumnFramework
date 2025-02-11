@@ -33,14 +33,14 @@ public class AnnotationMetadata {
     //复合注解也会被一起扫描
     public List<Annotation> getAllAnnotations() {
         if (cache == null) {
-            cache = AnnotationUtils.findAllClassAnnotations(clazz, Annotation.class);
+            cache = AnnotationUtils.findAllClassAnnotations(clazz);
         }
         return cache;
     }
 
     public <T extends Annotation> Optional<T> isAnnotated(Class<T> annotationClass) {
         if (cache == null) {
-            cache = AnnotationUtils.findAllClassAnnotations(clazz, Annotation.class);
+            cache = AnnotationUtils.findAllClassAnnotations(clazz);
         }
 
         for (Annotation ann : cache) {

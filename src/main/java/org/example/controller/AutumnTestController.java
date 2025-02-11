@@ -2,9 +2,9 @@ package org.example.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
+import org.example.Annotations.EnableAop;
 import org.example.Bean.Car;
 import org.example.Config.Test;
-import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAop;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Lazy;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
@@ -13,7 +13,7 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
-import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
+import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactory;
 import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
@@ -64,7 +64,7 @@ public class AutumnTestController implements BeanFactoryAware {
     private Car car;
 
     @MyAutoWired
-    private SqlSession sqlSession;
+    private SqlSessionFactory sqlSessionFactory;
 
     @MyAutoWired
     private Test test;
@@ -87,7 +87,6 @@ public class AutumnTestController implements BeanFactoryAware {
     @MyAutoWired
     private TransactionService transactionService;
 
-    //测试事务
     @MyRequestMapping("/refresh")
     public void refresh() {
         beanFactory.refresh();
@@ -200,7 +199,7 @@ public class AutumnTestController implements BeanFactoryAware {
     public String session(AutumnRequest myRequest) {
         String sessionId = myRequest.getSession().getSessionId();
         myRequest.getSession().setAttribute("name", sessionId);
-        return "切换阅览器查看唯一标识符是否变化? 标识符如下:"+myRequest.getSession().getAttribute("name");
+        return "切换阅览器查看唯一标识符是否变化? 标识符如下:" + myRequest.getSession().getAttribute("name");
     }
 
     //测试WebSocket功能

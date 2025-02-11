@@ -12,6 +12,8 @@ import java.util.Properties;
  */
 public interface Environment {
 
+    String GET_MAIN_PACKAGE = "autumn.main.package";
+
     ApplicationArguments getApplicationArguments();
 
     String getProperty(String key);

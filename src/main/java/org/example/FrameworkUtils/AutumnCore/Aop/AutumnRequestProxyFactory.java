@@ -10,9 +10,7 @@ import org.springframework.cglib.proxy.MethodInterceptor;
  * @since 2024.08
  */
 
-/**
- * 这是一个代理工厂,代理模式就是摩西十诫,不用代理模式的Java人就是异端,必须烧死
- */
+
 public class AutumnRequestProxyFactory {
     public static AutumnRequest createAutumnRequestProxy() {
         Enhancer enhancer = new Enhancer();

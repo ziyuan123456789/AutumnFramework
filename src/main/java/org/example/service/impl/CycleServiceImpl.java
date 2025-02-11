@@ -3,7 +3,6 @@ package org.example.service.impl;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.service.CycleService;
-import org.example.service.TestService;
 
 /**
  * @author ziyuan
@@ -11,8 +10,9 @@ import org.example.service.TestService;
  */
 @MyService
 public class CycleServiceImpl implements CycleService {
+
     @MyAutoWired
-    TestService testService;
+    private CycleService cycleService;
 
     @Override
     public void cycle() {

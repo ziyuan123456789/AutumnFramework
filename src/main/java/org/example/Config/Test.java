@@ -1,9 +1,7 @@
 package org.example.Config;
 
 import lombok.Data;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
-import org.example.controller.AutumnTestController;
 
 /**
  * @author ziyuan
@@ -12,7 +10,5 @@ import org.example.controller.AutumnTestController;
 @MyComponent
 @Data
 public class Test {
-    @MyAutoWired
-    AutumnTestController autumnTestController;
-    String testName;
+
 }

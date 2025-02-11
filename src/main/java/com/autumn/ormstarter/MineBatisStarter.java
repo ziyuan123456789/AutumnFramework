@@ -11,7 +11,7 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
 import org.example.FrameworkUtils.AutumnCore.Ioc.EarlyBeanFactoryAware;
-import org.example.FrameworkUtils.AutumnCore.Ioc.EarlyEnvironmentAware;
+import org.example.FrameworkUtils.AutumnCore.Ioc.EnvironmentAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
@@ -56,7 +56,7 @@ import java.util.Set;
  */
 @Slf4j
 @Import({SqlSessionFactoryBean.class, JokePostProcessor.class})
-public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, PriorityOrdered, EarlyEnvironmentAware, EarlyBeanFactoryAware {
+public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, EnvironmentAware, PriorityOrdered, EarlyBeanFactoryAware {
 
 
     private ApplicationContext beanFactory;
@@ -91,7 +91,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
 
     @Override
     public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner,BeanDefinitionRegistry registry) throws Exception {
-        log.info("{}加载,提前干预BeanDefinition的生成", this.getClass().getSimpleName());
+        log.info("{}加载", this.getClass().getSimpleName());
         String minebatisXml = environment.getProperty("MineBatis-configXML");
         InputStream inputStream;
         if (minebatisXml == null || minebatisXml.isEmpty()) {
@@ -104,13 +104,16 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
         Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
         for (Class<?> clazz : classSet) {
             MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
+            log.warn("包装Mapper:{}", clazz.getName());
             myBeanDefinition.setName(clazz.getName());
-            myBeanDefinition.setBeanClass(clazz);
-            myBeanDefinition.setStarter(true);
-            myBeanDefinition.setStarterMethod(createFactoryMethod(clazz));
+            myBeanDefinition.setBeanClass(MapperFactoryBean.class);
+            myBeanDefinition.setConstructor(MapperFactoryBean.class.getDeclaredConstructor(Class.class));
+            Object[] parameters = new Object[]{clazz};
+            myBeanDefinition.setParameters(parameters);
             registry.registerBeanDefinition(clazz.getName(), myBeanDefinition);
         }
-        AnnotationScanner.findAnnotatedClasses((String) beanFactory.get("packageUrl"), TypeHandler.class).forEach(typeHandler -> {
+
+        AnnotationScanner.findAnnotatedClasses(environment.getProperty(Environment.GET_MAIN_PACKAGE), TypeHandler.class).forEach(typeHandler -> {
             MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
             myBeanDefinition.setName(typeHandler.getName());
             myBeanDefinition.setBeanClass(typeHandler);
@@ -124,13 +127,14 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
     }
 
 
-    @Override
-    public void setEnvironment(Environment environment) {
-        this.environment = environment;
-    }
 
     @Override
     public void setBeanFactory(ApplicationContext beanFactory) {
         this.beanFactory = beanFactory;
+    }
+
+    @Override
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
     }
 }

@@ -11,7 +11,7 @@ import java.util.function.Supplier;
  */
 
 /**
- * LazyBeanFactory这个人很懒,他常常问:为什么我自己不能懒加载
+ * LazyBeanFactory这个人很懒,也经常因为自己不能懒加载而耿耿于怀
  */
 public class LazyBeanFactory {
 

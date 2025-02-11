@@ -7,7 +7,6 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanNameAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.FactoryBean;
 import org.example.FrameworkUtils.Orm.MineBatis.Io.Resources;
-import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactory;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactoryBuilder;
 
@@ -19,11 +18,14 @@ import java.io.InputStream;
  */
 @Data
 @Slf4j
-public class SqlSessionFactoryBean implements FactoryBean<SqlSession>, BeanFactoryAware, BeanNameAware {
+public class SqlSessionFactoryBean implements FactoryBean<SqlSessionFactory>, BeanFactoryAware, BeanNameAware {
+
     private ApplicationContext beanFactory;
 
+
     @Override
-    public SqlSession getObject() throws Exception {
+    public SqlSessionFactory getObject() throws Exception {
+        SqlSessionFactoryBuilder builder = new SqlSessionFactoryBuilder();
         String minebatisXml = beanFactory.getProperties().getProperty("MineBatis-configXML");
         InputStream inputStream;
         if (minebatisXml == null || minebatisXml.isEmpty()) {
@@ -31,15 +33,15 @@ public class SqlSessionFactoryBean implements FactoryBean<SqlSession>, BeanFacto
         } else {
             inputStream = Resources.getResourceAsSteam(minebatisXml);
         }
-        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+        SqlSessionFactory sqlSessionFactory = builder.build(inputStream);
         inputStream.close();
-        return sqlSessionFactory.openSession();
+        return sqlSessionFactory;
 
     }
 
     @Override
     public Class<?> getObjectType() {
-        return SqlSession.class;
+        return SqlSessionFactory.class;
     }
 
     @Override

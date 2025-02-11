@@ -2,10 +2,12 @@ package org.example.FrameworkUtils.AutumnCore.Aop;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.InstantiationAwareBeanPostProcessor;
+import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.springframework.cglib.core.DebuggingClassWriter;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.MethodInterceptor;
@@ -20,6 +22,7 @@ import java.util.List;
 
 @Slf4j
 @MyComponent
+@MyOrder(1)
 public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, InstantiationAwareBeanPostProcessor, BeanFactoryAware {
 
     private ApplicationContext beanFactory;
@@ -85,14 +88,14 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
                 try {
                     result = proxy.invokeSuper(obj, args);
                 } catch (Exception e) {
-                    Exception exception=null;
+                    Exception exception = null;
                     for (AutumnAopFactory factory : factories) {
                         if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
                             factory.doThrowing(obj, method, args, e);
-                            exception=e;
+                            exception = e;
                         }
                     }
-                    if(exception!=null){
+                    if (exception != null) {
                         throw exception;
                     }
                 }
@@ -124,23 +127,22 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
     @Override
     public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName, Object currentResult) {
         List<AutumnAopFactory> neededFactories = shouldCreateProxy(factories, beanClass);
-        if (!neededFactories.isEmpty()) {
-            log.warn("多个代理工厂,如果你没有处理好invokeSuper的条件那么很可能会出现问题,多个处理器同时处理{}", beanClass.getName());
+        if (neededFactories.size() > 1) {
+            log.warn("多个处理器同时处理{},如果你没有处理好invokeSuper的条件那么很可能会出现问题", beanClass.getName());
             currentResult = create(neededFactories, beanClass, currentResult);
         }
         return currentResult;
     }
 
 
-
     @Override
-    public Object postProcessBeforeInitialization(Object bean, String beanName) throws Exception {
-        return null;
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeanCreationException {
+        return bean;
     }
 
     @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName) throws Exception {
-        return null;
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeanCreationException {
+        return bean;
     }
 
     @Override

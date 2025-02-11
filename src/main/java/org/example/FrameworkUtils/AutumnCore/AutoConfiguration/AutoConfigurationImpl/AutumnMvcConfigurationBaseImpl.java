@@ -1,6 +1,5 @@
 package org.example.FrameworkUtils.AutumnCore.AutoConfiguration.AutoConfigurationImpl;
 
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyConditional;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.AutumnCore.AutoConfiguration.AutumnMvcConfiguration;
@@ -16,7 +15,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
  * 世界是一个草台班子,这句话说的确实挺对
  */
 @MyService
-@MyConditional(MatchClassByInterface.class)
+//@MyConditional(MatchClassByInterface.class)
 public class AutumnMvcConfigurationBaseImpl implements AutumnMvcConfiguration{
     @Value("baseHtml")
     String baseHtml;

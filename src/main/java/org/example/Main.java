@@ -2,7 +2,6 @@ package org.example;
 
 import com.autumn.async.EnableAutumnAsync;
 import com.autumn.cache.EnableAutumnCache;
-import com.autumn.ormstarter.minijpa.EnableJpaRepositories;
 import com.autumn.ormstarter.transaction.annotation.EnableAutumnTransactional;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBootApplication;
@@ -24,7 +23,6 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnApplicat
 @EnableAutumnAsync
 @EnableAutumnCache
 @EnableAutumnTransactional
-@EnableJpaRepositories
 @ComponentScan({"org.example", "annotation.scan.test"})
 @AutumnBootApplication
 public class Main {
@@ -36,7 +34,7 @@ public class Main {
     }
 
     @MyPreDestroy
-    public void sayBay(){
+    public void sayBay() {
         log.info("再见孩子们");
     }
 }

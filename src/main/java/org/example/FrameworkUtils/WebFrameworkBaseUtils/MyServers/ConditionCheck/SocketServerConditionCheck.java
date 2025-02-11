@@ -4,14 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.MyCondition;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 @MyComponent
 @Slf4j
 public class SocketServerConditionCheck implements MyCondition {
-    @Override
-    public void init() {
-        log.info("{}条件处理器中的初始化方法被执行", this.getClass().getSimpleName());
-    }
 
     @Override
     public boolean matches(ApplicationContext myContext, Class<?> clazz) {
@@ -24,9 +19,5 @@ public class SocketServerConditionCheck implements MyCondition {
 //        }
     }
 
-    @Override
-    public void after() {
 
-        MyCondition.super.after();
-    }
 }
