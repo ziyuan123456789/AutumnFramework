@@ -4,6 +4,8 @@
 ![Java17](https://img.shields.io/badge/JDK-17+-success.svg)
 ![License](https://img.shields.io/npm/l/mithril.svg)
 
+# AnnotationConfigApplicationContext完善中!Web部分完全失效,但是很快就会再次上线
+
 ## 写在前面的话:
 
 - `AutumnFramework模仿了SpringBoot的部分基本特性,但在底层实现上却大有不同,因此仅作为一个兴趣驱动的展示项目`
