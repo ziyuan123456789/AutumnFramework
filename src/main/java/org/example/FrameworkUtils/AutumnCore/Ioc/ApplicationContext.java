@@ -17,7 +17,7 @@ import java.util.Set;
 /**
  * 万恶之源
  */
-public interface ApplicationContext extends BeanFactory, Environment, SingletonBeanRegistry, BeanDefinitionRegistry {
+public interface ApplicationContext extends BeanFactory, Environment, SingletonBeanRegistry, BeanDefinitionRegistry, ApplicationEventPublisher {
 
     String BASE_CONTEXT = "AnnotationConfigApplicationContext";
 

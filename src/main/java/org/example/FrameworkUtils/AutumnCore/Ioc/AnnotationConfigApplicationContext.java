@@ -1,5 +1,6 @@
 package org.example.FrameworkUtils.AutumnCore.Ioc;
 
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
@@ -9,6 +10,7 @@ import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
 import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEventMulticaster;
+import org.example.FrameworkUtils.AutumnCore.Event.ContextClosedEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.IocInitEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Event.SimpleApplicationEventMulticaster;
@@ -16,8 +18,6 @@ import org.example.FrameworkUtils.AutumnCore.compare.AnnotationInterfaceAwareOrd
 import org.example.FrameworkUtils.AutumnCore.env.ApplicationArguments;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
-import org.springframework.core.Ordered;
-import org.springframework.core.PriorityOrdered;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -43,7 +43,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 //正在施工中,稍安勿躁,其实应该再抽出一个abstractApplicationContext来做这些基础的事情,不过类膨胀更让人苦恼,还在现在这写吧
 @Slf4j
-public class AnnotationConfigApplicationContext implements ApplicationContext, ApplicationEventPublisher {
+@EqualsAndHashCode
+public class AnnotationConfigApplicationContext implements ApplicationContext {
 
     //一级缓存存储成熟bean
     private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>();
@@ -89,26 +90,65 @@ public class AnnotationConfigApplicationContext implements ApplicationContext, A
 
     private ApplicationEventMulticaster applicationEventMulticaster;
 
+    private Set<ApplicationEvent> earlyApplicationEvents;
+
+    private Set<ApplicationListener<ApplicationEvent>> earlyApplicationListeners;
+
     //环境变量
     private Environment environment;
+
+    private long startupDate;
 
 
     //容器开始刷新
     @Override
     public void refresh() {
+        this.prepareRefresh();
+        this.prepareBeanFactory(this);
         try {
             this.invokeBeanFactoryPostProcessors();
             this.registerBeanPostProcessors(this);
             this.initApplicationEventMulticaster();
             this.registerListeners();
             this.finishBeanFactoryInitialization(this);
-            this.publishEvent(new IocInitEvent(new Object(), System.currentTimeMillis()));
+            this.finishRefresh();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
 
 
+    }
+
+    private void finishRefresh() {
+        this.publishEvent(new IocInitEvent(new Object()));
+    }
+
+    private void prepareBeanFactory(AnnotationConfigApplicationContext beanFactory) {
+        /**
+         * 其实我有点理解不来ApplicationContextAwareProcessor的作用 既然在invokeAwareMethods就已经可以setAware了,而且invokeAwareMethods可以处理的类远远比ApplicationContextAwareProcessor更多,更早
+         * 任何经过spring创建的对象都应该可以被invokeAwareMethods处理,为何不直接增强invokeAwareMethods的功能呢?
+         * 我只能解释为ApplicationContextAwareProcessor的功能更多更全
+         */
+        beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
+
+
+    }
+
+    private void prepareRefresh() {
+        /**
+         * 在AutumnApplication的run方法中,env已经生成,所以无需二次生成,spring的这种设计是为了防止你直接创建一个context出来而并非AutumnApplication来生成
+         * 因此需要检测env是否存在,没有的话重新创建一个,Z
+         */
+        this.startupDate = System.currentTimeMillis();
+        if (this.earlyApplicationListeners == null) {
+            this.earlyApplicationListeners = new LinkedHashSet<>(this.applicationListeners);
+        } else {
+            //refresh阶段可以二次调用,因此存在earlyApplicationListeners不为null的情况
+            this.applicationListeners.clear();
+            this.applicationListeners.addAll(this.earlyApplicationListeners);
+        }
+        this.earlyApplicationEvents = new HashSet<>();
     }
 
     private void registerListeners() {
@@ -899,4 +939,26 @@ public class AnnotationConfigApplicationContext implements ApplicationContext, A
     public void publishEvent(Object event) {
         applicationEventMulticaster.multicastEvent((ApplicationEvent) event);
     }
+
+    public void close() {
+        this.publishEvent(new ContextClosedEvent("Bye"));
+        this.destroyBeans();
+    }
+
+    private void destroyBeans() {
+        for (MyBeanDefinition myBeanDefinition : beanDefinitionMap.values()) {
+            if (myBeanDefinition.getAfterMethod() != null) {
+                try {
+                    for (Method method : myBeanDefinition.getAfterMethod()) {
+                        method.invoke(getBean(myBeanDefinition.getName()));
+                    }
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+        }
+
+
+    }
+
 }

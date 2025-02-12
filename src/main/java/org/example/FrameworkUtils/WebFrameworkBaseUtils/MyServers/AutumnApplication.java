@@ -14,6 +14,7 @@ import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.AutumnApplicationRunListener;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AnnotationConfigApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationShutdownHook;
 import org.example.FrameworkUtils.AutumnCore.Ioc.FactoryBean;
 import org.example.FrameworkUtils.AutumnCore.context.ApplicationContextInitializer;
 import org.example.FrameworkUtils.AutumnCore.env.ApplicationArguments;
@@ -40,9 +41,7 @@ import java.util.stream.Stream;
  */
 
 /*
- * 核心启动类,当时在设计这个类的时候糅合了网络与容器部分,正常来说这个启动类应该只负责容器的创建,其他部分用插件形式来进行扩展
- * 不过随着条件注解,复合注解,简易spi机制,与各种后置处理器的加入形成了简单的自动装配机制,启动类的作用就逐渐降低了
- * 今后会从启动类完整剔除网络部分
+ * 核心启动类
  */
 @Slf4j
 public class AutumnApplication {
@@ -69,8 +68,24 @@ public class AutumnApplication {
 
     private ConfigurableEnvironment environment;
 
+    private static final ApplicationShutdownHook shutdownHook = new ApplicationShutdownHook();
+
 
     public AutumnApplication(Class<?>... primarySources) {
+        /**
+         * 非常感谢你能看到这里,能看到这段注释也说明你克隆了这段代码并且真的点进去看了,autumnFramework仅仅是对springboot的基础结构和基础功能进行简单的仿写
+         * 对于springboot这样的庞然大物想要去梳理结构甚至看到细枝末节都是一件极其不易的事情
+         * 作为一个称霸整个javaWeb生态的框架肩负了太多历史包袱,控制反转和面对接口编程在spring的源码中体现的淋漓尽致
+         * 对于我们这样的学习者来说无疑更是增加了不少困难,在阅读,整理,理解的过程中我也买了不少的书,翻遍了各种博客也问遍了各种ai
+         * 我能力有限,工作经验也并不丰富,这个项目我从大三下实习开始写起,到今天也有一年半的时间了,一转眼毕业上班也有半年了
+         * 在编写项目的过程中还是止不住惊叹于spring生态的强大和复杂,在debug地狱中一层层的翻找,在无数个实现类和接口间闪转腾挪真的非常痛苦
+         * 特别在设计AnnotationConfigApplicationContext,AutowiredAnnotationBeanPostProcessor,AnnotationAwareAspectJAutoProxyCreator,ConfigurationClassPostProcessor的时候简直抓耳挠腮,跟着博客打断点一点点观察运行情况
+         * 这个bean从哪来的?这怎么就加载了?我的bean定义是被谁加载的?为什么BeanDefinitionRegistryPostProcessor还可以进行getBean操作?这个bean是怎么被代理的?怎么就被代理了
+         * 经常几晚上的不出结果,或者出了结果又是运行异常.不过我依然觉得这是一件非常有意思的事,充满了挑战性
+         *
+         * 但一切都不是完美无缺的,我也经常在思考,是不是java这门历史包袱太重的语言到了今天已经充满了缺陷,从而需要springboot这样的框架来增强语言的能力
+         * 不管事实是这样也好,还是仅仅是我的暴论也好,我都会通过注释写下我的真实写法,如果你也有一样的想法/不一致的想法 也欢迎分享出来
+         */
         this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
         this.initAutumnSpi();
         this.bootstrapRegistryInitializers = this.getAutumnFactoriesInstances(BootstrapRegistryInitializer.class);
@@ -144,6 +159,12 @@ public class AutumnApplication {
         return bootstrapContext;
     }
 
+    private void refreshContext(AnnotationConfigApplicationContext context) {
+        shutdownHook.registerApplicationContext(context);
+        beanFactory.refresh();
+
+    }
+
     public void run(String[] args) {
         this.sysArgs = args;
         DefaultBootstrapContext bootstrapContext = this.createBootstrapContext();
@@ -158,7 +179,9 @@ public class AutumnApplication {
         beanFactory = createApplicationContext();
         prepareContext(bootstrapContext, beanFactory, environment, listeners, applicationArguments);
 
-        beanFactory.refresh();
+        refreshContext((AnnotationConfigApplicationContext) beanFactory);
+
+
 
 
 //        //:保存主类的包名,也就是默认扫描的包,以后会开放自定义扫包路径
@@ -191,6 +214,7 @@ public class AutumnApplication {
 //        ServerRunner server = (ServerRunner) beanFactory.getBean(ServerRunner.class.getName());
 //        server.run();
     }
+
 
 //    private void componentScan(Class<?> mainClass, ApplicationContext myContext) throws Exception {
 //        //xml方式加载beans,弃用

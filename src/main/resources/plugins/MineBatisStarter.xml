@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<beans>
-    <AutumnStarters>
-<!--        这是一个BeanDefinitionRegistryPostProcessor实现类,可以增删改查BeanDefinition-->
-        <bean class="com.autumn.ormstarter.MineBatisStarter"/>
-<!--        这是一个BeanFactoryPostProcessor 实现类,可以删改查BeanDefinition,但不能新增-->
-        <bean class="org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor"/>
-    </AutumnStarters>
-</beans>

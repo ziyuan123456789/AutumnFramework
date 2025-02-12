@@ -11,6 +11,9 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
+import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.ContextClosedEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactory;
@@ -38,7 +41,7 @@ import java.util.Map;
  */
 @MyController
 @Slf4j
-public class AutumnTestController implements BeanFactoryAware {
+public class AutumnTestController implements BeanFactoryAware, ApplicationListener<ContextClosedEvent> {
 
     private ApplicationContext beanFactory;
 
@@ -232,5 +235,16 @@ public class AutumnTestController implements BeanFactoryAware {
     @Override
     public void setBeanFactory(ApplicationContext beanFactory) {
         this.beanFactory = beanFactory;
+    }
+
+    @Override
+    public void onApplicationEvent(ContextClosedEvent event) {
+        log.info(("接受到容器关闭信号"));
+
+    }
+
+    @Override
+    public boolean supportsEvent(ApplicationEvent event) {
+        return event instanceof ContextClosedEvent;
     }
 }

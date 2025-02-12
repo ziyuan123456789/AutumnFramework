@@ -26,7 +26,7 @@ public class UserBeanPostProcessor implements BeanPostProcessor, Ordered, Applic
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) {
         startTimeMap.put(beanName, System.nanoTime());
-        log.info("Bean:{}初始化开始", beanName);
+//        log.info("Bean:{}初始化开始", beanName);
         return bean;
     }
 
@@ -38,7 +38,7 @@ public class UserBeanPostProcessor implements BeanPostProcessor, Ordered, Applic
             long loadTime = System.nanoTime() - startTime;
             beanLoadTimes.put(beanName, loadTime);
         }
-        log.info("Bean:{}初始化结束", beanName);
+//        log.info("Bean:{}初始化结束", beanName);
         return bean;
     }
 

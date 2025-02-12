@@ -13,7 +13,7 @@ public class BaseApplicationListener implements ApplicationListener<ApplicationE
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        log.info("接受到容器已经刷新完成的事件{}", event.getTime());
+        log.info("接受到容器已经刷新完成的事件{}", event.getTimestamp());
     }
 
     @Override

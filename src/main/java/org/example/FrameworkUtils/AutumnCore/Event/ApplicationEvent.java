@@ -1,18 +1,20 @@
 package org.example.FrameworkUtils.AutumnCore.Event;
 
+import lombok.EqualsAndHashCode;
+
 /**
  * @author ziyuan
  * @since 2025.01
  */
 
+@EqualsAndHashCode(callSuper = false)
+public abstract class ApplicationEvent extends EventObject {
 
-public abstract class ApplicationEvent implements Event {
-    private final Object source;
-    private final Long time;
+    private final long timestamp;
 
-    public ApplicationEvent(Object source, Long time) {
-        this.source = source;
-        this.time = time;
+    public ApplicationEvent(Object source) {
+        super(source);
+        this.timestamp = System.currentTimeMillis();
     }
 
     @Override
@@ -20,7 +22,9 @@ public abstract class ApplicationEvent implements Event {
         return source;
     }
 
-    public Long getTime() {
-        return time;
+    public final long getTimestamp() {
+        return this.timestamp;
     }
+
+
 }

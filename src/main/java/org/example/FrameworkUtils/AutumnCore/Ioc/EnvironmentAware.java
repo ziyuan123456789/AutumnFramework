@@ -11,7 +11,7 @@ import org.example.FrameworkUtils.AutumnCore.env.Environment;
 /**
  * 一个比较敏感的接口,可以感知到大环境好不好
  */
-public interface EnvironmentAware {
+public interface EnvironmentAware extends Aware {
     void setEnvironment(Environment environment);
 }
 

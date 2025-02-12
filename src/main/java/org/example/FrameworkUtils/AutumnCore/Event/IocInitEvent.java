@@ -5,13 +5,12 @@ package org.example.FrameworkUtils.AutumnCore.Event;
  * @since 2024.11
  */
 public class IocInitEvent extends ApplicationEvent {
-    private final Object source;
-    private final Long time;
 
-    public IocInitEvent(Object source, Long time) {
-        super(source, time);
+    private final Object source;
+
+    public IocInitEvent(Object source) {
+        super(source);
         this.source = source;
-        this.time = time;
     }
 
     @Override
@@ -19,7 +18,4 @@ public class IocInitEvent extends ApplicationEvent {
         return source;
     }
 
-    public Long getTime() {
-        return time;
-    }
 }

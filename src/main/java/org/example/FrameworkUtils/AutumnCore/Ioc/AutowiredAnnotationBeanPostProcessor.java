@@ -45,7 +45,7 @@ public class AutowiredAnnotationBeanPostProcessor implements InstantiationAwareB
                     if (field.get(bean) != null) {
                         continue;
                     }
-                    log.info("开始依赖注入,被处理的类是{}处理的字段是{}", bean, field.getName());
+//                    log.info("开始依赖注入,被处理的类是{}处理的字段是{}", bean, field.getName());
                     String myAutoWired = field.getAnnotation(MyAutoWired.class).value();
                     if (field.getType().equals(AutumnRequest.class)) {
                         field.set(bean, AutumnRequestProxyFactory.createAutumnRequestProxy());

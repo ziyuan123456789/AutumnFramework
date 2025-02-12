@@ -91,7 +91,6 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, En
 
     @Override
     public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner,BeanDefinitionRegistry registry) throws Exception {
-        log.info("{}加载", this.getClass().getSimpleName());
         String minebatisXml = environment.getProperty("MineBatis-configXML");
         InputStream inputStream;
         if (minebatisXml == null || minebatisXml.isEmpty()) {
@@ -104,7 +103,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, En
         Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
         for (Class<?> clazz : classSet) {
             MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
-            log.warn("包装Mapper:{}", clazz.getName());
+            log.warn("{}包装Mapper:{}", this.getClass().getSimpleName(), clazz.getName());
             myBeanDefinition.setName(clazz.getName());
             myBeanDefinition.setBeanClass(MapperFactoryBean.class);
             myBeanDefinition.setConstructor(MapperFactoryBean.class.getDeclaredConstructor(Class.class));

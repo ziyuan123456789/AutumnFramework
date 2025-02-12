@@ -392,7 +392,7 @@ public class MyContext implements ApplicationContext {
                 }
 
                 if (myAutoWired.isEmpty()) {
-                    log.info("开始依赖注入,被处理的类是{}处理的字段是{}", bean.getClass().getSimpleName(), field.getName());
+//                    log.info("开始依赖注入,被处理的类是{}处理的字段是{}", bean.getClass().getSimpleName(), field.getName());
                     injectDependencies(bean, field, mb);
                 } else {
                     Object dependency = getBean(myAutoWired);
@@ -727,5 +727,10 @@ public class MyContext implements ApplicationContext {
     @Override
     public Set<BeanPostProcessor> getAllBeanPostProcessors() {
         return new HashSet<>();
+    }
+
+    @Override
+    public void publishEvent(Object event) {
+
     }
 }
