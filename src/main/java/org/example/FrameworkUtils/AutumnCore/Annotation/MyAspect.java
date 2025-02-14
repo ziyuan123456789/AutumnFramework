@@ -17,5 +17,6 @@ import java.lang.annotation.Target;
 @Target({ElementType.PARAMETER,ElementType.TYPE})
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
+@MyComponent
 public @interface MyAspect {
 }

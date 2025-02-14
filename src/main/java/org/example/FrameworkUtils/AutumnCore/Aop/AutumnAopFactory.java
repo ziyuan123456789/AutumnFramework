@@ -16,9 +16,13 @@ import java.lang.reflect.Method;
  * 我可不愿意写代码去帮用户做判断,还是你们自己来决定怎么代理,解析表达式这种事情我可干不来
  */
 public interface AutumnAopFactory {
+
+    String CGLIB_MARK = "$$EnhancerByCGLIB$$";
+
     boolean shouldNeedAop(Class clazz, ApplicationContext myContext);
 
     boolean shouldIntercept(Method method, Class clazz, ApplicationContext myContext);
+
     void doBefore(Object obj, Method method, Object[] args);
 
      default Object intercept(Object obj, Method method, Object[] args, MethodProxy pr) throws Throwable {
@@ -26,6 +30,7 @@ public interface AutumnAopFactory {
      };
 
     void doAfter(Object obj, Method method, Object[] args);
+
     void doThrowing(Object obj, Method method, Object[] args,Exception e);
 
 }

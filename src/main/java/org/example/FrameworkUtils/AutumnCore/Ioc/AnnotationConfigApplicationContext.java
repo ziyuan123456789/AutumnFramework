@@ -1,6 +1,7 @@
 package org.example.FrameworkUtils.AutumnCore.Ioc;
 
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
@@ -41,18 +42,24 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2025.01
  */
 
-//正在施工中,稍安勿躁,其实应该再抽出一个abstractApplicationContext来做这些基础的事情,不过类膨胀更让人苦恼,还在现在这写吧
+//正在施工中,稍安勿躁
 @Slf4j
 @EqualsAndHashCode
-public class AnnotationConfigApplicationContext implements ApplicationContext {
+public class AnnotationConfigApplicationContext implements ConfigurableApplicationContext {
 
     //一级缓存存储成熟bean
     private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>();
 
-    // 二级缓存提前暴露的还未完全成熟的bean,用于解决循环依赖
+    /**
+     * 二级缓存提前暴露的还未完全成熟的bean,用于解决循环依赖
+     * 三层缓存能生效的本质就是分离对象创建和属性注入,但构造器注入会导致这一步紧耦合,无法分离,所以三级缓存面对构造器注入会失效
+     */
     private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>();
 
-    // 三级缓存：对象工厂
+    /**
+     * 三级缓存：对象工厂
+     * 原则上来说进需要二层缓存就可以解决循环依赖问题,但ObjectFactory存在的意义是为了AOP等替换bean实现
+     */
     private final Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();
 
     // Bean定义Map
@@ -83,6 +90,7 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
 
     private final Set<String> registeredSingletons = Collections.synchronizedSet(new LinkedHashSet<>(256));
 
+    @Getter
     private final Set<ApplicationListener<ApplicationEvent>> applicationListeners = new HashSet<>();
 
     //通用比较器 用于处理Order注解 Order接口等,并进行原地排序
@@ -103,15 +111,27 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     //容器开始刷新
     @Override
     public void refresh() {
-        this.prepareRefresh();
-        this.prepareBeanFactory(this);
+        //刷新前的准备
+        prepareRefresh();
+        //BeanFactory前准备
+        prepareBeanFactory(this);
         try {
-            this.invokeBeanFactoryPostProcessors();
-            this.registerBeanPostProcessors(this);
-            this.initApplicationEventMulticaster();
-            this.registerListeners();
-            this.finishBeanFactoryInitialization(this);
-            this.finishRefresh();
+            //模板方法
+            postProcessBeanFactory(this);
+            //调用BeanFactory后置处理器(在此处扫描全部的Bean定义,并倒入Starter)
+            invokeBeanFactoryPostProcessors();
+            //注册实例化Bean后置处理器(依赖注入处理器,感知处理器,Aop处理器在此处被导入)
+            registerBeanPostProcessors(this);
+            //初始化事件广播器
+            initApplicationEventMulticaster();
+            //模板方法
+            onRefresh();
+            //注册监听器
+            registerListeners();
+            //实例化所有的Bean
+            finishBeanFactoryInitialization(this);
+            //刷新完成
+            finishRefresh();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -120,11 +140,18 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
 
     }
 
+    protected void onRefresh() {
+    }
+
+    protected void postProcessBeanFactory(ConfigurableApplicationContext beanFactory) {
+    }
+
+
     private void finishRefresh() {
         this.publishEvent(new IocInitEvent(new Object()));
     }
 
-    private void prepareBeanFactory(AnnotationConfigApplicationContext beanFactory) {
+    private void prepareBeanFactory(ConfigurableApplicationContext beanFactory) {
         /**
          * 其实我有点理解不来ApplicationContextAwareProcessor的作用 既然在invokeAwareMethods就已经可以setAware了,而且invokeAwareMethods可以处理的类远远比ApplicationContextAwareProcessor更多,更早
          * 任何经过spring创建的对象都应该可以被invokeAwareMethods处理,为何不直接增强invokeAwareMethods的功能呢?
@@ -166,15 +193,19 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     }
 
 
-    public Set<ApplicationListener<ApplicationEvent>> getApplicationListeners() {
-        return this.applicationListeners;
-    }
-
     public void addApplicationListener(ApplicationListener<ApplicationEvent> listener) {
         if (this.applicationEventMulticaster != null) {
             this.applicationEventMulticaster.addApplicationListener(listener);
         }
         this.applicationListeners.add(listener);
+    }
+
+    @Override
+    public void removeApplicationListener(ApplicationListener<ApplicationEvent> listener) {
+        if (this.applicationEventMulticaster != null) {
+            this.applicationEventMulticaster.removeApplicationListener(listener);
+        }
+        this.applicationListeners.remove(listener);
     }
 
     private void initApplicationEventMulticaster() {
@@ -185,9 +216,9 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
 
 
     //对容器中的对象进行全部getBean,因为Aop部分我参考Spring的实现,因此我需要单独初始化我的AutumnAopFactory
-    private void finishBeanFactoryInitialization(AnnotationConfigApplicationContext annotationConfigApplicationContext) {
+    private void finishBeanFactoryInitialization(ConfigurableApplicationContext fatory) {
         Set<String> instantiatedBeans = new HashSet<>();
-        for (Map.Entry<String, MyBeanDefinition> entry : annotationConfigApplicationContext.getBeanDefinitionMap().entrySet()) {
+        for (Map.Entry<String, MyBeanDefinition> entry : fatory.getBeanDefinitionMap().entrySet()) {
             if (AutumnAopFactory.class.isAssignableFrom(entry.getValue().getBeanClass())) {
                 Object bean = doGetBean(entry.getKey());
                 aopFactories.add((AutumnAopFactory) bean);
@@ -195,7 +226,7 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
             }
         }
 
-        for (Map.Entry<String, MyBeanDefinition> entry : annotationConfigApplicationContext.getBeanDefinitionMap().entrySet()) {
+        for (Map.Entry<String, MyBeanDefinition> entry : fatory.getBeanDefinitionMap().entrySet()) {
             String beanName = entry.getKey();
             if (!instantiatedBeans.contains(beanName)) {
                 doGetBean(beanName);
@@ -205,21 +236,21 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     }
 
     //注册并实例化BeanPostProcessors
-    private void registerBeanPostProcessors(AnnotationConfigApplicationContext annotationConfigApplicationContext) {
+    private void registerBeanPostProcessors(ConfigurableApplicationContext configurableApplicationContext) {
         List<BeanPostProcessor> annoPriorityOrderedPostProcessors = new ArrayList<>();
         List<BeanPostProcessor> priorityOrderedPostProcessors = new ArrayList<>();
         List<String> orderedPostProcessorNames = new ArrayList<>();
         List<String> nonOrderedPostProcessorNames = new ArrayList<>();
 
-        for (Map.Entry<String, MyBeanDefinition> entry : annotationConfigApplicationContext.getBeanDefinitionMap().entrySet()) {
+        for (Map.Entry<String, MyBeanDefinition> entry : configurableApplicationContext.getBeanDefinitionMap().entrySet()) {
             Class<?> beanClass = entry.getValue().getBeanClass();
             if (BeanPostProcessor.class.isAssignableFrom(beanClass)) {
                 if (beanClass.isAnnotationPresent(MyOrder.class)) {
-                    BeanPostProcessor beanPostProcessor = (BeanPostProcessor) annotationConfigApplicationContext.getBean(entry.getKey());
+                    BeanPostProcessor beanPostProcessor = (BeanPostProcessor) configurableApplicationContext.getBean(entry.getKey());
                     annoPriorityOrderedPostProcessors.add(beanPostProcessor);
                 }
                 if (beanClass.isAssignableFrom(PriorityOrdered.class)) {
-                    BeanPostProcessor beanPostProcessor = (BeanPostProcessor) annotationConfigApplicationContext.getBean(entry.getKey());
+                    BeanPostProcessor beanPostProcessor = (BeanPostProcessor) configurableApplicationContext.getBean(entry.getKey());
                     priorityOrderedPostProcessors.add(beanPostProcessor);
                 } else if (beanClass.isAssignableFrom(Ordered.class)) {
                     orderedPostProcessorNames.add(entry.getKey());
@@ -379,16 +410,6 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
 
 
     @Override
-    public void registerShutdownHook() {
-
-    }
-
-    @Override
-    public void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor) {
-
-    }
-
-    @Override
     public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
         this.beanPostProcessors.add(beanPostProcessor);
     }
@@ -399,6 +420,12 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     }
 
 
+    /**
+     * 某些情况下使用beanFactory来进行getBean是一件危险的事情
+     * 特别在自动注入的时机未到来的地方,例如(BeanDefinitionRegistryPostProcessor ,BeanFactoryPostProcessor,BeanPostProcessor)
+     * 如果你使用Aware接口来获取beanFactory从而进行强制的getBean,那么会导致这个Bean被提前实例化,可能导致一些自定义的后置处理器无法处理这个Bean
+     * 所以在getBean的时候请保证提前实例化这个Bean并不会对业务产生什么影响,你已经知晓这个Bean不可能被额外处理
+     */
     @Override
     public Object getBean(String name) {
         return doGetBean(name);
@@ -429,8 +456,6 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
                     log.error(e.getMessage(), e);
                     throw new RuntimeException(e);
                 }
-
-
             }
             try {
                 MyBeanDefinition mbd = getBeanDefinition(beanName);
@@ -812,8 +837,42 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
 
     @Override
     public <T> T getBean(Class<T> requiredType) {
-        return null;
+        Object resolved = resolveBean(requiredType);
+        if (resolved == null) {
+            for (MyBeanDefinition myBeanDefinition : beanDefinitionMap.values()) {
+                if (myBeanDefinition.isFactoryBean()) {
+                    Object o1 = getBean(myBeanDefinition.getName());
+                    if (requiredType.isAssignableFrom(o1.getClass())) {
+                        return (T) o1;
+                    }
+
+                }
+            }
+            throw new BeanCreationException("找实现类异常哦");
+        }
+        return (T) resolved;
     }
+
+    private <T> T resolveBean(Class<T> requiredType) {
+        List<String> impls = new ArrayList<>();
+        for (MyBeanDefinition mb : beanDefinitionMap.values()) {
+            if (requiredType.isAssignableFrom(mb.getBeanClass())) {
+                impls.add(mb.getName());
+            }
+        }
+        if (impls.isEmpty()) {
+            return null;
+        }
+        if (impls.size() == 1) {
+            //委托给getBean(String)
+            return (T) getBean(impls.get(0));
+        } else {
+            throw new BeanCreationException(impls + "多个实现类");
+        }
+
+    }
+
+
 
     @Override
     public ApplicationArguments getApplicationArguments() {
@@ -940,6 +999,7 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
         applicationEventMulticaster.multicastEvent((ApplicationEvent) event);
     }
 
+    @Override
     public void close() {
         this.publishEvent(new ContextClosedEvent("Bye"));
         this.destroyBeans();
@@ -959,6 +1019,16 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
         }
 
 
+    }
+
+    @Override
+    public void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor) {
+        this.beanFactoryPostProcessors.add(postProcessor);
+    }
+
+
+    @Override
+    public void registerShutdownHook() {
     }
 
 }

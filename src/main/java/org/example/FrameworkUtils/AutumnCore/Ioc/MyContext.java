@@ -24,7 +24,6 @@ import org.reflections.scanners.SubTypesScanner;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -191,7 +190,7 @@ public class MyContext implements ApplicationContext {
         //xxx: 检查循环依赖
         DependencyChecker dependencyChecker = (DependencyChecker) getBean(DependencyChecker.class.getName());
         dependencyChecker.checkForCyclicDependencies(beanDependencies);
-        this.registerShutdownHook();
+//        this.registerShutdownHook();
 
     }
 
@@ -573,27 +572,27 @@ public class MyContext implements ApplicationContext {
 //        return beans;
 //    }
 
-    @Override
-    public void registerShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.warn("进行关机清理....请稍后");
-            for (Map<Method, Object> afterMethod : afterMethods) {
-                for (Map.Entry<Method, Object> entry : afterMethod.entrySet()) {
-                    try {
-                        entry.getKey().invoke(entry.getValue());
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        log.error("调用销毁方法失败", e);
-                    }
-                }
-            }
-            log.warn("已成功停机");
-        }));
-    }
+//    @Override
+//    public void registerShutdownHook() {
+//        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+//            log.warn("进行关机清理....请稍后");
+//            for (Map<Method, Object> afterMethod : afterMethods) {
+//                for (Map.Entry<Method, Object> entry : afterMethod.entrySet()) {
+//                    try {
+//                        entry.getKey().invoke(entry.getValue());
+//                    } catch (IllegalAccessException | InvocationTargetException e) {
+//                        log.error("调用销毁方法失败", e);
+//                    }
+//                }
+//            }
+//            log.warn("已成功停机");
+//        }));
+//    }
 
-    @Override
-    public void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor) {
-
-    }
+//    @Override
+//    public void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor) {
+//
+//    }
 
     @Override
     public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {

@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
@@ -35,7 +34,7 @@ import java.util.Set;
 public class AnnotationScanner implements BeanFactoryAware {
     private static ApplicationContext beanFactory;
 
-    private final static List<Class<? extends Annotation>> defaultAnnotation = List.of(MyController.class, MyService.class, MyComponent.class, MyConfig.class, MyWebSocketConfig.class, MyAspect.class);
+    private final static List<Class<? extends Annotation>> defaultAnnotation = List.of(MyService.class, MyComponent.class, MyConfig.class, MyWebSocketConfig.class, MyAspect.class);
 
 
     public static List<Class> findImplByInterface(String packageName, Class interfaceClass){

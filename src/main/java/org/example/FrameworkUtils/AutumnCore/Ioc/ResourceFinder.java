@@ -12,10 +12,13 @@ import java.net.URL;
  */
 @MyComponent
 public class ResourceFinder {
+
     @Value("htmlHome")
     private String htmlHome;
+
     @Value("iconHome")
     private String iconHome;
+
     ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
     public String getHtmlLocation(String htmlName) {

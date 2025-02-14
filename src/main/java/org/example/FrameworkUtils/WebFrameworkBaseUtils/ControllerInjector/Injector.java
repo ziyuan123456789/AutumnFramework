@@ -1,5 +1,7 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector;
 
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -13,5 +15,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
+@MyComponent
 public @interface Injector {
 }

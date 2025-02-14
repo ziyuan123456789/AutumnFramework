@@ -14,12 +14,12 @@ import java.util.Set;
  * @since 2024.06
  */
 
-/**
- * 万恶之源
- */
+
 public interface ApplicationContext extends BeanFactory, Environment, SingletonBeanRegistry, BeanDefinitionRegistry, ApplicationEventPublisher {
 
     String BASE_CONTEXT = "AnnotationConfigApplicationContext";
+
+    String SERVLET_CONTEXT = "AnnotationConfigServletWebServerApplicationContext";
 
     Environment getEnvironment();
 
@@ -41,10 +41,6 @@ public interface ApplicationContext extends BeanFactory, Environment, SingletonB
     void addBean(String name, Object bean);
 
     <T> Map<String, T> getBeansOfType(Class<T> type) throws BeanCreationException;
-
-    void registerShutdownHook();
-
-    void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor);
 
     void addBeanPostProcessor(BeanPostProcessor beanPostProcessor);
 

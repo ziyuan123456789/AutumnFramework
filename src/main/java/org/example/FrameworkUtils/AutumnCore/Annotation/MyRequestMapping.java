@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2023.10
  */
-@Target({ElementType.PARAMETER,ElementType.METHOD})
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface MyRequestMapping {

@@ -4,10 +4,16 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyPostConstruct;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
+import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
 import org.example.FrameworkUtils.AutumnCore.Aop.RequestContext;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
-import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContextAware;
+import org.example.FrameworkUtils.AutumnCore.Ioc.EnvironmentAware;
+import org.example.FrameworkUtils.AutumnCore.env.Environment;
 import org.example.FrameworkUtils.DataStructure.Tuple;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector.ControllerInjector;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector.Injector;
@@ -40,13 +46,18 @@ import java.util.concurrent.Executors;
  * @author ziyuan
  * @since 2024.05
  */
+
+/**
+ * 这个类也进行了部分重构,选择了前缀树来保存url映射
+ */
 @WebServlet("/*")
 @Slf4j
-
 @MyComponent
-public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
+public class DispatcherServlet extends HttpServlet implements ApplicationContextAware, EnvironmentAware {
 
-    private ApplicationContext myContext;
+    private ApplicationContext context;
+
+    private Environment environment;
 
     @MyAutoWired
     private TomCatHtmlResponse tomCatHtmlResponse;
@@ -61,26 +72,51 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
 
     private ExecutorService threadPool;
 
-    private Map<String, String> handlerMap;
+//    private PrefixTreeNode root =new  PrefixTreeNode();
+
+
+    @MyPostConstruct
+    private void initUrlMapping() {
+        for (String beanName : context.getBeanDefinitionNames()) {
+            Object bean = context.getBean(beanName);
+            Class<?> clazz = bean.getClass();
+            if (clazz.getName().contains(AutumnAopFactory.CGLIB_MARK)) {
+                clazz = clazz.getSuperclass();
+            }
+            if (clazz.isAnnotationPresent(Injector.class)) {
+                controllerInjectors.add((ControllerInjector) bean);
+            }
+            if (clazz.isAnnotationPresent(MyController.class)) {
+                String rootUrl = "";
+                MyRequestMapping classUrl = clazz.getAnnotation(MyRequestMapping.class);
+                if (classUrl != null) {
+                    rootUrl = classUrl.value();
+                }
+                for (Method method : clazz.getDeclaredMethods()) {
+                    MyRequestMapping myRequestMapping = method.getAnnotation(MyRequestMapping.class);
+                    if (myRequestMapping != null) {
+                        String url = myRequestMapping.value();
+                        if (url.startsWith("/")) {
+                            url = url.substring(1);
+                        } else {
+                            throw new RuntimeException("url格式错误");
+                        }
+//                        if("".equals(rootUrl)){
+//                            root.addChild(new PrefixTreeNode(url));
+//                        }
+                    }
+                }
+            }
+
+        }
+
+    }
 
 
     @Override
     public void init() throws ServletException {
         super.init();
         int threadNums = 10;
-        Set<Class<?>> temp = scanner.findAnnotatedClassesList(List.of(Injector.class), (String) myContext.get("packageUrl"));
-        for (Class<?> c : temp) {
-            try {
-                controllerInjectors.add((ControllerInjector) c.getConstructor().newInstance());
-            } catch (InstantiationException | IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException(e);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        handlerMap = (Map<String, String>) myContext.get("urlmapping");
         threadPool = Executors.newFixedThreadPool(threadNums);
     }
 
@@ -98,10 +134,10 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
         try {
             AutumnRequest autumnRequest = new HttpServletRequestAdapter(req);
             RequestContext.setRequest(autumnRequest);
-            AutumnResponse autumnResponse = new ServletResponseAdapter(resp,(TomCatHtmlResponse) myContext.getBean(TomCatHtmlResponse.class.getName()));
+            AutumnResponse autumnResponse = new ServletResponseAdapter(resp, (TomCatHtmlResponse) context.getBean(TomCatHtmlResponse.class.getName()));
             String url = autumnRequest.getUrl();
             String baseUrl = extractPath(url);
-            String methodFullName = handlerMap.get(baseUrl);
+            String methodFullName = null;
 
             if (methodFullName != null) {
                 executeHandler(autumnRequest, autumnResponse, resp, methodFullName);
@@ -143,7 +179,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
     }
 
     private void executeHandler(AutumnRequest req, AutumnResponse autumnResponse, HttpServletResponse resp, String handlerMethod) throws Exception {
-        Filter filter = (Filter) myContext.getBean(AnnotationScanner.initFilterChain().getName());
+        Filter filter = (Filter) context.getBean(AnnotationScanner.initFilterChain().getName());
         if (!filter.doChain(req, autumnResponse)) {
             int lastIndex = handlerMethod.lastIndexOf(".");
             String classurl = handlerMethod.substring(0, lastIndex);
@@ -186,7 +222,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
 
     private Tuple<Object, Class<?>> invokeMethod(String classurl, String methodName, AutumnRequest myRequest, AutumnResponse myResponse) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<?> clazz = Class.forName(classurl);
-        Object instance = myContext.getBean(clazz.getName());
+        Object instance = context.getBean(clazz.getName());
 
         if (classurl.contains("$$")) {
             clazz = clazz.getSuperclass();
@@ -272,8 +308,13 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware {
 
 
     @Override
-    public void setBeanFactory(ApplicationContext beanFactory) {
-        this.myContext = beanFactory;
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.context = applicationContext;
     }
 }
 

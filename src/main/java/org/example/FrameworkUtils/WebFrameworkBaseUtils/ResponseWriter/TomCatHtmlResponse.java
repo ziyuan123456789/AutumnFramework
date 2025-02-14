@@ -18,13 +18,14 @@ import java.nio.file.Path;
 @MyComponent
 @Slf4j
 public class TomCatHtmlResponse {
+
     @MyAutoWired
     private ResourceFinder resourceFinder;
 
     @MyAutoWired
     private CrossOriginBean crossOriginBean;
 
-    //xxx: 直接返回拼接的html文本
+    //直接返回拼接的html文本
     public void outPutMessageWriter(HttpServletResponse response, int statusCode, String responseText, javax.servlet.http.Cookie cookie) throws IOException {
         response.setStatus(statusCode);
         response.setContentType("text/html;charset=UTF-8");

@@ -15,6 +15,8 @@ import java.util.Set;
 @Slf4j
 public class ApplicationShutdownHook implements Runnable {
 
+    public static final String THREAD_NAME = "AutumnApplicationShutdownHookThread";
+
     private final Set<AnnotationConfigApplicationContext> contexts = new LinkedHashSet();
 
     private final ApplicationListener<?> listener = new ApplicationContextClosedListener();
@@ -22,7 +24,7 @@ public class ApplicationShutdownHook implements Runnable {
 
     @Override
     public void run() {
-        log.warn("准备关机了,ApplicationShutdownHook开始调用容器的Close方法");
+        log.warn("准备关机了,ApplicationShutdownHook开始调用容器的Close方法,让容器广播一下散伙通知");
         contexts.forEach(AnnotationConfigApplicationContext::close);
     }
 
@@ -35,7 +37,7 @@ public class ApplicationShutdownHook implements Runnable {
     }
 
     void addRuntimeShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(new Thread(this, "AutumnApplicationShutdownHook"));
+        Runtime.getRuntime().addShutdownHook(new Thread(this, THREAD_NAME));
     }
 
 

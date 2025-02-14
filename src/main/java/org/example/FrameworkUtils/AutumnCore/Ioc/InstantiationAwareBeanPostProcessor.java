@@ -1,13 +1,11 @@
 package org.example.FrameworkUtils.AutumnCore.Ioc;
 
-import org.springframework.lang.Nullable;
-
 /**
  * @author ziyuan
  * @since 2024.05
  */
 public interface InstantiationAwareBeanPostProcessor extends BeanPostProcessor {
-    @Nullable
+
     default Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) {
         return null;
     }

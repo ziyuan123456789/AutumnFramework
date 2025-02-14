@@ -15,7 +15,6 @@ import java.util.EventListener;
  * spring的面对这件事在AbstractApplicationEventMulticaster中采用了ResolvableType来解析泛型,真是高科技!
  */
 
-
 public interface ApplicationListener<E extends ApplicationEvent> extends EventListener {
     void onApplicationEvent(E event);
 

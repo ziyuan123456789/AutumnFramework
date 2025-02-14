@@ -13,6 +13,7 @@ import org.example.FrameworkUtils.AutumnCore.Bootstrap.DefaultBootstrapContext;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.AutumnApplicationRunListener;
 import org.example.FrameworkUtils.AutumnCore.Ioc.AnnotationConfigApplicationContext;
+import org.example.FrameworkUtils.AutumnCore.Ioc.AnnotationConfigServletWebServerApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationShutdownHook;
 import org.example.FrameworkUtils.AutumnCore.Ioc.FactoryBean;
@@ -129,7 +130,7 @@ public class AutumnApplication {
     private ApplicationContext createApplicationContext() {
 
         if (ApplicationContext.BASE_CONTEXT.equals(environment.getProperty("autumn.beanFactory"))) {
-            return new AnnotationConfigApplicationContext();
+            return new AnnotationConfigServletWebServerApplicationContext();
         } else {
             try {
                 Method getInstanceMethod = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext").getDeclaredMethod("getInstance");

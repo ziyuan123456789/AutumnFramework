@@ -15,8 +15,6 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
 
 import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author ziyuan
@@ -39,7 +37,7 @@ public class AutowiredAnnotationBeanPostProcessor implements InstantiationAwareB
                 ? bean.getClass().getSuperclass() : bean.getClass();
         for (Field field : clazz.getDeclaredFields()) {
             try {
-                //xxx:标记@auto wired进行对象/接口依赖注入
+                //标记@auto wired进行对象/接口依赖注入
                 if (field.isAnnotationPresent(MyAutoWired.class)) {
                     field.setAccessible(true);
                     if (field.get(bean) != null) {
@@ -122,33 +120,9 @@ public class AutowiredAnnotationBeanPostProcessor implements InstantiationAwareB
     private void injectDependencies(Object bean, Field field) throws IllegalAccessException {
         Class<?> fieldType = field.getType();
         if (fieldType.isInterface()) {
-            List<String> impls = beanFactory.getBeanDefinitionMap().entrySet().stream()
-                    .filter(entry -> fieldType.isAssignableFrom(entry.getValue().getBeanClass()))
-                    .map(Map.Entry::getKey)
-                    .toList();
-
-            if (impls.isEmpty()) {
-
-                field.setAccessible(true);
-                try {
-                    field.set(bean, beanFactory.getBean(fieldType.getName()));
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                    throw new RuntimeException("没有找到实现类" + fieldType.getName()
-                            + " -> " + impls);
-                }
-
-                return;
-            }
-
-            if (impls.size() > 1) {
-                throw new RuntimeException("怎么还有多个实现???" + fieldType.getName()
-                        + " -> " + impls);
-            }
-            Object dependency = beanFactory.getBean(impls.get(0));
+            Object dependency = beanFactory.getBean(fieldType);
             field.setAccessible(true);
             field.set(bean, dependency);
-
         } else {
             injectNormalDependency(bean, field);
         }

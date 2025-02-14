@@ -17,6 +17,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.PARAMETER,ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
+@MyComponent
 public @interface MyController {
     String value() default "";
 
