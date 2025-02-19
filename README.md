@@ -4,7 +4,7 @@
 ![Java17](https://img.shields.io/badge/JDK-17+-success.svg)
 ![License](https://img.shields.io/npm/l/mithril.svg)
 
-# AnnotationConfigApplicationContext完善中!Web部分完全失效,但是很快就会再次上线
+# AnnotationConfigServletWebServerApplicationContext容器构建中,AOP暂时失效
 
 ## 写在前面的话:
 

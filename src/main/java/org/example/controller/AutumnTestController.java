@@ -9,7 +9,6 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.Lazy;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestParam;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Value;
 import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.ContextClosedEvent;
@@ -105,7 +104,7 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
 
     //测试minebatis增删改查
     @MyRequestMapping("/crud")
-    public Object crudKing(@MyRequestParam("method") String method) {
+    public Object crudKing(String method) {
         return switch (method) {
             case "insert" -> updateMapper.insertUser("test", "0", "test", "收到");
             case "update" -> updateMapper.updateUserById("test1", "0", "test3", 1);
@@ -144,9 +143,9 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
 
     //测试方法级request功能
     @MyRequestMapping("/requestmethod")
-    public String requestTestWithMethodParma(AutumnRequest autumn) {
-        log.info("{}{}{}", autumn.getUrl(), autumn.getMethod(), autumn.getParameters());
-        return autumn.getUrl() + autumn.getMethod() + autumn.getParameters();
+    public String requestTestWithMethodParma(AutumnRequest res) {
+        log.info("{}{}{}", res.getUrl(), res.getMethod(), res.getParameters());
+        return res.getUrl() + res.getMethod() + res.getParameters();
     }
 
 
@@ -163,7 +162,7 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
     //测试参数注入
     @MyRequestMapping("/paramTest")
     public String paramTest(String name, String age) {
-        return name + age;
+        return name + "+" + age;
     }
 
     //循环依赖测试

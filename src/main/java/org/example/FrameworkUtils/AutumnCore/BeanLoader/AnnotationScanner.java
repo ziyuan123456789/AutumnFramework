@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAspect;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
@@ -18,7 +17,6 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -72,25 +70,6 @@ public class AnnotationScanner implements BeanFactoryAware {
         return annotatedClasses;
     }
 
-    //错误写法,过一阵弃用
-    public static  Class<?> initFilterChain() throws ClassNotFoundException {
-        Map<String, Object> iocContainer = beanFactory.getIocContainer();
-        for (Map.Entry<String, Object> entry : iocContainer.entrySet()) {
-            try {
-                Class<?> clazz = Class.forName(entry.getKey());
-                if (clazz.isAnnotationPresent(MyOrder.class)) {
-                    MyOrder myOrder = clazz.getAnnotation(MyOrder.class);
-                    if (myOrder.value() == 1) {
-                        return clazz;
-                    }
-                }
-            }catch (Exception e){
-
-            }
-
-        }
-        return null;
-    }
 
     public Set<Class<?>> findDefaultAnnotatedClassesList(String... basePackages) {
         Set<Class<?>> annotatedClasses = new HashSet<>();

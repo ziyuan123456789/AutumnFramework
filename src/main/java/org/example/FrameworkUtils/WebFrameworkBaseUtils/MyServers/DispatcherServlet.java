@@ -13,7 +13,9 @@ import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContextAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.EnvironmentAware;
+import org.example.FrameworkUtils.AutumnCore.compare.AnnotationInterfaceAwareOrderComparator;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
+import org.example.FrameworkUtils.DataStructure.MethodWrapper;
 import org.example.FrameworkUtils.DataStructure.Tuple;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector.ControllerInjector;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector.Injector;
@@ -35,6 +37,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -48,10 +51,10 @@ import java.util.concurrent.Executors;
  */
 
 /**
- * 这个类也进行了部分重构,选择了前缀树来保存url映射
+ 重构的风终究还是吹到了这里
  */
-@WebServlet("/*")
 @Slf4j
+@WebServlet("/*")
 @MyComponent
 public class DispatcherServlet extends HttpServlet implements ApplicationContextAware, EnvironmentAware {
 
@@ -70,10 +73,14 @@ public class DispatcherServlet extends HttpServlet implements ApplicationContext
 
     private Set<ControllerInjector> controllerInjectors = new HashSet<>();
 
+    private final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     private ExecutorService threadPool;
+    private final AnnotationInterfaceAwareOrderComparator comparator = AnnotationInterfaceAwareOrderComparator.getInstance();
+    private List<Filter> filters = new ArrayList<>();
+    private Map<String, MethodWrapper> urlMapping = new HashMap<>();
 
 //    private PrefixTreeNode root =new  PrefixTreeNode();
-
 
     @MyPostConstruct
     private void initUrlMapping() {
@@ -86,30 +93,31 @@ public class DispatcherServlet extends HttpServlet implements ApplicationContext
             if (clazz.isAnnotationPresent(Injector.class)) {
                 controllerInjectors.add((ControllerInjector) bean);
             }
+
+            if (Filter.class.isAssignableFrom(bean.getClass())) {
+                filters.add((Filter) bean);
+            }
             if (clazz.isAnnotationPresent(MyController.class)) {
-                String rootUrl = "";
-                MyRequestMapping classUrl = clazz.getAnnotation(MyRequestMapping.class);
-                if (classUrl != null) {
-                    rootUrl = classUrl.value();
-                }
+//                String rootUrl = "";
+//                MyRequestMapping classUrl = clazz.getAnnotation(MyRequestMapping.class);
+//                if (classUrl != null) {
+//                    rootUrl = classUrl.value();
+//                }
                 for (Method method : clazz.getDeclaredMethods()) {
                     MyRequestMapping myRequestMapping = method.getAnnotation(MyRequestMapping.class);
                     if (myRequestMapping != null) {
                         String url = myRequestMapping.value();
                         if (url.startsWith("/")) {
-                            url = url.substring(1);
+//                            url = url.substring(1);
+                            urlMapping.put(url, new MethodWrapper(method, beanName));
                         } else {
                             throw new RuntimeException("url格式错误");
                         }
-//                        if("".equals(rootUrl)){
-//                            root.addChild(new PrefixTreeNode(url));
-//                        }
                     }
                 }
             }
-
         }
-
+        comparator.compare(filters);
     }
 
 
@@ -137,15 +145,15 @@ public class DispatcherServlet extends HttpServlet implements ApplicationContext
             AutumnResponse autumnResponse = new ServletResponseAdapter(resp, (TomCatHtmlResponse) context.getBean(TomCatHtmlResponse.class.getName()));
             String url = autumnRequest.getUrl();
             String baseUrl = extractPath(url);
-            String methodFullName = null;
-
-            if (methodFullName != null) {
-                executeHandler(autumnRequest, autumnResponse, resp, methodFullName);
+            MethodWrapper methodWrapper = urlMapping.get(baseUrl);
+            if (methodWrapper != null) {
+                executeHandler(autumnRequest, autumnResponse, resp, methodWrapper);
             } else {
                 if (!resp.isCommitted()) {
-                    resp.sendRedirect("/404");
+                    resp.setStatus(404);
+//                    resp.sendRedirect("/404");
                 } else {
-                    log.error("Response already committed. Unable to redirect to /404.");
+                    log.error("重定向到/404");
                 }
             }
         } catch (Exception e) {
@@ -178,14 +186,12 @@ public class DispatcherServlet extends HttpServlet implements ApplicationContext
         log.error(message, e);
     }
 
-    private void executeHandler(AutumnRequest req, AutumnResponse autumnResponse, HttpServletResponse resp, String handlerMethod) throws Exception {
-        Filter filter = (Filter) context.getBean(AnnotationScanner.initFilterChain().getName());
-        if (!filter.doChain(req, autumnResponse)) {
-            int lastIndex = handlerMethod.lastIndexOf(".");
-            String classurl = handlerMethod.substring(0, lastIndex);
-            String methodName = handlerMethod.substring(lastIndex + 1);
+    private void executeHandler(AutumnRequest req, AutumnResponse res, HttpServletResponse resp, MethodWrapper handlerMethod) {
+        //这一块我还没想好是使用责任链还是注册表,先这样凑合写
+        Filter filter = filters.get(0);
+        if (!filter.doChain(req, res)) {
             try {
-                Tuple<Object, Class<?>> result = invokeMethod(classurl, methodName, req, autumnResponse);
+                Tuple<Object, Class<?>> result = invokeMethod(handlerMethod, req, res);
                 if (result.second.equals(void.class)) {
                     return;
                 }
@@ -198,7 +204,6 @@ public class DispatcherServlet extends HttpServlet implements ApplicationContext
                 }
             } catch (Exception e) {
                 log.error(e.getMessage(),e);
-//                log.error("处理请求时出现异常: {}", methodName, e);
                 Throwable cause = e.getCause();
                 String errorMessage;
                 if (cause != null) {
@@ -208,7 +213,7 @@ public class DispatcherServlet extends HttpServlet implements ApplicationContext
                 }
 
                 try {
-                    tomCatHtmlResponse.outPutErrorMessageWriter(resp, 500, errorMessage, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), null);
+                    tomCatHtmlResponse.outPutErrorMessageWriter(resp, 500, errorMessage, format.format(new Date()), null);
                 } catch (IOException ioException) {
                     log.error("发送错误响应时出现IO异常", ioException);
                 }
@@ -220,43 +225,24 @@ public class DispatcherServlet extends HttpServlet implements ApplicationContext
     }
 
 
-    private Tuple<Object, Class<?>> invokeMethod(String classurl, String methodName, AutumnRequest myRequest, AutumnResponse myResponse) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Class<?> clazz = Class.forName(classurl);
-        Object instance = context.getBean(clazz.getName());
-
-        if (classurl.contains("$$")) {
-            clazz = clazz.getSuperclass();
-        }
-
-        Method targetMethod = null;
+    private Tuple<Object, Class<?>> invokeMethod(MethodWrapper wrapper, AutumnRequest myRequest, AutumnResponse myResponse) throws InvocationTargetException, IllegalAccessException {
         List<Object> objectList = new ArrayList<>();
-
-        for (Method method : clazz.getDeclaredMethods()) {
-            if (method.getName().equals(methodName)) {
-                targetMethod = method;
-                Set<Integer> processedIndices = new HashSet<>();
-                for (ControllerInjector injector : controllerInjectors) {
-                    injector.inject(method, instance, objectList, processedIndices, myRequest, myResponse);
-                }
-                Parameter[] parameters = method.getParameters();
-                for (int i = 0; i < parameters.length; i++) {
-                    if (!processedIndices.contains(i)) {
-                        objectList.add(null);
-                    }
-                }
-
-                break;
+        Method method = wrapper.method();
+        Object instance = context.getBean(wrapper.beanName());
+        Set<Integer> processedIndices = new HashSet<>();
+        for (ControllerInjector injector : controllerInjectors) {
+            injector.inject(method, instance, objectList, processedIndices, myRequest, myResponse);
+        }
+        Parameter[] parameters = method.getParameters();
+        for (int i = 0; i < parameters.length; i++) {
+            if (!processedIndices.contains(i)) {
+                objectList.add(null);
             }
         }
-
-        if (targetMethod == null) {
-            throw new NoSuchMethodException("为啥方法不存在呢? " + methodName);
-        }
-
-        log.debug(String.valueOf(targetMethod));
+        log.debug(String.valueOf(method));
         log.debug(Arrays.toString(objectList.toArray()));
         log.debug(String.valueOf(objectList.size()));
-        return new Tuple<>(targetMethod.invoke(instance, objectList.toArray()), targetMethod.getReturnType());
+        return new Tuple<>(method.invoke(instance, objectList.toArray()), method.getReturnType());
     }
 
 

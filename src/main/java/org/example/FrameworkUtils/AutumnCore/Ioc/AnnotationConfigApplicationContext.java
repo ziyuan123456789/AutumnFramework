@@ -453,7 +453,6 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
                     log.error(beanName);
                     throw new BeanCreationException();
                 } catch (Exception e) {
-                    log.error(e.getMessage(), e);
                     throw new RuntimeException(e);
                 }
             }
@@ -473,7 +472,6 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
                 beanInstance = getObjectForBeanInstance(sharedInstance, name, beanName);
 //                }
             } catch (Exception ignored) {
-                log.error(ignored.getMessage(), ignored);
                 throw new RuntimeException(ignored);
             }
         }

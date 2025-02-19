@@ -36,10 +36,16 @@ public class BaseInjector implements ControllerInjector {
             } else {
                 Object paramValue = useUrlGetParam(paramName, myRequest);
                 if (paramValue != null) {
-                    methodParams.add(paramValue);
-                    processedIndices.add(i);
+                    if (paramName.equals(parameter.getName()) && checkParamType(paramType)) {
+                        methodParams.add(paramValue);
+                        processedIndices.add(i);
+                    }
                 }
             }
         }
+    }
+
+    private Boolean checkParamType(Class paramType) {
+        return paramType.equals(String.class) || paramType.equals(Integer.class) || paramType.equals(Long.class) || paramType.equals(Double.class) || paramType.equals(Float.class) || paramType.equals(Boolean.class);
     }
 }

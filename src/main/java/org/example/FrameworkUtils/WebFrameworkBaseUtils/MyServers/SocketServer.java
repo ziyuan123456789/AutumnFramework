@@ -204,7 +204,7 @@ public class SocketServer implements MyServer, BeanFactoryAware {
                 str = (String) sharedMap.get(str);
                 int lastIndex = str.lastIndexOf(".");
                 String classurl = str.substring(0, lastIndex);
-                Filter filter = (Filter) beanFactory.getBean(annotationScanner.initFilterChain().getName());
+                Filter filter = (Filter) beanFactory.getBean("");
                 MyResponse myResponse =new MyResponse(socketServerHtmlResponse, clientSocket);
                 AutumnRequest autumnRequest = new SocketRequestAdapter(myRequest);
                 if (!filter.doChain(autumnRequest, myResponse)) {

@@ -3,7 +3,7 @@ package org.example.Interceptor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
+import org.example.FrameworkUtils.AutumnCore.Ioc.Ordered;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.Filter;
@@ -13,8 +13,8 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.Filter;
  */
 @Slf4j
 @MyComponent
-@MyOrder(1)
-public class UrlFilter implements Filter {
+public class UrlFilter implements Filter, Ordered {
+
     @MyAutoWired
     IndexFilter indexFilter;
 
@@ -28,5 +28,10 @@ public class UrlFilter implements Filter {
             log.info("一级过滤链放行");
             return false;
         }
+    }
+
+    @Override
+    public int getOrder() {
+        return 100;
     }
 }
