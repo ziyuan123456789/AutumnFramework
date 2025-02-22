@@ -53,7 +53,7 @@ public class CacheAopProxyHandler implements AutumnAopFactory, Ordered {
             }
         }
         log.info("缓存失效: {} 准备invoke目标方法", cacheKey);
-        Object result = proxy.invokeSuper(obj, args);
+        Object result = method.invoke(obj, args);
         cacheManager.addCache(cacheKey, result);
         log.info("缓存更新 {}", cacheKey);
         return result;

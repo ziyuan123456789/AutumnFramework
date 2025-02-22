@@ -525,10 +525,10 @@ public class MyContext implements ApplicationContext {
     }
 
 
-    @Override
-    public Map<String, Object> getIocContainer() {
-        return singletonObjects;
-    }
+//    @Override
+//    public Map<String, Object> getIocContainer() {
+//        return singletonObjects;
+//    }
 
     @Override
     public Properties getProperties() {

@@ -31,9 +31,6 @@ public interface ApplicationContext extends BeanFactory, Environment, SingletonB
 
     Object get(String key);
 
-
-    Map<String, Object> getIocContainer();
-
     Properties getProperties();
 
     List<Object> getBeansByAnnotation(Class<? extends Annotation> annotationClass);

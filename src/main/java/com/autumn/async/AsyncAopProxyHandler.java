@@ -51,7 +51,7 @@ public class AsyncAopProxyHandler implements AutumnAopFactory, Ordered {
         CompletableFuture<Object> future = new CompletableFuture<>();
         executorService.submit(() -> {
             try {
-                Object result = proxy.invokeSuper(obj, args);
+                Object result = method.invoke(obj, args);
                 future.complete(result);
             } catch (Throwable throwable) {
                 log.error("异步切面方法执行异常", throwable);

@@ -3,18 +3,22 @@ package org.example.FrameworkUtils.AutumnCore.Aop;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
+import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.EnvironmentAware;
-import org.example.FrameworkUtils.AutumnCore.Ioc.InstantiationAwareBeanPostProcessor;
+import org.example.FrameworkUtils.AutumnCore.Ioc.SmartInstantiationAwareBeanPostProcessor;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
-import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.springframework.cglib.core.DebuggingClassWriter;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.MethodInterceptor;
+import org.springframework.cglib.proxy.MethodProxy;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author ziyuan
@@ -24,7 +28,7 @@ import java.util.List;
 @Slf4j
 @MyComponent
 @MyOrder(1)
-public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, InstantiationAwareBeanPostProcessor, BeanFactoryAware, EnvironmentAware {
+public class MyAnnotationAwareAspectJAutoProxyCreator implements SmartInstantiationAwareBeanPostProcessor, BeanFactoryAware, EnvironmentAware {
 
     private ApplicationContext beanFactory;
 
@@ -33,6 +37,10 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
      * 所以我们需要实现EnvironmentAware/BeanFactoryAware接口来手动设置依赖
      */
     private boolean cglibClassOutPut;
+
+    private Set<String> factoriesName = new HashSet<>();
+
+    private List<AutumnAopFactory> factories = new ArrayList<>();
 
     private List<AutumnAopFactory> shouldCreateProxy(List<AutumnAopFactory> factories, Class<?> beanClass) {
         List<AutumnAopFactory> neededFactories = new ArrayList<>();
@@ -45,78 +53,167 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
     }
 
 
+//    private <T> T create(List<AutumnAopFactory> factories, Class<T> beanClass, Object currentResult) {
+//        saveGeneratedCGlibProxyFiles();
+//        Enhancer enhancer = new Enhancer();
+//        enhancer.setSuperclass(currentResult != null ? currentResult.getClass() : beanClass);
+//
+//        //看看检查一下是否需要代理
+//        boolean shouldProxy = factories.stream()
+//                .anyMatch(factory -> factory.shouldNeedAop(beanClass, beanFactory));
+//
+//        if (!shouldProxy) {
+//            return (T) currentResult;
+//        }
+//
+//        enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
+//            Object result = null;
+//            boolean methodInvoked = false;
+//
+//            for (AutumnAopFactory factory : factories) {
+//                if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
+//                    try {
+//                        factory.doBefore(obj, method, args);
+//                    } catch (Exception e) {
+//                        factory.doThrowing(obj, method, args, e);
+//                        return null;
+//                    }
+//                }
+//            }
+//
+//            for (AutumnAopFactory factory : factories) {
+//                if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
+//                    try {
+//                        result = factory.intercept(obj, method, args, proxy);
+//                        if (result != null) {
+//                            methodInvoked = true;
+//                            break;
+//                        }
+//                    } catch (Exception e) {
+//                        factory.doThrowing(obj, method, args, e);
+//                    }
+//                }
+//            }
+//
+//            //如果没有任何拦截器返回非空结果那么调用实际方法
+//            if (!methodInvoked) {
+//                try {
+//                    result = proxy.invokeSuper(obj, args);
+//                } catch (Exception e) {
+//                    Exception exception = null;
+//                    for (AutumnAopFactory factory : factories) {
+//                        if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
+//                            factory.doThrowing(obj, method, args, e);
+//                            exception = e;
+//                        }
+//                    }
+//                    if (exception != null) {
+//                        throw exception;
+//                    }
+//                }
+//
+//            }
+//
+//            for (AutumnAopFactory factory : factories) {
+//                if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
+//                    try {
+//                        factory.doAfter(obj, method, args);
+//                    } catch (Exception e) {
+//                        factory.doThrowing(obj, method, args, e);
+//                    }
+//                }
+//            }
+//
+//            return result;
+//        });
+//
+//        if (currentResult != null) {
+//            enhancer.setClassLoader(currentResult.getClass().getClassLoader());
+//        }
+//
+//        T proxy = (T) enhancer.create();
+//
+//        // 在代理对象中保持对目标对象的引用
+//        if (currentResult != null) {
+//            proxy = (T) enhancer.create();
+//        }
+//
+//        return proxy;
+//    }
+
     private <T> T create(List<AutumnAopFactory> factories, Class<T> beanClass, Object currentResult) {
         saveGeneratedCGlibProxyFiles();
         Enhancer enhancer = new Enhancer();
-        enhancer.setSuperclass(currentResult != null ? currentResult.getClass() : beanClass);
 
-        //看看检查一下是否需要代理
+        enhancer.setSuperclass(currentResult != null ? currentResult.getClass() : beanClass);
         boolean shouldProxy = factories.stream()
                 .anyMatch(factory -> factory.shouldNeedAop(beanClass, beanFactory));
-
         if (!shouldProxy) {
             return (T) currentResult;
         }
 
-        enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
-            Object result = null;
-            boolean methodInvoked = false;
+        enhancer.setCallback(new MethodInterceptor() {
+            private final Object target = currentResult;
 
-            for (AutumnAopFactory factory : factories) {
-                if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
-                    try {
-                        factory.doBefore(obj, method, args);
-                    } catch (Exception e) {
-                        factory.doThrowing(obj, method, args, e);
-                        return null;
-                    }
-                }
-            }
+            @Override
+            public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
+                Object result = null;
+                boolean methodInvoked = false;
 
-            for (AutumnAopFactory factory : factories) {
-                if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
-                    try {
-                        result = factory.intercept(obj, method, args, proxy);
-                        if (result != null) {
-                            methodInvoked = true;
-                            break;
-                        }
-                    } catch (Exception e) {
-                        factory.doThrowing(obj, method, args, e);
-                    }
-                }
-            }
-
-            //如果没有任何拦截器返回非空结果那么调用实际方法
-            if (!methodInvoked) {
-                try {
-                    result = proxy.invokeSuper(obj, args);
-                } catch (Exception e) {
-                    Exception exception = null;
-                    for (AutumnAopFactory factory : factories) {
-                        if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
-                            factory.doThrowing(obj, method, args, e);
-                            exception = e;
+                for (AutumnAopFactory factory : factories) {
+                    if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
+                        try {
+                            factory.doBefore(target, method, args);
+                        } catch (Exception e) {
+                            factory.doThrowing(target, method, args, e);
+                            return null;
                         }
                     }
-                    if (exception != null) {
-                        throw exception;
+                }
+
+                for (AutumnAopFactory factory : factories) {
+                    if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
+                        try {
+                            result = factory.intercept(target, method, args, methodProxy);
+                            if (result != null) {
+                                methodInvoked = true;
+                                break;
+                            }
+                        } catch (Exception e) {
+                            factory.doThrowing(target, method, args, e);
+                        }
                     }
                 }
 
-            }
-
-            for (AutumnAopFactory factory : factories) {
-                if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
+                if (!methodInvoked) {
                     try {
-                        factory.doAfter(obj, method, args);
+                        result = method.invoke(target, args);
                     } catch (Exception e) {
-                        factory.doThrowing(obj, method, args, e);
+                        Exception exception = null;
+                        for (AutumnAopFactory factory : factories) {
+                            if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
+                                factory.doThrowing(target, method, args, e);
+                                exception = e;
+                            }
+                        }
+                        if (exception != null) {
+                            throw exception;
+                        }
                     }
                 }
-            }
 
-            return result;
+                for (AutumnAopFactory factory : factories) {
+                    if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
+                        try {
+                            factory.doAfter(target, method, args);
+                        } catch (Exception e) {
+                            factory.doThrowing(target, method, args, e);
+                        }
+                    }
+                }
+
+                return result;
+            }
         });
 
         if (currentResult != null) {
@@ -124,30 +221,8 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
         }
 
         return (T) enhancer.create();
-
     }
 
-
-    @Override
-    public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName, Object currentResult) {
-        List<AutumnAopFactory> neededFactories = shouldCreateProxy(factories, beanClass);
-        if (neededFactories.size() > 1) {
-            currentResult = create(neededFactories, beanClass, currentResult);
-            log.warn("成功创建{} AOP执行链,如果你没有处理好invokeSuper的条件那么很可能会出现问题", beanClass.getName());
-        }
-        return currentResult;
-    }
-
-
-    @Override
-    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeanCreationException {
-        return bean;
-    }
-
-    @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeanCreationException {
-        return bean;
-    }
 
     @Override
     public void setBeanFactory(ApplicationContext beanFactory) {
@@ -173,4 +248,29 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, Insta
     public void setEnvironment(Environment environment) {
         this.cglibClassOutPut = Boolean.parseBoolean(environment.getProperty("autumn.debug.cglibClassOutPut"));
     }
+
+    @Override
+    public Object getEarlyBeanReference(Object bean, String beanName) {
+        for (MyBeanDefinition mb : beanFactory.getBeanDefinitionMap().values()) {
+            if (factoriesName.contains(mb.getName())) {
+                continue;
+            }
+            factoriesName.add(mb.getName());
+            if (AutumnAopFactory.class.isAssignableFrom(mb.getBeanClass())) {
+                factories.add((AutumnAopFactory) beanFactory.getBean(mb.getName()));
+            }
+        }
+        List<AutumnAopFactory> neededFactories = shouldCreateProxy(factories, bean.getClass());
+        if (!neededFactories.isEmpty()) {
+            bean = create(neededFactories, bean.getClass(), bean);
+            log.warn("成功创建{} AOP执行链,如果你没有处理好invokeSuper的条件那么很可能会出现问题", beanName);
+        }
+        return bean;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) {
+        return getEarlyBeanReference(bean, beanName);
+    }
+
 }

@@ -2,14 +2,10 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyPostConstruct;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
-import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
+import org.example.FrameworkUtils.AutumnCore.Annotation.*;
 import org.example.FrameworkUtils.AutumnCore.Aop.RequestContext;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
+import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContextAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.EnvironmentAware;
@@ -34,14 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -51,32 +40,25 @@ import java.util.concurrent.Executors;
  */
 
 /**
- 重构的风终究还是吹到了这里
+ * 重构的风终究还是吹到了这里
  */
 @Slf4j
 @WebServlet("/*")
 @MyComponent
 public class DispatcherServlet extends HttpServlet implements ApplicationContextAware, EnvironmentAware {
 
+    private final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private final AnnotationInterfaceAwareOrderComparator comparator = AnnotationInterfaceAwareOrderComparator.getInstance();
     private ApplicationContext context;
-
     private Environment environment;
-
     @MyAutoWired
     private TomCatHtmlResponse tomCatHtmlResponse;
-
     @MyAutoWired
     private JsonFormatter jsonFormatter;
-
     @MyAutoWired
     private AnnotationScanner scanner;
-
     private Set<ControllerInjector> controllerInjectors = new HashSet<>();
-
-    private final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
     private ExecutorService threadPool;
-    private final AnnotationInterfaceAwareOrderComparator comparator = AnnotationInterfaceAwareOrderComparator.getInstance();
     private List<Filter> filters = new ArrayList<>();
     private Map<String, MethodWrapper> urlMapping = new HashMap<>();
 
@@ -84,32 +66,23 @@ public class DispatcherServlet extends HttpServlet implements ApplicationContext
 
     @MyPostConstruct
     private void initUrlMapping() {
-        for (String beanName : context.getBeanDefinitionNames()) {
-            Object bean = context.getBean(beanName);
-            Class<?> clazz = bean.getClass();
-            if (clazz.getName().contains(AutumnAopFactory.CGLIB_MARK)) {
-                clazz = clazz.getSuperclass();
-            }
+        for (MyBeanDefinition mb : context.getBeanDefinitionMap().values()) {
+            Class<?> clazz = mb.getBeanClass();
             if (clazz.isAnnotationPresent(Injector.class)) {
-                controllerInjectors.add((ControllerInjector) bean);
+                controllerInjectors.add((ControllerInjector) context.getBean(mb.getName()));
             }
 
-            if (Filter.class.isAssignableFrom(bean.getClass())) {
-                filters.add((Filter) bean);
+            if (Filter.class.isAssignableFrom(clazz)) {
+                filters.add((Filter) context.getBean(mb.getName()));
             }
             if (clazz.isAnnotationPresent(MyController.class)) {
-//                String rootUrl = "";
-//                MyRequestMapping classUrl = clazz.getAnnotation(MyRequestMapping.class);
-//                if (classUrl != null) {
-//                    rootUrl = classUrl.value();
-//                }
                 for (Method method : clazz.getDeclaredMethods()) {
                     MyRequestMapping myRequestMapping = method.getAnnotation(MyRequestMapping.class);
                     if (myRequestMapping != null) {
                         String url = myRequestMapping.value();
                         if (url.startsWith("/")) {
 //                            url = url.substring(1);
-                            urlMapping.put(url, new MethodWrapper(method, beanName));
+                            urlMapping.put(url, new MethodWrapper(method, mb.getName()));
                         } else {
                             throw new RuntimeException("url格式错误");
                         }
@@ -163,9 +136,9 @@ public class DispatcherServlet extends HttpServlet implements ApplicationContext
             }
         }
     }
+
     @Override
-    public void destroy()
-    {
+    public void destroy() {
         RequestContext.clear();
         log.info("请求对象生命周期结束");
     }
@@ -203,7 +176,7 @@ public class DispatcherServlet extends HttpServlet implements ApplicationContext
                     resp.setStatus(HttpServletResponse.SC_OK);
                 }
             } catch (Exception e) {
-                log.error(e.getMessage(),e);
+                log.error(e.getMessage(), e);
                 Throwable cause = e.getCause();
                 String errorMessage;
                 if (cause != null) {
@@ -250,7 +223,6 @@ public class DispatcherServlet extends HttpServlet implements ApplicationContext
         Map<String, String> param = myRequest.getParameters();
         return param.get(paramName);
     }
-
 
 
     //xxx:依照方法的返回值来确定选择哪种返回器

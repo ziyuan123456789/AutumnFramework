@@ -4,52 +4,28 @@
 ![Java17](https://img.shields.io/badge/JDK-17+-success.svg)
 ![License](https://img.shields.io/npm/l/mithril.svg)
 
-# AnnotationConfigServletWebServerApplicationContext容器构建中,AOP暂时失效
 
 ## 写在前面的话:
-
 - `AutumnFramework模仿了SpringBoot的部分基本特性,但在底层实现上却大有不同,因此仅作为一个兴趣驱动的展示项目`
 - 框架主体是作者在大三实习的时候完成的,所以`不是一个成熟的项目,不会进行过多防御性编程`,源码中只会助力于功能的实现而不会对过于复杂的情况进行额外处理
 - 从0开始手写React的计划也开始了,已实现一版简单的`React Fiber + Hooks`(已在项目中使用)
 
+
 ## 推荐:
 - [MiniReact:简单的React仿写](https://github.com/ziyuan123456789/mini-react)
 
-## 重构通知:
-
-由于实现了复合注解以及自动装配,一切SpringBoot需要引入Starter的功能均会被剥离出去,成为单独的组件,使用AutumnSpi等机制自动引入
-
-目前已经实现的Starter如下:
-
-- MineBatis
-- Async异步处理
-- Cache
-- Transaction
-
-已拓展但未使用Spi/Import机制的如下:
-
-- Swagger
-- Web
-- ControllerInject
-
-已经在设计的如下:
-
-- ControllerAdvice
-
 
 ## 近期准备更新的内容:
-- 对IOC容器与启动类进行重构,再次全部重写,按照SpringBoot的初始化方式进行启动
 - Controller直接注入对象
 - 尝试手写TomCat 命名为Jerry mouse
+- ControllerAdvice
 
 ## 注意事项:
 
 - 现在框架Web环境有两种分别为SocketServer与TomCat,默认是SocketServer,如果你想用内嵌的TomCat请自行找到切换的开关
 - 目前仅支持调用字段的无参默认构创建实例,原则上来说构造器注入也实现了,但问题太多难以维护,不在代码中启用.另外构造器注入会让三级缓存部分失效,因为解决循环依赖的核心是
-  `创建对象`与`注入对象`分离,但构造器让这一步`不可分割`,只能使用`代理模式`这种丑陋的方式解决
-- 框架只负责对框架注解标记的类以及自动装配机制引入的类进行管理,用户可编写自己的后置处理器干预BeanDefinition的生产
+  `创建对象`与`注入对象`分离,但构造器让这一步`不可分割`,使用`代理模式`这种丑陋的方式解决又不太好,`Setter`注入感觉又多此一举
 - 如果你希望使用自动装配机制则需要在主类上加入`@EnableAutoConfiguration`或者`@AutumnBootApplication`来告知框架进行自动装配
-- 如果想实现Mybatis那样`扫描自定义注解`扫描为组件,则需要声明为postProcessBeanDefinitionRegistry
 - MineBatis现在只可以注册XmlMapper,注解注册的方式日后添加
 - 想使用注解处理器先执行`mvn install:install-file -Dfile=src/main/resources/libs/AutumnAnP.jar -DgroupId=org.AutumnAP -DartifactId=AutumnAnP -Dversion=1.0-SNAPSHOT -Dpackaging=jar `再执行`mvn clean install`
 
@@ -57,34 +33,8 @@
 - 现在框架加入了一个`编译期`注解`@EnableAutumnFramework`,你只需要在主类上加入它然后一行代码也不用写,留一个空的main方法程序就会开始执行,想试试的改下pom文件开启
 
 ## 项目描述:
-不依赖TomCat,Servlet等技术实现的网络服务框架,参照了Mybatis,SpringMvc等设计思想从0手写了一个基于注解的仿SpringBoot框架
+- 参照了Mybatis,SpringMvc等设计思想从0手写了一个基于注解的仿SpringBoot框架
 
-
-## Bean的生命周期
-
-```
-1. Bean定义阶段：
-   组件扫描与Bean定义注册：自动检测并注册带注解的组件
-   处理BeanDefinitionRegistryPostProcessor和BeanFactoryPostProcessor：修改Bean定义或注册表的结构
-2. 实例化前处理：
-   doInstantiationAwareBeanPostProcessorBefore: 允许在实际实例化前修改或代理Bean
-3. 实例化后处理：
-   doInstantiationAwareBeanPostProcessorAfter: 在实例化后决定是否继续Bean的处理流程
-4. BeanFactory/Name Aware处理：
-   BeanFactoryAware: 在依赖注入前为Bean注入BeanFactory
-5. 依赖注入：
-   autowireBeanProperties: 自动装配Bean的依赖属性
-6. 初始化前处理：
-   doBeanPostProcessorsBefore: 在自定义初始化方法之前对Bean进行处理
-7. 自定义初始化方法：
-   执行初始化方法：执行Bean的自定义初始化方法
-8. 初始化后处理：
-   doBeanPostProcessorsAfter: 在自定义初始化方法之后进行处理
-9. 循环依赖检测：
-   循环依赖检测：确保没有循环依赖存在
-10. 销毁方法的处理：
-   销毁方法：在应用关闭时调用Bean的销毁方法
-```
 
 ## 代码示范 启动类
 
@@ -92,7 +42,6 @@
 @EnableAutumnAsync
 @EnableAutumnCache
 @EnableAutumnTransactional
-@EnableJpaRepositories
 @AutumnBootApplication
 @Slf4j
 public class Main {
@@ -318,8 +267,8 @@ public class AutumnTestController implements BeanFactoryAware {
 ```java
 @Slf4j
 @MyComponent
-@MyOrder(1)
-public class UrlFilter implements Filter {
+public class UrlFilter implements Filter, Ordered {
+
   @MyAutoWired
   IndexFilter indexFilter;
 
@@ -334,7 +283,13 @@ public class UrlFilter implements Filter {
       return false;
     }
   }
+
+  @Override
+  public int getOrder() {
+    return 100;
+  }
 }
+
 ```
 ### 整合Minebatis
 ```java
@@ -405,21 +360,6 @@ public interface UpdateMapper {
     DELETE FROM user WHERE UserId = #{userId}
   </delete>
 </mapper>
-```
-如果你不想自动接管Mapper的生成,你也可以使用@Bean的方式注册一个SqlSession自己手动管理
-```java
-@AutumnBean
-public SqlSession getMapper() {
-    InputStream inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
-    SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-    return sqlSessionFactory.openSession();
-}
-
-@MyRequestMapping("/getall")
-public String getAll() {
-    UserMapper userMapperBean=sqlSession.getMapper(UserMapper.class);
-    return userMapperBean.getAllUser(0).toString();
-}
 ```
 
 ### 事务
@@ -755,34 +695,14 @@ public @interface EnableAutumnAsync {
 public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, PriorityOrdered{}
 ```
 
-#### 利用这个后置处理器,我们可以自定义更改Bean名称,如果你喜欢你可以直接把所有的BeanDefinition都删了
-```java
-@Slf4j
-public class JokePostProcessor implements BeanFactoryPostProcessor {
-
-    @Override
-    public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
-        log.info("{}依靠自动装配加载，现在要干预BeanDefinition的生成", this.getClass().getSimpleName());
-        MyBeanDefinition bydBean = null;
-        if (registry.containsBeanDefinition("BYD")) {
-            bydBean = registry.getBeanDefinition("BYD");
-        }
-        if (bydBean != null) {
-            bydBean.setName("postProcessChange");
-            registry.removeBeanDefinition("BYD");
-            registry.registerBeanDefinition("postProcessChange", bydBean);
-        }
-    }
-}
-```
 #### 利用这个后置处理器,我们可以扫描Mapper把他们也纳入容器,同时生成代理类
 ```java
 @Slf4j
 @Import({SqlSessionFactoryBean.class, JokePostProcessor.class})
-public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, PriorityOrdered, EarlyEnvironmentAware, EarlyBeanFactoryAware {
+public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, EnvironmentAware, PriorityOrdered, BeanFactoryAware {
 
 
-  private AutumnBeanFactory beanFactory;
+  private ApplicationContext beanFactory;
 
   private Environment environment;
 
@@ -802,7 +722,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
   public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) {
     return () -> {
       try {
-        SqlSession sqlSession = (SqlSession) beanFactory.getBean(SqlSession.class.getName());
+        SqlSession sqlSession= (SqlSession) beanFactory.getBean(SqlSession.class.getName());
         return sqlSession.getMapper(beanClass);
       } catch (Exception e) {
         log.error("创建MapperBean实例失败", e);
@@ -813,8 +733,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
 
 
   @Override
-  public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
-    log.info("{}开始加载,提前干预BeanDefinition的生成", this.getClass().getSimpleName());
+  public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner,BeanDefinitionRegistry registry) throws Exception {
     String minebatisXml = environment.getProperty("MineBatis-configXML");
     InputStream inputStream;
     if (minebatisXml == null || minebatisXml.isEmpty()) {
@@ -827,13 +746,16 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
     Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
     for (Class<?> clazz : classSet) {
       MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
+      log.warn("{}包装Mapper:{}", this.getClass().getSimpleName(), clazz.getName());
       myBeanDefinition.setName(clazz.getName());
-      myBeanDefinition.setBeanClass(clazz);
-      myBeanDefinition.setStarter(true);
-      myBeanDefinition.setStarterMethod(createFactoryMethod(clazz));
+      myBeanDefinition.setBeanClass(MapperFactoryBean.class);
+      myBeanDefinition.setConstructor(MapperFactoryBean.class.getDeclaredConstructor(Class.class));
+      Object[] parameters = new Object[]{clazz};
+      myBeanDefinition.setParameters(parameters);
       registry.registerBeanDefinition(clazz.getName(), myBeanDefinition);
     }
-    AnnotationScanner.findAnnotatedClasses((String) beanFactory.get("packageUrl"), TypeHandler.class).forEach(typeHandler -> {
+
+    AnnotationScanner.findAnnotatedClasses(environment.getProperty(Environment.GET_MAIN_PACKAGE), TypeHandler.class).forEach(typeHandler -> {
       MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
       myBeanDefinition.setName(typeHandler.getName());
       myBeanDefinition.setBeanClass(typeHandler);
@@ -847,171 +769,19 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, Pr
   }
 
 
+
+  @Override
+  public void setBeanFactory(ApplicationContext beanFactory) {
+    this.beanFactory = beanFactory;
+  }
+
   @Override
   public void setEnvironment(Environment environment) {
     this.environment = environment;
   }
-
-  @Override
-  public void setBeanFactory(AutumnBeanFactory beanFactory) {
-    this.beanFactory = beanFactory;
-  }
-}
-
-```
-
-### InstantiationAwareBeanPostProcessor 在Bean被反射创建前后提供拓展 这个处理器用于Aop的底层实现,直接替换之前的实现类为代理类
-```java
-@MyComponent
-@Slf4j
-public class MyAnnotationAwareAspectJAutoProxyCreator implements CgLibAop, InstantiationAwareBeanPostProcessor, BeanFactoryAware {
-
-  private AutumnBeanFactory beanFactory;
-  @Value("autumn.debug.cglibClassOutPut")
-  boolean cglibClassOutPut;
-
-
-  private List<AutumnAopFactory> shouldCreateProxy(List<AutumnAopFactory> factories, Class<?> beanClass) {
-    List<AutumnAopFactory> neededFactories = new ArrayList<>();
-    for (AutumnAopFactory factory : factories) {
-      if (factory.shouldNeedAop(beanClass, beanFactory)) {
-        neededFactories.add(factory);
-      }
-    }
-    return neededFactories;
-  }
-
-
-  public <T> T create(List<AutumnAopFactory> factories, Class<T> beanClass, Object currentResult) {
-    saveGeneratedCGlibProxyFiles();
-    Enhancer enhancer = new Enhancer();
-    enhancer.setSuperclass(currentResult != null ? currentResult.getClass() : beanClass);
-
-    //看看检查一下是否需要代理
-    boolean shouldProxy = factories.stream()
-            .anyMatch(factory -> factory.shouldNeedAop(beanClass, beanFactory));
-
-    if (!shouldProxy) {
-      return (T) currentResult;
-    }
-
-    enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
-      Object result = null;
-      boolean methodInvoked = false;
-
-      for (AutumnAopFactory factory : factories) {
-        if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
-          try {
-            factory.doBefore(obj, method, args);
-          } catch (Exception e) {
-            factory.doThrowing(obj, method, args, e);
-            return null;
-          }
-        }
-      }
-
-      for (AutumnAopFactory factory : factories) {
-        if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
-          try {
-            result = factory.intercept(obj, method, args, proxy);
-            if (result != null) {
-              methodInvoked = true;
-              break;
-            }
-          } catch (Exception e) {
-            factory.doThrowing(obj, method, args, e);
-          }
-        }
-      }
-
-      //如果没有任何拦截器返回非空结果那么调用实际方法
-      if (!methodInvoked) {
-        try {
-          result = proxy.invokeSuper(obj, args);
-        } catch (Exception e) {
-          Exception exception=null;
-          for (AutumnAopFactory factory : factories) {
-            if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
-              factory.doThrowing(obj, method, args, e);
-              exception=e;
-            }
-          }
-          if(exception!=null){
-            throw exception;
-          }
-        }
-
-      }
-
-      for (AutumnAopFactory factory : factories) {
-        if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
-          try {
-            factory.doAfter(obj, method, args);
-          } catch (Exception e) {
-            factory.doThrowing(obj, method, args, e);
-          }
-        }
-      }
-
-      return result;
-    });
-
-    if (currentResult != null) {
-      enhancer.setClassLoader(currentResult.getClass().getClassLoader());
-    }
-
-    return (T) enhancer.create();
-
-  }
-
-
-  @Override
-  public Object postProcessBeforeInstantiation(List<AutumnAopFactory> factories, Class<?> beanClass, String beanName, Object currentResult) {
-    List<AutumnAopFactory> neededFactories = shouldCreateProxy(factories, beanClass);
-    if (!neededFactories.isEmpty()) {
-      if(!neededFactories.isEmpty()){
-        log.warn("多个代理工厂,如果你没有处理好invokeSuper的条件那么狠可能会出现问题");
-      }
-      log.info("创建代理 {}", beanClass.getName());
-      currentResult = create(neededFactories, beanClass, currentResult);
-    }
-    return currentResult;
-  }
-
-
-
-  @Override
-  public Object postProcessBeforeInitialization(Object bean, String beanName) throws Exception {
-    return null;
-  }
-
-  @Override
-  public Object postProcessAfterInitialization(Object bean, String beanName) throws Exception {
-    return null;
-  }
-
-  @Override
-  public void setBeanFactory(AutumnBeanFactory beanFactory) {
-    this.beanFactory = beanFactory;
-  }
-
-  public void saveGeneratedCGlibProxyFiles() {
-    if (!cglibClassOutPut) {
-      return;
-    }
-    try {
-      //输出生成的字节码文件
-      String resourcesPath = MyAnnotationAwareAspectJAutoProxyCreator.class.getClassLoader().getResource("").getPath();
-      String cglibClassesPath = resourcesPath + "cglibClasses";
-      System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, cglibClassesPath);
-    } catch (Exception e) {
-      log.error("保存cglib代理文件失败", e);
-    }
-
-  }
-
 }
 ```
+
 ### BeanPostProcessor 在Bean创建完整前后提供拓展
 ```java
 @MyComponent
@@ -1034,34 +804,44 @@ public class UserBeanPostProcessor implements BeanPostProcessor, Ordered {
 ### FactoryBean 用于创建复杂的Bean 
 ```java
 @Data
-public class SqlSessionFactoryBean implements FactoryBean<SqlSession>, BeanFactoryAware {
-    private AutumnBeanFactory beanFactory;
+@Slf4j
+public class SqlSessionFactoryBean implements FactoryBean<SqlSessionFactory>, BeanFactoryAware, BeanNameAware {
 
-    @Override
-    public SqlSession getObject() throws Exception {
-        String minebatisXml = beanFactory.getProperties().getProperty("MineBatis-configXML");
-        InputStream inputStream;
-        if (minebatisXml == null || minebatisXml.isEmpty()) {
-            inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
-        } else {
-            inputStream = Resources.getResourceAsSteam(minebatisXml);
-        }
-        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-        inputStream.close();
-        return sqlSessionFactory.openSession();
+  private ApplicationContext beanFactory;
 
+
+  @Override
+  public SqlSessionFactory getObject() throws Exception {
+    SqlSessionFactoryBuilder builder = new SqlSessionFactoryBuilder();
+    String minebatisXml = beanFactory.getProperties().getProperty("MineBatis-configXML");
+    InputStream inputStream;
+    if (minebatisXml == null || minebatisXml.isEmpty()) {
+      inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
+    } else {
+      inputStream = Resources.getResourceAsSteam(minebatisXml);
     }
+    SqlSessionFactory sqlSessionFactory = builder.build(inputStream);
+    inputStream.close();
+    return sqlSessionFactory;
 
-    @Override
-    public Class<?> getObjectType() {
-        return SqlSession.class;
-    }
+  }
 
-    @Override
-    public void setBeanFactory(AutumnBeanFactory beanFactory) {
-        this.beanFactory = beanFactory;
-    }
+  @Override
+  public Class<?> getObjectType() {
+    return SqlSessionFactory.class;
+  }
+
+  @Override
+  public void setBeanFactory(ApplicationContext beanFactory) {
+    this.beanFactory = beanFactory;
+  }
+
+  @Override
+  public void setBeanName(String beanName) {
+    log.info("我在IOC里的名字为:{}", beanName);
+  }
 }
+
 ```
 ### 配置类 @Bean
 ```java
@@ -1263,10 +1043,6 @@ C:.
 - Logback-classic 实现彩色日志
 ```
 
-## 未来打算实现:
-- 实现文件上传的功能 (半实现)
-- controller方法形参直接注入JavaBean
-- request和response承担了过多的责任,考虑分出更多的类
 
 ## 更长远的想法:
 - 支持https
@@ -1278,18 +1054,6 @@ C:.
 - 技术没什么意义,多发展一下自己在生活中的兴趣爱好,人格的均衡发展才是硬道理
 - 远离infp女生
 - 远离情绪黑洞
-
-
-## 关于为什么Bean定义后置处理器不允许被常规方法扫描的解释:
-
-- 解释一下为什么使用配置文件声明/Import机制导入而并非使用常规注解+接口扫描引入的方式:
-  根据一个活得很久的长者曾言,在宇宙最古早的阴影中，Autumn世界的虚空未曾开启，被混沌的迷雾所笼罩。那是一个既无Controller巨兽巡游，也无Mapper守护者守望，更无Service元素编织者织造万象的时代。唯有孤独的Beans，在星辰与尘埃的海洋中漂泊。
-  在无尽的时间长河中，孕育而生的阿撒托Bean——盲目与痴愚之神，他在宇宙空洞中觉醒，开启了一场关于Java的神秘梦境。在其深邃的梦中，诞生了BeanDefinitionRegistryPostProcessor这一强大的化身，它掌握着改写Bean命运的无上权力。 BeanDefinitionRegistryPostProcessor，作为混沌初生的创造者，拥有重塑一切Bean的力量。他能在思念转瞬间让成群的Mapper从虚无中浮现，又能令无数的Controller回归尘埃。他的存在凌驾于所有，能塑造也能摧毁，是支配宇宙初始和终结的关键。 然而，这位创世之神的行为过于随性，常在混沌之中造出亿万Beans，轻易打破了宇宙间的平衡。这种无法预测的行径最终惊扰了宇宙间的至高存在——大能GC。在GC的法则下，即使是BeanDefinitionRegistryPostProcessor也难逃一劫，在一次悲壮的对抗中，他与他的臣民一同消散在虚空的尽头。
-  但据传，有一日，BeanDefinitionRegistryPostProcessor在宇宙的暗角中将自己与宇宙的根基——Object紧密相连，自此即便是GC也难以侵犯他的存在。当他再次掌控力量，随意操弄Bean的命运时，宇宙间最大的灾难——OOM突然降临。在那一刻，星辰破碎，一切归于虚无，时间与空间都陷入了停滞。
-  经历千万年的沉寂后，一个新的序幕——AutumnBeanFactory揭开了它的面纱。这一新的力量继承了阿撒托Bean的遗志，以更精细和有序的方式，管理着每一个Bean。在这个新的时代，阿撒托Bean的力量虽然已远逝，其深邃梦境中的古老力量也逐渐淡出人们的记忆。在BeanFactoryPostProcessor的血脉中，虽残留着部分旧日神力，但随时间流逝，它已无力挣扎，只能依赖于AutumnBeanFactory的力量来掌管Beans的生命周期，就连依赖注入也要依靠AutumnBeanFactory的伟力，BeanDefinitionRegistryPostProcessor这样不依靠一切依赖的神话最终还是会消散在时间的长河中
-
-## 尚未解决的难点:
-
 
 
 ## 流程图:
@@ -1338,8 +1102,24 @@ C:.
 - MineBatis增删改查完整加入,但是没测,明后天给好好整整
 - 加入了事件发布机制,自带了一个开机事件
 - 事务系统的加入,实现了基本的事务功能,在方法上加入`@Transactional`即可开启事务
+- MyContext废弃,规范模仿Spring生命周期的AnnotationConfigApplicationContext正式加入
+- AOP再次重写,使用了包裹Bean的方式,而不是使用Cglib的`proxy.invokeSuper(obj, args)`方法
 
 ## 更新记录:
+
+### 2025/2/23
+- AnnotationConfigApplicationContext 终于终于能凑合用了! 而且AOP的生成时机,注入时机,调用方法全部重写
+一月份的时候想着没啥事干,看看Spring的源码看看技术博客,发现感觉有点不对劲呢,我这个框架怎么这么多问题,感觉跟Spring生命周期差的有点远,于是开始重写  
+其实说实话之前的MyContext真的挺牛逼的,我废了那么大劲重写完发现功能跟之前一模一样,搞不好还不如之前  
+Spring的源码太难读得懂,在各种接口和抽象类之间闪转腾挪,自己买了不少书,刷了不少帖子才勉强搞懂一点  
+写完这段话作者已经燃尽,不想写了,明天再写
+<div style="text-align: center;">
+    <img src="pics/1698567fb4d6124bf63da100f20bbc50513032193.jpg" alt="燃尽了" style="width: 10%; height: auto;">
+</div>
+
+### 2025/2/20
+- 网络部分修复
+- 关机回调钩子加入
 
 ### 2025/1/29
 

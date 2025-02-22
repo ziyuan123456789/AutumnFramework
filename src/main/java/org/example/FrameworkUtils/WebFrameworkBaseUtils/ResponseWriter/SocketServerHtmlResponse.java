@@ -243,21 +243,21 @@ public class SocketServerHtmlResponse implements BeanFactoryAware {
 
 
             out.write(responseHeader.toString().getBytes(StandardCharsets.UTF_8));
-            for (Map.Entry<String, Object> entry : beanFactory.getIocContainer().entrySet()) {
-                try{
-                    Class<?> clazz = Class.forName(entry.getKey());
-                    if (clazz.isAnnotationPresent(MyWebSocketConfig.class)) {
-                        MyWebSocketConfig annotation = clazz.getAnnotation(MyWebSocketConfig.class);
-                        if (url.equals(annotation.value())) {
-                            webSocketMaster = (WebSocketBaseConfig) beanFactory.getBean(entry.getKey());
-                            break;
-                        }
-                    }
-                }catch (Exception e){
-
-                }
-
-            }
+//            for (Map.Entry<String, Object> entry : beanFactory.getIocContainer().entrySet()) {
+//                try{
+//                    Class<?> clazz = Class.forName(entry.getKey());
+//                    if (clazz.isAnnotationPresent(MyWebSocketConfig.class)) {
+//                        MyWebSocketConfig annotation = clazz.getAnnotation(MyWebSocketConfig.class);
+//                        if (url.equals(annotation.value())) {
+//                            webSocketMaster = (WebSocketBaseConfig) beanFactory.getBean(entry.getKey());
+//                            break;
+//                        }
+//                    }
+//                }catch (Exception e){
+//
+//                }
+//
+//            }
             if (webSocketMaster == null) {
                 throw new RuntimeException("没有符合的WebSocket处理器");
             } else {

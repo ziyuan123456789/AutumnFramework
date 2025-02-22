@@ -5,16 +5,11 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
 import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
-import org.example.FrameworkUtils.AutumnCore.Aop.CgLibAop;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
-import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
-import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEventMulticaster;
-import org.example.FrameworkUtils.AutumnCore.Event.ContextClosedEvent;
-import org.example.FrameworkUtils.AutumnCore.Event.IocInitEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.*;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
-import org.example.FrameworkUtils.AutumnCore.Event.SimpleApplicationEventMulticaster;
 import org.example.FrameworkUtils.AutumnCore.compare.AnnotationInterfaceAwareOrderComparator;
 import org.example.FrameworkUtils.AutumnCore.env.ApplicationArguments;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
@@ -23,17 +18,7 @@ import org.example.FrameworkUtils.Exception.BeanCreationException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -217,22 +202,10 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
 
     //对容器中的对象进行全部getBean,因为Aop部分我参考Spring的实现,因此我需要单独初始化我的AutumnAopFactory
     private void finishBeanFactoryInitialization(ConfigurableApplicationContext fatory) {
-        Set<String> instantiatedBeans = new HashSet<>();
-        for (Map.Entry<String, MyBeanDefinition> entry : fatory.getBeanDefinitionMap().entrySet()) {
-            if (AutumnAopFactory.class.isAssignableFrom(entry.getValue().getBeanClass())) {
-                Object bean = doGetBean(entry.getKey());
-                aopFactories.add((AutumnAopFactory) bean);
-                instantiatedBeans.add(entry.getKey());
-            }
-        }
-
         for (Map.Entry<String, MyBeanDefinition> entry : fatory.getBeanDefinitionMap().entrySet()) {
             String beanName = entry.getKey();
-            if (!instantiatedBeans.contains(beanName)) {
-                doGetBean(beanName);
-            }
+            doGetBean(beanName);
         }
-
     }
 
     //注册并实例化BeanPostProcessors
@@ -383,10 +356,10 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         return null;
     }
 
-    @Override
-    public Map<String, Object> getIocContainer() {
-        return Map.of();
-    }
+//    @Override
+//    public Map<String, Object> getIocContainer() {
+//        return Map.of();
+//    }
 
     @Override
     public Properties getProperties() {
@@ -594,14 +567,11 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
 
     protected Object getEarlyBeanReference(String beanName, MyBeanDefinition mbd, Object bean) {
         Object exposedObject = bean;
-//        for (BeanPostProcessor bp : beanPostProcessors) {
-//            if (bp instanceof InstantiationAwareBeanPostProcessor) {
-//                exposedObject = ((InstantiationAwareBeanPostProcessor) bp).getEarlyBeanReference(exposedObject, beanName);
-//                if (exposedObject == null) {
-//                    return exposedObject;
-//                }
-//            }
-//        }
+        for (BeanPostProcessor bp : beanPostProcessors) {
+            if (bp instanceof SmartInstantiationAwareBeanPostProcessor sibp) {
+                exposedObject = sibp.getEarlyBeanReference(exposedObject, beanName);
+            }
+        }
         return exposedObject;
     }
 
@@ -799,12 +769,12 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     protected Object applyBeanPostProcessorsBeforeInstantiation(Class<?> beanClass, String beanName) {
         for (BeanPostProcessor beanPostProcessor : beanPostProcessors) {
             if (beanPostProcessor instanceof InstantiationAwareBeanPostProcessor ibp) {
-                if (beanPostProcessor instanceof CgLibAop) {
-                    Object result = ((CgLibAop) beanPostProcessor).postProcessBeforeInstantiation(aopFactories, beanClass, beanName, null);
-                    if (result != null) {
-                        return result;
-                    }
-                }
+//                if (beanPostProcessor instanceof CgLibAop) {
+//                    Object result = ((CgLibAop) beanPostProcessor).postProcessBeforeInstantiation(aopFactories, beanClass, beanName, null);
+//                    if (result != null) {
+//                        return result;
+//                    }
+//                }
                 Object result = ibp.postProcessBeforeInstantiation(beanClass, beanName);
                 if (result != null) {
                     return result;
@@ -869,7 +839,6 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         }
 
     }
-
 
 
     @Override
