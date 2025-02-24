@@ -35,7 +35,6 @@ public class UserAopProxyHandler implements AutumnAopFactory {
             for (Annotation annotation : paramAnnotations[i]) {
                 if (annotation.annotationType().equals(CheckParameter.class)) {
                     log.error("参数{}被拦截", args[i].getClass().getSimpleName());
-                    args[i] = "AopCheck";
                 }
             }
         }

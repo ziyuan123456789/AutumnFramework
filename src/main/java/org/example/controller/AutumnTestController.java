@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
 import org.example.Annotations.EnableAop;
 import org.example.Bean.Car;
+import org.example.Config.BeanTestConfig;
 import org.example.Config.Test;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Lazy;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
@@ -88,6 +89,15 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
 
     @MyAutoWired
     private TransactionService transactionService;
+
+    @MyAutoWired
+    private BeanTestConfig beanTestConfig;
+
+    @MyRequestMapping("/cglib")
+    public String getBean() {
+        log.debug(beanTestConfig.getClass().getName());
+        return beanTestConfig.giveMeWenJieCar().toString();
+    }
 
     @MyRequestMapping("/refresh")
     public void refresh() {
@@ -213,9 +223,9 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
     //测试数据库功能
     @EnableAop
     @MyRequestMapping("/Login")
-    public String login(@CheckParameter String userId,
+    public String login(@CheckParameter String username,
                         String password) {
-        if (loginService.checkLogin(userId, password)) {
+        if (loginService.checkLogin(username, password)) {
             return "登录成功";
 
         } else {

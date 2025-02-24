@@ -2,6 +2,7 @@ package com.autumn.swaggerstarter;
 
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
+import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
@@ -25,6 +26,7 @@ import java.util.Map;
  */
 @MyController
 public class BaseController implements BeanFactoryAware {
+
     private ApplicationContext beanFactory;
 
     @MyRequestMapping("/myswagger")
@@ -47,38 +49,36 @@ public class BaseController implements BeanFactoryAware {
 
     @MyRequestMapping("/urlMapping")
     public Map<String, Object> urlMapping() {
-        Map<String, String> urlToMethodMap = (Map<String, String>) beanFactory.get("urlmapping");
         Map<String, Object> openApiMap = new HashMap<>();
-        for (Map.Entry<String, String> entry : urlToMethodMap.entrySet()) {
-            int lastIndex = entry.getValue().lastIndexOf(".");
-            String classurl = entry.getValue().substring(0, lastIndex);
-            String methodName = entry.getValue().substring(lastIndex + 1);
-            try {
-                Class<?> clazz = Class.forName(classurl);
-                Method[] methods = clazz.getDeclaredMethods();
-                for (Method method : methods) {
-                    if (method.getName().equals(methodName)) {
-                        List<String> methodsName = new ArrayList<>();
-                        Class<?>[] paramTypes = method.getParameterTypes();
-                        for (Class i : paramTypes) {
-                            methodsName.add(i.getSimpleName());
+        for (MyBeanDefinition mb : beanFactory.getBeanDefinitionMap().values()) {
+            Class<?> clazz = mb.getBeanClass();
+            if (clazz.isAnnotationPresent(MyController.class)) {
+                for (Method method : clazz.getDeclaredMethods()) {
+                    MyRequestMapping myRequestMapping = method.getAnnotation(MyRequestMapping.class);
+                    if (myRequestMapping != null) {
+                        String url = myRequestMapping.value();
+                        if (url.startsWith("/")) {
+                            List<String> methodsName = new ArrayList<>();
+                            Class<?>[] paramTypes = method.getParameterTypes();
+                            for (Class<?> param : paramTypes) {
+                                methodsName.add(param.getSimpleName());
+                            }
+                            Class<?> returnType = method.getReturnType();
+                            Map<String, Object> methodInfo = new HashMap<>();
+                            methodInfo.put("parameters", methodsName);
+                            methodInfo.put("returnType", returnType.getSimpleName());
+                            openApiMap.put(url, methodInfo);
+                        } else {
+                            throw new RuntimeException("URL格式错误");
                         }
-                        Class<?> returnType = method.getReturnType();
-                        Map<String, Object> methodInfo = new HashMap<>();
-                        methodInfo.put("parameters", methodsName);
-                        methodInfo.put("returnType", returnType.getSimpleName());
-                        openApiMap.put(entry.getKey(), methodInfo);
-                        break;
                     }
                 }
-
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-
         }
+
         return openApiMap;
     }
+
 
     @Override
     public void setBeanFactory(ApplicationContext beanFactory) {

@@ -17,6 +17,7 @@ import java.lang.reflect.Method;
 @Slf4j
 @MyAspect
 public class CacheAopProxyHandler implements AutumnAopFactory, Ordered {
+
     @MyAutoWired
     private CacheManager cacheManager;
 

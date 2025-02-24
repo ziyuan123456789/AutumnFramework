@@ -11,8 +11,9 @@ import org.example.service.LoginService;
  */
 @MyService
 public class LoginServiceImpl implements LoginService {
+
     @MyAutoWired
-    UserMapper userMapper;
+    private UserMapper userMapper;
 
     @Override
     public boolean checkLogin(String userId, String password) {

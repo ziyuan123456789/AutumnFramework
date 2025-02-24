@@ -52,95 +52,6 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements SmartInstantiat
         return neededFactories;
     }
 
-
-//    private <T> T create(List<AutumnAopFactory> factories, Class<T> beanClass, Object currentResult) {
-//        saveGeneratedCGlibProxyFiles();
-//        Enhancer enhancer = new Enhancer();
-//        enhancer.setSuperclass(currentResult != null ? currentResult.getClass() : beanClass);
-//
-//        //看看检查一下是否需要代理
-//        boolean shouldProxy = factories.stream()
-//                .anyMatch(factory -> factory.shouldNeedAop(beanClass, beanFactory));
-//
-//        if (!shouldProxy) {
-//            return (T) currentResult;
-//        }
-//
-//        enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
-//            Object result = null;
-//            boolean methodInvoked = false;
-//
-//            for (AutumnAopFactory factory : factories) {
-//                if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
-//                    try {
-//                        factory.doBefore(obj, method, args);
-//                    } catch (Exception e) {
-//                        factory.doThrowing(obj, method, args, e);
-//                        return null;
-//                    }
-//                }
-//            }
-//
-//            for (AutumnAopFactory factory : factories) {
-//                if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
-//                    try {
-//                        result = factory.intercept(obj, method, args, proxy);
-//                        if (result != null) {
-//                            methodInvoked = true;
-//                            break;
-//                        }
-//                    } catch (Exception e) {
-//                        factory.doThrowing(obj, method, args, e);
-//                    }
-//                }
-//            }
-//
-//            //如果没有任何拦截器返回非空结果那么调用实际方法
-//            if (!methodInvoked) {
-//                try {
-//                    result = proxy.invokeSuper(obj, args);
-//                } catch (Exception e) {
-//                    Exception exception = null;
-//                    for (AutumnAopFactory factory : factories) {
-//                        if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
-//                            factory.doThrowing(obj, method, args, e);
-//                            exception = e;
-//                        }
-//                    }
-//                    if (exception != null) {
-//                        throw exception;
-//                    }
-//                }
-//
-//            }
-//
-//            for (AutumnAopFactory factory : factories) {
-//                if (method.getDeclaringClass() != Object.class && factory.shouldIntercept(method, beanClass, beanFactory)) {
-//                    try {
-//                        factory.doAfter(obj, method, args);
-//                    } catch (Exception e) {
-//                        factory.doThrowing(obj, method, args, e);
-//                    }
-//                }
-//            }
-//
-//            return result;
-//        });
-//
-//        if (currentResult != null) {
-//            enhancer.setClassLoader(currentResult.getClass().getClassLoader());
-//        }
-//
-//        T proxy = (T) enhancer.create();
-//
-//        // 在代理对象中保持对目标对象的引用
-//        if (currentResult != null) {
-//            proxy = (T) enhancer.create();
-//        }
-//
-//        return proxy;
-//    }
-
     private <T> T create(List<AutumnAopFactory> factories, Class<T> beanClass, Object currentResult) {
         saveGeneratedCGlibProxyFiles();
         Enhancer enhancer = new Enhancer();
@@ -263,7 +174,6 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements SmartInstantiat
         List<AutumnAopFactory> neededFactories = shouldCreateProxy(factories, bean.getClass());
         if (!neededFactories.isEmpty()) {
             bean = create(neededFactories, bean.getClass(), bean);
-            log.warn("成功创建{} AOP执行链,如果你没有处理好invokeSuper的条件那么很可能会出现问题", beanName);
         }
         return bean;
     }
