@@ -8,25 +8,17 @@
 ## 写在前面的话:
 - `AutumnFramework模仿了SpringBoot的部分基本特性,但在底层实现上却大有不同,因此仅作为一个兴趣驱动的展示项目`
 - 框架主体是作者在大三实习的时候完成的,所以`不是一个成熟的项目,不会进行过多防御性编程`,源码中只会助力于功能的实现而不会对过于复杂的情况进行额外处理
-- 从0开始手写React的计划也开始了,已实现一版简单的`React Fiber + Hooks`(已在项目中使用)
+- 从0开始手写React的计划也开始了,已实现简单的`React Fiber + Hooks`(已在项目中使用)
 
 
 ## 推荐:
 - [MiniReact:简单的React仿写](https://github.com/ziyuan123456789/mini-react)
 
 
-## 近期准备更新的内容:
-- Controller直接注入对象
-- 尝试手写TomCat 命名为Jerry mouse
-- ControllerAdvice
-
 ## 注意事项:
-
-- 现在框架Web环境有两种分别为SocketServer与TomCat,默认是SocketServer,如果你想用内嵌的TomCat请自行找到切换的开关
 - 目前仅支持调用字段的无参默认构创建实例,原则上来说构造器注入也实现了,但问题太多难以维护,不在代码中启用.另外构造器注入会让三级缓存部分失效,因为解决循环依赖的核心是
   `创建对象`与`注入对象`分离,但构造器让这一步`不可分割`,使用`代理模式`这种丑陋的方式解决又不太好,`Setter`注入感觉又多此一举
 - 如果你希望使用自动装配机制则需要在主类上加入`@EnableAutoConfiguration`或者`@AutumnBootApplication`来告知框架进行自动装配
-- MineBatis现在只可以注册XmlMapper,注解注册的方式日后添加
 - 想使用注解处理器先执行`mvn install:install-file -Dfile=src/main/resources/libs/AutumnAnP.jar -DgroupId=org.AutumnAP -DartifactId=AutumnAnP -Dversion=1.0-SNAPSHOT -Dpackaging=jar `再执行`mvn clean install`
 
 ## 实验性内容:
@@ -35,9 +27,7 @@
 ## 项目描述:
 - 参照了Mybatis,SpringMvc等设计思想从0手写了一个基于注解的仿SpringBoot框架
 
-
-## 代码示范 启动类
-
+## 启动类
 ```java
 @EnableAutumnAsync
 @EnableAutumnCache
@@ -57,9 +47,105 @@ public class Main {
     log.info("再见孩子们");
   }
 }
-
 ```
-## 代码示范 MVC章节
+
+## 生命周期
+
+### AutumnApplication构造方法:
+
+```java
+public AutumnApplication(Class<?>... primarySources) {
+  //确定应用的主要配置来源,为Bean扫描的起点
+  this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+
+  //初始化SPI机制,读取meta-inf下的配置文件
+  this.initAutumnSpi();
+
+  //读取默认的BootstrapRegistryInitializer实现类,可以预注册组件
+  this.bootstrapRegistryInitializers = this.getAutumnFactoriesInstances(BootstrapRegistryInitializer.class);
+
+  //读取默认的ApplicationContextInitializer实现类,可以修改 ApplicationContext,在Context创建后启用
+  this.setInitializers(this.getAutumnFactoriesInstances(ApplicationContextInitializer.class));
+
+  //注册监听器
+  this.setListeners(this.getAutumnFactoriesInstances(ApplicationListener.class));
+
+  //依照调用栈回溯到main方法,确定应用入口
+  this.mainApplicationClass = deduceMainApplicationClass();
+
+  //检查是否开启了编译参数,以便获取方法的真正参数名
+  this.checkEnv();
+}
+```
+
+### AutumnApplication中的run方法:
+
+```java
+public void run(String[] args) {
+
+  //初始化命令行参数
+  this.sysArgs = args;
+
+  //创建DefaultBootstrapContext,在context没有创建之前提供一个容器
+  DefaultBootstrapContext bootstrapContext = this.createBootstrapContext();
+
+  //发布start事件
+  List<AutumnApplicationRunListener> listeners = getAutumnFactoriesInstances(AutumnApplicationRunListener.class);
+  for (AutumnApplicationRunListener listener : listeners) {
+    listener.starting(bootstrapContext, mainApplicationClass);
+  }
+
+  //包裹命令行/jvm/其他参数
+  ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+
+  //初始化环境配置,例如把主包,主类,主源进行写入保存
+  environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
+
+  //依照配置创建beanFactory,默认为`AnnotationConfigServletWebServerApplicationContext`
+  beanFactory = createApplicationContext();
+
+  prepareContext(bootstrapContext, beanFactory, environment, listeners, applicationArguments);
+
+  refreshContext((AnnotationConfigApplicationContext) beanFactory);
+
+}
+```
+
+### ApplicationContext中的refresh方法:
+
+```java
+
+@Override
+public void refresh() {
+  //刷新前的准备
+  prepareRefresh();
+  //BeanFactory前准备
+  prepareBeanFactory(this);
+  try {
+    //模板方法
+    postProcessBeanFactory(this);
+    //调用BeanFactory后置处理器(在此处扫描全部的Bean定义,并倒入Starter)
+    invokeBeanFactoryPostProcessors();
+    //注册实例化Bean后置处理器(依赖注入处理器,感知处理器,Aop处理器在此处被导入)
+    registerBeanPostProcessors(this);
+    //初始化事件广播器
+    initApplicationEventMulticaster();
+    //模板方法
+    onRefresh();
+    //注册监听器
+    registerListeners();
+    //实例化所有的Bean
+    finishBeanFactoryInitialization(this);
+    //刷新完成
+    finishRefresh();
+  } catch (Exception e) {
+    log.error(e.getMessage(), e);
+    throw new RuntimeException(e);
+  }
+}
+```
+
+## MVC章节
 ### Controller
 ```java
 @MyController
@@ -270,7 +356,7 @@ public class AutumnTestController implements BeanFactoryAware {
 public class UrlFilter implements Filter, Ordered {
 
   @MyAutoWired
-  IndexFilter indexFilter;
+  private IndexFilter indexFilter;
 
   @Override
   public boolean doChain(AutumnRequest autumnRequest, AutumnResponse autumnResponse) {
@@ -392,8 +478,14 @@ SERIALIZABLE
 事务的默认捕获范围为`RuntimeException` 如果你想捕获`受检异常` 请在注解上声明
 `rollbackFor = Exception.class/Throwable.class`
 
-另外如果你在同一个类声明了多个事务方法，那么你依然需要进行 `自注入` 以保证拿到的是代理类,而不是这个被代理类本身,这一点与
-Spring 保持一致 此外直接调用方法与this.method 效果是一样的,均会导致事务失效
+直接调用方法与this.method 会导致事务失效
+如果你在同一个类声明了多个事务方法，需要进行 `自注入` 以保证拿到的是代理类
+
+```text
+┌──->──┐
+|  transactionService
+└──<-──┘
+```
 
 ```java
 @MyService
@@ -490,30 +582,7 @@ public class WebSocketController implements WebSocketBaseConfig {
 ```
 ### 自定Converter
 使用`@Inject`注解标记一个类并实现`ControllerInjector`接口,就可以注入一个自定义注入器,来控制Controller方法参数的注入
-例如下面这个例子,我们使用自定义注入器通知框架去正确处理并注入一个枚举
-```java
-@Injector
-public class UserInjector implements ControllerInjector {
-  @Override
-  public void inject(Method method, Object object, List<Object> methodParams, Set<Integer> processedIndices, AutumnRequest myRequest, AutumnResponse myResponse) {
-    Parameter[] parameters = method.getParameters();
-    for (int i = 0; i < parameters.length; i++) {
-      if (processedIndices.contains(i)) {
-        continue;
-      }
-
-      Parameter parameter = parameters[i];
-      if (parameter.getType().equals(ColorMappingEnum.class)) {
-        Object value = useUrlGetParam("color", myRequest);
-        if (value != null) {
-          methodParams.add(ColorMappingEnum.fromName(value.toString()));
-          processedIndices.add(i);
-        }
-      }
-    }
-  }
-}
-```
+例如下面这个例子,我们使用自定义注入器指导框架去正确处理并注入一个枚举
 ```java
 @MyRequestMapping("/inject")
 public String injectTest(ColorMappingEnum color) {
@@ -521,55 +590,55 @@ public String injectTest(ColorMappingEnum color) {
 }
 ```
 
-### 全局跨域配置
-```java
-@MyConfig
-public class CrossOriginConfig implements AutumnMvcCrossOriginConfig {
-
-    CrossOriginBean crossOrigin=new CrossOriginBean();
-
-    @Override
-    @AutunmnBean
-    public CrossOriginBean setAllowCrossOrigin() {
-        crossOrigin.setOrigins("*");
-        return crossOrigin;
-    }
-}
-```
-
 ### Web容器选择 如果你喜欢可以自行加入Jetty的适配器 可依靠条件注解实现无缝的容器切换
 ```java
-@MyConfig
-@MyConditional(TomCatConditionCheck.class)
-@Slf4j
-public class TomCatContainer implements MyServer, BeanFactoryAware {
-  @Value("port")
-  int port;
-  private AutumnBeanFactory beanFactory;
+
+@MyComponent
+public class TomCatContainer implements MyServer, ApplicationListener<IocInitEvent>, EnvironmentAware {
+
+  private int port;
+
+  @MyAutoWired
+  private DispatcherServlet dispatcherServlet;
 
   @Override
   public void init() throws Exception {
     log.info("切换到TomCat容器");
-    Tomcat tomcat = new Tomcat();
-    Connector connector = new Connector();
-    connector.setPort(port);
-    connector.setURIEncoding("UTF-8");
-    tomcat.getService().addConnector(connector);
-    Context context = tomcat.addContext("/", null);
-    DispatcherServlet servlet = (DispatcherServlet) beanFactory.getBean(DispatcherServlet.class.getName());
-    Tomcat.addServlet(context, "dispatcherServlet", servlet);
-    //xxx:进行简单路由操作,所有请求都交给dispatcherServlet处理
-    context.addServletMappingDecoded("/", "dispatcherServlet");
-    log.info("服务于{}端口启动", port);
-    log.info("http://localhost:{}/", port);
-    tomcat.start();
-    tomcat.getServer().await();
+  }
+
+
+  @Override
+  public void onApplicationEvent(IocInitEvent event) {
+    new Thread(() -> {
+      try {
+        Tomcat tomcat = new Tomcat();
+        Connector connector = new Connector();
+        connector.setPort(port);
+        connector.setURIEncoding("UTF-8");
+        tomcat.getService().addConnector(connector);
+        Context context = tomcat.addContext("/", null);
+        Tomcat.addServlet(context, "dispatcherServlet", dispatcherServlet);
+        context.addServletMappingDecoded("/", "dispatcherServlet");
+        tomcat.start();
+        log.info("服务于{}端口启动", port);
+        log.info("http://localhost:{}/", port);
+        tomcat.getServer().await();
+      } catch (Exception e) {
+        log.error(e.getMessage(), e);
+      }
+    }).start();
 
   }
 
   @Override
-  public void setBeanFactory(AutumnBeanFactory beanFactory) {
-    this.beanFactory = beanFactory;
+  public boolean supportsEvent(ApplicationEvent event) {
+    return event instanceof IocInitEvent;
+  }
+
+
+  @Override
+  public void setEnvironment(Environment environment) {
+    this.port = Integer.parseInt(environment.getProperty("port"));
   }
 }
 ```
@@ -722,7 +791,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, En
   public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) {
     return () -> {
       try {
-        SqlSession sqlSession= (SqlSession) beanFactory.getBean(SqlSession.class.getName());
+        SqlSession sqlSession = (SqlSession) beanFactory.getBean(SqlSession.class.getName());
         return sqlSession.getMapper(beanClass);
       } catch (Exception e) {
         log.error("创建MapperBean实例失败", e);
@@ -733,7 +802,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, En
 
 
   @Override
-  public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner,BeanDefinitionRegistry registry) throws Exception {
+  public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
     String minebatisXml = environment.getProperty("MineBatis-configXML");
     InputStream inputStream;
     if (minebatisXml == null || minebatisXml.isEmpty()) {
@@ -767,7 +836,6 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, En
   public int getOrder() {
     return 4;
   }
-
 
 
   @Override
@@ -841,7 +909,33 @@ public class SqlSessionFactoryBean implements FactoryBean<SqlSessionFactory>, Be
     log.info("我在IOC里的名字为:{}", beanName);
   }
 }
+```
 
+```java
+public class MapperFactoryBean<T> implements FactoryBean<T> {
+
+  private final Class<T> mapperInterface;
+
+  @MyAutoWired
+  private SqlSessionFactory sqlSessionFactory;
+
+  @MyAutoWired
+  public MapperFactoryBean(Class<T> mapperInterface) {
+    this.mapperInterface = mapperInterface;
+  }
+
+  @Override
+  public T getObject() throws Exception {
+    SqlSession sqlSession = sqlSessionFactory.openSession();
+    return sqlSession.getMapper(mapperInterface);
+  }
+
+  @Override
+  public Class<?> getObjectType() {
+    return this.mapperInterface;
+  }
+
+}
 ```
 ### 配置类 @Bean
 ```java
@@ -849,35 +943,47 @@ public class SqlSessionFactoryBean implements FactoryBean<SqlSessionFactory>, Be
 @Slf4j
 public class BeanTestConfig {
     @AutumnBean("BYD")
-    public Car giveMeBydCar(){
-        Car car=new Car();
-        car.setName("BYD");
-        return car;
+    public Car giveMeBydCar() {
+      Car car = new Car();
+      car.setName("BYD");
+      return car;
     }
 
-    @AutumnBean("WenJie")
+  @AutumnBean(value = "WenJie", initMethod = "initMethod", destroyMethod = "destroyMethod")
     public Car giveMeWenJieCar(){
-        Car car=new Car();
-        car.setName("WenJie");
-        return car;
+    Car car = new Car();
+    car.setName("WenJie");
+    return car;
     }
 }
 
 @Data
 @Slf4j
-public class Car {
+public class Car implements InitializingBean {
     private String name;
 
-    @MyPostConstruct
+  @MyPostConstruct
     public void init() {
-        log.warn("{}{} init", this.getClass().getSimpleName(), name);
+    log.info(" {}  孩子们,我复活了", name);
     }
 
-    @MyPreDestroy
+  @MyPreDestroy
     public void destroy() {
-        log.warn("{}{} destroy", this.getClass().getSimpleName(), name);
+    log.warn(" {} 孩子们,我的时间不多了", name);
+  }
+
+  public void initMethod() {
+    log.info(" {} 中的initMethod调用", name);
     }
 
+  public void destroyMethod() {
+    log.info(" {} 中的destroyMethod调用", name);
+  }
+
+  @Override
+  public void afterPropertiesSet() {
+    log.info(" {} 中的afterPropertiesSet调用", name);
+  }
 }
 ```
 ### 条件注解
@@ -957,78 +1063,6 @@ allow-circular-references=true
 MineBatis-configXML=minebatis-config.xml
 ```
 
-### 代码结构
-```txt
-C:.
-├─java
-│  ├─com
-│  │  └─autumn  模拟JAR包 保证不被自动扫描到.这部分依靠自动装配机制加载
-│  │      ├─async 异步服务
-│  │      ├─cache 缓存服务
-│  │      ├─ormstarter 数据库服务
-│  │      ├─swaggerstarter 文档服务
-│  │      └─transaction 事务服务
-│  └─org
-│      └─example
-│          ├─Annotations 用户自定义注解
-│          ├─Aop 用户自定义AOP处理器
-│          ├─Bean 用户实体类
-│          ├─Config 用户配置类
-│          ├─controller Controller层 
-│          ├─FrameworkUtils 框架层
-│          │  ├─AutumnCore 核心功能
-│          │  │  ├─Annotation 核心注解
-│          │  │  ├─Aop AOP实现
-│          │  │  ├─AutoConfiguration 一些以前的默认装载类,不应该叫这个名字的
-│          │  │  │  └─AutoConfigurationImpl
-│          │  │  ├─BeanLoader Bean加载器
-│          │  │  ├─Ioc IOC容器
-│          │  │  ├─Listener 生命周期监听器
-│          │  │  └─Transaction 事务
-│          │  ├─DataStructure 自定义数据结构
-│          │  ├─Exception 自定义异常
-│          │  │  └─OrmError
-│          │  ├─Orm 自定义ORM框架
-│          │  │  ├─MineBatis
-│          │  │  │  ├─configuration
-│          │  │  │  ├─executor
-│          │  │  │  ├─Interceptor
-│          │  │  │  ├─Io
-│          │  │  │  ├─mapping
-│          │  │  │  ├─OrmAnnotations
-│          │  │  │  ├─session
-│          │  │  │  └─type
-│          │  │  │      └─TypeHandler
-│          │  │  │          └─Impl
-│          │  │  └─MyRedis
-│          │  ├─PropertiesReader 配置文件读取
-│          │  ├─Utils 工具类
-│          │  └─WebFrameworkBaseUtils 框架基础工具类
-│          │      ├─BaseController 基础控制器
-│          │      ├─Cookie 操作Cookie
-│          │      ├─Json 操作Json
-│          │      ├─MyServers 服务器接口
-│          │      │  └─ConditionCheck 条件注解处理器
-│          │      ├─ResponseType  响应类型
-│          │      │  └─Views
-│          │      ├─ResponseWriter 响应输出
-│          │      ├─Session 操作Session
-│          │      └─WebSocket WebSocket
-│          ├─Interceptor 用户拦截器
-│          ├─mapper Dao层
-│          └─service Service层
-│              └─impl
-└─resources
-    ├─cglibClasses 生成的代理类
-    ├─HTML 静态资源
-    ├─Icon 图标
-    ├─libs 注解处理器JAR包
-    ├─mapper MineBatis配置文件
-    ├─META-INF 自动装配目录
-    │  └─autumn
-    └─plugins 已废弃
-
-```
 ### 项目依赖
 ```
 - TomCat 内嵌了一个TomCat,如果你不希望用我写的SocketHttpServer只需要把条件处理器的逻辑改了即可启动TomCat接管网络服务
@@ -1056,11 +1090,6 @@ C:.
 - 远离情绪黑洞
 
 
-## 流程图:
-- 项目启动
-  ![Main_main.jpg](pics/AutumnFrameworkRunner_run.jpg)
-- MineBatis 启动流程
-  ![MineBatis](pics/Main_main.jpg)
 
 ## 更新日志:
 
@@ -1108,10 +1137,11 @@ C:.
 ## 更新记录:
 
 ### 2025/2/23
-- AnnotationConfigApplicationContext 终于终于能凑合用了! 而且AOP的生成时机,注入时机,调用方法全部重写
-一月份的时候想着没啥事干,看看Spring的源码看看技术博客,发现感觉有点不对劲呢,我这个框架怎么这么多问题,感觉跟Spring生命周期差的有点远,于是开始重写  
-其实说实话之前的MyContext真的挺牛逼的,我废了那么大劲重写完发现功能跟之前一模一样,搞不好还不如之前  
-Spring的源码太难读得懂,在各种接口和抽象类之间闪转腾挪,自己买了不少书,刷了不少帖子才勉强搞懂一点  
+
+- AnnotationConfigApplicationContext 终于终于能凑合用了! 而且AOP的生成时机,注入时机,调用方法全部重写  
+  一月份的时候想着没啥事干,看看Spring的源码看看技术博客,发现感觉有点不对劲呢,我这个框架怎么这么多问题,感觉跟Spring生命周期差的有点远,于是开始重写   
+  其实说实话之前的MyContext真的挺牛逼的,我废了那么大劲重写完发现功能跟之前一模一样,搞不好还不如之前   
+  Spring的源码太难读得懂,在各种接口和抽象类之间闪转腾挪,自己买了不少书,刷了不少帖子才勉强搞懂一点    
 写完这段话作者已经燃尽,不想写了,明天再写
 <div style="text-align: center;">
     <img src="pics/1698567fb4d6124bf63da100f20bbc50513032193.jpg" alt="燃尽了" style="width: 10%; height: auto;">
