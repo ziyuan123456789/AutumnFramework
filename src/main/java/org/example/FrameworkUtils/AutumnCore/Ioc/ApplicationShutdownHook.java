@@ -24,7 +24,7 @@ public class ApplicationShutdownHook implements Runnable {
 
     @Override
     public void run() {
-        log.warn("准备关机了,ApplicationShutdownHook开始调用容器的Close方法,让容器广播一下散伙通知");
+        log.warn("准备关机了,调用容器的Close方法,广播一下散伙通知");
         contexts.forEach(AnnotationConfigApplicationContext::close);
     }
 

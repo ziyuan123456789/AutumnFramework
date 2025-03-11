@@ -12,9 +12,7 @@ import org.reflections.scanners.SubTypesScanner;
  * @author wsh
  */
 
-/**
- * 这也配叫自动装配??
- */
+
 @MyConfig
 @Slf4j
 public class AutoConfigurationBeans implements EnvironmentAware {

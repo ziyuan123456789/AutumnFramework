@@ -15,6 +15,7 @@ import java.lang.annotation.Target;
 
 /**
  * 用于条件注解,在满足条件的情况下才会生效
+ * 条件注解在Bean定义扫描阶段生效,也就意味着被淘汰的Bean并不会生成Bean定义
  */
 @Target({ElementType.METHOD,ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

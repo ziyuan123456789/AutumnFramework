@@ -21,7 +21,7 @@ public class AnnotationConfigServletWebServerApplicationContext extends Annotati
         super.onRefresh();
         try {
             this.createWebServer();
-        } catch (Throwable ex) {
+        } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             throw new BeanCreationException();
         }

@@ -22,6 +22,7 @@ public class AutumnBaseController implements BeanFactoryAware {
 
     @MyAutoWired
     private AutumnMvcConfiguration autumnMvcConfiguration;
+
     private ApplicationContext beanFactory;
 
     @MyRequestMapping("/favicon.ico")

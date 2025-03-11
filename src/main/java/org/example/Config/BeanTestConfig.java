@@ -2,7 +2,11 @@ package org.example.Config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.Bean.Car;
-import org.example.FrameworkUtils.AutumnCore.Annotation.*;
+import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBean;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyPostConstruct;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyPreDestroy;
 import org.example.mapper.UserMapper;
 
 import java.util.concurrent.ExecutionException;
@@ -56,7 +60,7 @@ public class BeanTestConfig {
         return car;
     }
 
-    @AutumnBean("WenJie")
+    @AutumnBean(value = "WenJie", initMethod = "initMethod", destroyMethod = "destroyMethod")
     public Car giveMeWenJieCar(){
         Car car=new Car();
         car.setName("WenJie");

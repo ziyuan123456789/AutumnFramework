@@ -11,7 +11,11 @@ import java.lang.annotation.Target;
  * @since 2023.11
  */
 
-//日后会对此注解标记的类进行代理,保证@Bean的单例性
+/**
+ * 声明一个类为配置类并进行代理,保证@Bean的单例性
+ * 此外与Spring不同,只有被@Config标记的类中的@Bean才会生效
+ */
+
 @Target({ElementType.PARAMETER,ElementType.TYPE})
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)

@@ -25,6 +25,10 @@ import java.util.Set;
  * @since 2024.05
  */
 
+/**
+ * AOP的实现
+ * 代理类本身不会被依赖注入,而是包裹一个成熟的bean,来进行代替
+ */
 @Slf4j
 @MyComponent
 @MyOrder(1)

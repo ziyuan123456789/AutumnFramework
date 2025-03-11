@@ -137,7 +137,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
                     if (value == null || value.length == 0) {
                         continue;
                     }
-                    log.info("通过ComponentScan注解扫描了{}", (Object) annotated.get().value());
+                    log.info("通过ComponentScan注解扫描包:{}", (Object) annotated.get().value());
                     for (String packageToScan : value) {
                         if (!scannedPackages.contains(packageToScan)) {
                             Set<Class<?>> foundClasses = scanner.findDefaultAnnotatedClassesList(packageToScan);
@@ -164,6 +164,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
         }
         String beanName;
         AutumnBean annotation = method.getAnnotation(AutumnBean.class);
+        String initMethodName = annotation.initMethod();
+        String destroyMethodName = annotation.destroyMethod();
 
         if (annotation.value().isEmpty()) {
             beanName = returnType.getName();
@@ -173,6 +175,17 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 
         MyBeanDefinition myBeanDefinition = new MyBeanDefinition(beanName, returnType);
+        for (Method m : myBeanDefinition.getBeanClass().getDeclaredMethods()) {
+            m.setAccessible(true);
+            if (m.getName().equals(initMethodName)) {
+                myBeanDefinition.getInitMethodName().add(initMethodName);
+                myBeanDefinition.getInitMethod().add(m);
+            }
+            if (m.getName().equals(destroyMethodName)) {
+                myBeanDefinition.getAfterMethodName().add(destroyMethodName);
+                myBeanDefinition.getAfterMethod().add(m);
+            }
+        }
         myBeanDefinition.setDoMethod(method);
         myBeanDefinition.setConfigurationClass(clazz);
         return myBeanDefinition;

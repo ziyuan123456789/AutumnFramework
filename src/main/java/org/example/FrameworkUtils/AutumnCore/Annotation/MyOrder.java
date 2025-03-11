@@ -11,7 +11,10 @@ import java.lang.annotation.Target;
  * @since 2023.10
  */
 
-//标记这个注解就可以实现最高的优先级,仅限内部使用
+/**
+ * 标记这个注解就可以实现最高的优先级,仅限内部使用
+ * 此外order接口与PriorityOrdered接口也可也声明优先级
+ */
 @Target({ElementType.PARAMETER,ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited

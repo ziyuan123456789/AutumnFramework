@@ -149,12 +149,6 @@ public class AutowiredAnnotationBeanPostProcessor implements InstantiationAwareB
 
 
     @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeanCreationException {
-        return bean;
-    }
-
-
-    @Override
     public void setBeanFactory(ApplicationContext beanFactory) {
         this.beanFactory = beanFactory;
     }

@@ -6,7 +6,6 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
 import org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
-import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistry;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanDefinitionRegistryPostProcessor;
@@ -14,10 +13,8 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.EnvironmentAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.PriorityOrdered;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
-import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Orm.MineBatis.Io.Resources;
 import org.example.FrameworkUtils.Orm.MineBatis.OrmAnnotations.TypeHandler;
-import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactory;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactoryBuilder;
 
@@ -75,19 +72,6 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, En
 
     }
 
-    @Override
-    public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) {
-        return () -> {
-            try {
-                SqlSession sqlSession= (SqlSession) beanFactory.getBean(SqlSession.class.getName());
-                return sqlSession.getMapper(beanClass);
-            } catch (Exception e) {
-                log.error("创建MapperBean实例失败", e);
-                throw new BeanCreationException("创建MapperBean实例失败", e);
-            }
-        };
-    }
-
 
     @Override
     public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner,BeanDefinitionRegistry registry) throws Exception {
@@ -103,7 +87,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, En
         Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
         for (Class<?> clazz : classSet) {
             MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
-            log.warn("{}包装Mapper:{}", this.getClass().getSimpleName(), clazz.getName());
+            log.warn("{}包装Mapper:{},替换实现为{}", this.getClass().getSimpleName(), clazz.getName(), MapperFactoryBean.class);
             myBeanDefinition.setName(clazz.getName());
             myBeanDefinition.setBeanClass(MapperFactoryBean.class);
             myBeanDefinition.setConstructor(MapperFactoryBean.class.getDeclaredConstructor(Class.class));

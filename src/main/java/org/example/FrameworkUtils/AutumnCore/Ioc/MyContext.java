@@ -210,11 +210,11 @@ public class MyContext implements ApplicationContext {
                 autowireBeanProperties(bean, myBeanDefinition);
             }
             bean = doBeanPostProcessorsBefore(bean, myBeanDefinition.getName());
-            List<Method> initMethod = myBeanDefinition.getInitMethod();
+            Set<Method> initMethod = myBeanDefinition.getInitMethod();
             for (Method method : initMethod) {
                 method.invoke(bean);
             }
-            List<Method> afterMethod = myBeanDefinition.getAfterMethod();
+            Set<Method> afterMethod = myBeanDefinition.getAfterMethod();
             for (Method method : afterMethod) {
                 Map<Method, Object> result = new HashMap<>();
                 result.put(method, bean);

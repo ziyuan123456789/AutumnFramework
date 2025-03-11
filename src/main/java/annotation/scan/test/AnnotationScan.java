@@ -12,8 +12,5 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 @Slf4j
 @MyComponent
 public class AnnotationScan {
-    static {
-        log.info("AnnotationScan init");
-    }
 
 }

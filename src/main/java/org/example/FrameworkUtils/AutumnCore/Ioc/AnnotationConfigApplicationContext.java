@@ -8,8 +8,12 @@ import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
-import org.example.FrameworkUtils.AutumnCore.Event.*;
+import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEventMulticaster;
+import org.example.FrameworkUtils.AutumnCore.Event.ContextClosedEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.IocInitEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
+import org.example.FrameworkUtils.AutumnCore.Event.SimpleApplicationEventMulticaster;
 import org.example.FrameworkUtils.AutumnCore.compare.AnnotationInterfaceAwareOrderComparator;
 import org.example.FrameworkUtils.AutumnCore.env.ApplicationArguments;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
@@ -18,7 +22,17 @@ import org.example.FrameworkUtils.Exception.BeanCreationException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -27,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2025.01
  */
 
-//正在施工中,稍安勿躁
+
 @Slf4j
 @EqualsAndHashCode
 public class AnnotationConfigApplicationContext implements ConfigurableApplicationContext {
@@ -87,7 +101,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
 
     private Set<ApplicationListener<ApplicationEvent>> earlyApplicationListeners;
 
-    //环境变量
+    //环境
     private Environment environment;
 
     private long startupDate;
@@ -550,14 +564,16 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
 
 
     private void invokeInitMethods(String beanName, Object wrappedBean, MyBeanDefinition mbd) {
+        if (wrappedBean instanceof InitializingBean ib) {
+            ib.afterPropertiesSet();
+        }
+
         if (mbd.getInitMethod() != null) {
             try {
                 for (Method method : mbd.getInitMethod()) {
                     method.invoke(wrappedBean);
-
                 }
             } catch (Exception e) {
-
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);
             }
@@ -754,6 +770,27 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         return singletonObject;
     }
 
+    private void logCircularDependency(String beanName) {
+        List<String> creationList = new ArrayList<>(singletonsCurrentlyInCreation);
+        if (creationList.size() == 1) {
+            StringBuilder sb = new StringBuilder("\n");
+            sb.append("┌──->──┐\n");
+            sb.append("|  ").append(beanName).append("\n");
+            sb.append("└──<-──┘");
+            log.error(sb.toString());
+            return;
+        }
+        StringBuilder sb2 = new StringBuilder("\n");
+        sb2.append("┌──->──┐\n");
+        for (String string : creationList) {
+            sb2.append("|  ").append(string).append("\n");
+        }
+        sb2.append("└──<-──┘");
+        log.error(sb2.toString());
+    }
+
+
+
 
     protected Object resolveBeforeInstantiation(String beanName, MyBeanDefinition mbd) {
 
@@ -942,6 +979,9 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     }
 
     private void beforeSingletonCreation(String beanName) {
+        if (!singletonsCurrentlyInCreation.add(beanName)) {
+            logCircularDependency(beanName);
+        }
         this.singletonsCurrentlyInCreation.add(beanName);
     }
 

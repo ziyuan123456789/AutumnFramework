@@ -787,19 +787,6 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, En
 
   }
 
-  @Override
-  public ObjectFactory<?> createFactoryMethod(Class<?> beanClass) {
-    return () -> {
-      try {
-        SqlSession sqlSession = (SqlSession) beanFactory.getBean(SqlSession.class.getName());
-        return sqlSession.getMapper(beanClass);
-      } catch (Exception e) {
-        log.error("创建MapperBean实例失败", e);
-        throw new BeanCreationException("创建MapperBean实例失败", e);
-      }
-    };
-  }
-
 
   @Override
   public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
@@ -1135,6 +1122,12 @@ MineBatis-configXML=minebatis-config.xml
 - AOP再次重写,使用了包裹Bean的方式,而不是使用Cglib的`proxy.invokeSuper(obj, args)`方法
 
 ## 更新记录:
+
+### 2025/3/11
+
+- 增加了对InitializingBean的支持
+- 更新了生命周期
+- 恢复循环依赖图
 
 ### 2025/2/23
 

@@ -10,8 +10,6 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.IocInitEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
-import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
-import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.EnvironmentAware;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
 
@@ -22,14 +20,12 @@ import org.example.FrameworkUtils.AutumnCore.env.Environment;
 
 @Slf4j
 @MyComponent
-public class TomCatContainer implements MyServer, ApplicationListener<IocInitEvent>, BeanFactoryAware, EnvironmentAware {
+public class TomCatContainer implements MyServer, ApplicationListener<IocInitEvent>, EnvironmentAware {
 
     private int port;
 
     @MyAutoWired
     private DispatcherServlet dispatcherServlet;
-
-    private ApplicationContext beanFactory;
 
     @Override
     public void init() throws Exception {
@@ -49,9 +45,9 @@ public class TomCatContainer implements MyServer, ApplicationListener<IocInitEve
                 Context context = tomcat.addContext("/", null);
                 Tomcat.addServlet(context, "dispatcherServlet", dispatcherServlet);
                 context.addServletMappingDecoded("/", "dispatcherServlet");
+                tomcat.start();
                 log.info("服务于{}端口启动", port);
                 log.info("http://localhost:{}/", port);
-                tomcat.start();
                 tomcat.getServer().await();
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
@@ -65,10 +61,6 @@ public class TomCatContainer implements MyServer, ApplicationListener<IocInitEve
         return event instanceof IocInitEvent;
     }
 
-    @Override
-    public void setBeanFactory(ApplicationContext beanFactory) {
-        this.beanFactory = beanFactory;
-    }
 
     @Override
     public void setEnvironment(Environment environment) {

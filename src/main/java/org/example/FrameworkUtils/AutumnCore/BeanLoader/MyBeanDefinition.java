@@ -4,8 +4,6 @@ import lombok.Data;
 import lombok.ToString;
 import org.example.FrameworkUtils.AutumnCore.Annotation.DependsOn;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyPostConstruct;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyPreDestroy;
 import org.example.FrameworkUtils.AutumnCore.Ioc.FactoryBean;
 import org.example.FrameworkUtils.Exception.BeanDefinitionCreationException;
 
@@ -14,7 +12,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /*
   @author ziyuan
@@ -56,13 +56,13 @@ public class MyBeanDefinition {
 
     private Object[] parameters = new Object[0];
 
-    private List<String> initMethodName = new ArrayList<>();
+    private Set<String> initMethodName = new HashSet<>();
 
-    private List<String> afterMethodName = new ArrayList<>();
+    private Set<String> afterMethodName = new HashSet<>();
 
-    private List<Method> initMethod = new ArrayList<>();
+    private Set<Method> initMethod = new HashSet<>();
 
-    private List<Method> afterMethod = new ArrayList<>();
+    private Set<Method> afterMethod = new HashSet<>();
 
     private Scope scope = Scope.SINGLETON;
 
@@ -79,7 +79,7 @@ public class MyBeanDefinition {
         this.beanClass = beanClass;
         //在包装为beanDefinition的时候就扫描一下依赖,并保存一下构造器,但大概率构造器注入不会进行起用
         this.scanBeanDependsOn(beanClass);
-        this.scanInitAndAfterMethod(beanClass);
+//        this.scanInitAndAfterMethod(beanClass);
     }
 
     public MyBeanDefinition(Class<?> beanClass) {
@@ -87,7 +87,7 @@ public class MyBeanDefinition {
         this.name = beanClass.getName();
         this.beanClass = beanClass;
         this.scanBeanDependsOn(beanClass);
-        this.scanInitAndAfterMethod(beanClass);
+//        this.scanInitAndAfterMethod(beanClass);
     }
 
     //无参构造方法,一切由你来决定
@@ -95,23 +95,23 @@ public class MyBeanDefinition {
 
     }
 
-    private void scanInitAndAfterMethod(Class<?> beanClass) {
-        if (beanClass.getName().contains("$$EnhancerByCGLIB")) {
-            beanClass = beanClass.getSuperclass();
-        }
-        Method[] declaredMethods = beanClass.getDeclaredMethods();
-        for (Method method : declaredMethods) {
-            method.setAccessible(true);
-            if (method.getAnnotation(MyPostConstruct.class) != null) {
-                this.initMethod.add(method);
-                this.initMethodName.add(method.getName());
-            }
-            if (method.getAnnotation(MyPreDestroy.class) != null) {
-                this.afterMethod.add(method);
-                this.afterMethodName.add(method.getName());
-            }
-        }
-    }
+//    private void scanInitAndAfterMethod(Class<?> beanClass) {
+//        if (beanClass.getName().contains("$$EnhancerByCGLIB")) {
+//            beanClass = beanClass.getSuperclass();
+//        }
+//        Method[] declaredMethods = beanClass.getDeclaredMethods();
+//        for (Method method : declaredMethods) {
+//            method.setAccessible(true);
+//            if (method.getAnnotation(MyPostConstruct.class) != null) {
+//                this.initMethod.add(method);
+//                this.initMethodName.add(method.getName());
+//            }
+//            if (method.getAnnotation(MyPreDestroy.class) != null) {
+//                this.afterMethod.add(method);
+//                this.afterMethodName.add(method.getName());
+//            }
+//        }
+//    }
 
 
     private void scanBeanDependsOn(Class<?> beanClass) {

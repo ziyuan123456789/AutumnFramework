@@ -12,6 +12,7 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.AnnotationConfigApplicationCont
 import org.example.FrameworkUtils.AutumnCore.Ioc.AnnotationConfigServletWebServerApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationShutdownHook;
+import org.example.FrameworkUtils.AutumnCore.Ioc.ConfigurableApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.context.ApplicationContextInitializer;
 import org.example.FrameworkUtils.AutumnCore.env.ApplicationArguments;
 import org.example.FrameworkUtils.AutumnCore.env.ConfigurableEnvironment;
@@ -81,13 +82,58 @@ public class AutumnApplication {
          * 但一切都不是完美无缺的,我也经常在思考,是不是java这门历史包袱太重的语言到了今天已经充满了缺陷,从而需要springboot这样的框架来增强语言的能力
          * 不管事实是这样也好,还是仅仅是我的暴论也好,我都会通过注释写下我的真实写法,如果你也有一样的想法/不一致的想法 也欢迎分享出来
          */
+
+
+        //确定应用的主要配置来源,为Bean扫描的起点
         this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+
+        //初始化SPI机制,读取meta-inf下的配置文件
         this.initAutumnSpi();
+
+        //读取默认的BootstrapRegistryInitializer实现类,可以预注册组件
         this.bootstrapRegistryInitializers = this.getAutumnFactoriesInstances(BootstrapRegistryInitializer.class);
+
+        //读取默认的ApplicationContextInitializer实现类,可以修改 ApplicationContext,在Context创建后启用
         this.setInitializers(this.getAutumnFactoriesInstances(ApplicationContextInitializer.class));
+
+        //注册监听器
         this.setListeners(this.getAutumnFactoriesInstances(ApplicationListener.class));
+
+        //依照调用栈回溯到main方法,确定应用入口
         this.mainApplicationClass = deduceMainApplicationClass();
+
+        //检查是否开启了编译参数,以便获取方法的真正参数名
         this.checkEnv();
+    }
+
+    public void run(String[] args) {
+
+        //初始化命令行参数
+        this.sysArgs = args;
+
+        //创建DefaultBootstrapContext,在context没有创建之前提供一个容器
+        DefaultBootstrapContext bootstrapContext = this.createBootstrapContext();
+
+        //发布start事件
+        List<AutumnApplicationRunListener> listeners = getAutumnFactoriesInstances(AutumnApplicationRunListener.class);
+        for (AutumnApplicationRunListener listener : listeners) {
+            listener.starting(bootstrapContext, mainApplicationClass);
+        }
+
+        //包裹命令行/jvm/其他参数
+        ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+
+        //初始化环境配置,例如把主包,主类,主源进行写入保存
+        environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
+
+        //依照配置创建beanFactory,默认为`AnnotationConfigServletWebServerApplicationContext`
+        beanFactory = createApplicationContext();
+
+
+        prepareContext(bootstrapContext, beanFactory, environment, listeners, applicationArguments);
+
+        refreshContext((AnnotationConfigApplicationContext) beanFactory);
+
     }
 
 
@@ -121,7 +167,7 @@ public class AutumnApplication {
 
     }
 
-    private ApplicationContext createApplicationContext() {
+    private ConfigurableApplicationContext createApplicationContext() {
 
         if (ApplicationContext.BASE_CONTEXT.equals(environment.getProperty("autumn.beanFactory"))) {
             return new AnnotationConfigServletWebServerApplicationContext();
@@ -129,7 +175,7 @@ public class AutumnApplication {
             try {
                 Method getInstanceMethod = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext").getDeclaredMethod("getInstance");
                 getInstanceMethod.setAccessible(true);
-                return (ApplicationContext) getInstanceMethod.invoke(null);
+                return (ConfigurableApplicationContext) getInstanceMethod.invoke(null);
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
@@ -160,24 +206,7 @@ public class AutumnApplication {
 
     }
 
-    public void run(String[] args) {
-        this.sysArgs = args;
-        DefaultBootstrapContext bootstrapContext = this.createBootstrapContext();
-        List<AutumnApplicationRunListener> listeners = getAutumnFactoriesInstances(AutumnApplicationRunListener.class);
-        for (AutumnApplicationRunListener listener : listeners) {
-            listener.starting(bootstrapContext, mainApplicationClass);
-        }
-        ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
-        environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
 
-
-        beanFactory = createApplicationContext();
-        prepareContext(bootstrapContext, beanFactory, environment, listeners, applicationArguments);
-
-        refreshContext((AnnotationConfigApplicationContext) beanFactory);
-
-
-    }
 
     private void initAutumnSpi() {
         try {
@@ -255,6 +284,7 @@ public class AutumnApplication {
 
     private void checkEnv() {
         try {
+            //如果不开额外的编译参数,Java会把方法参数名都去掉,这样框架就无法获取真实的方法参数名,就得使用参数注解来标记参数名字
             Parameter[] parameters = AutumnApplication.class.getDeclaredMethod("test", String.class, String.class).getParameters();
             String[] expectedParamNames = {"test", "test2"};
             for (int i = 0; i < parameters.length; i++) {

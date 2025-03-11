@@ -2,12 +2,16 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Annotation.*;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyPostConstruct;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.AutumnCore.Aop.RequestContext;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
-import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContextAware;
+import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.EnvironmentAware;
 import org.example.FrameworkUtils.AutumnCore.compare.AnnotationInterfaceAwareOrderComparator;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
@@ -30,7 +34,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -45,21 +56,31 @@ import java.util.concurrent.Executors;
 @Slf4j
 @WebServlet("/*")
 @MyComponent
-public class DispatcherServlet extends HttpServlet implements ApplicationContextAware, EnvironmentAware {
+public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, EnvironmentAware {
 
     private final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     private final AnnotationInterfaceAwareOrderComparator comparator = AnnotationInterfaceAwareOrderComparator.getInstance();
+
     private ApplicationContext context;
+
     private Environment environment;
+
     @MyAutoWired
     private TomCatHtmlResponse tomCatHtmlResponse;
+
     @MyAutoWired
     private JsonFormatter jsonFormatter;
+
     @MyAutoWired
     private AnnotationScanner scanner;
+
     private Set<ControllerInjector> controllerInjectors = new HashSet<>();
+
     private ExecutorService threadPool;
+
     private List<Filter> filters = new ArrayList<>();
+
     private Map<String, MethodWrapper> urlMapping = new HashMap<>();
 
 //    private PrefixTreeNode root =new  PrefixTreeNode();
@@ -123,8 +144,8 @@ public class DispatcherServlet extends HttpServlet implements ApplicationContext
                 executeHandler(autumnRequest, autumnResponse, resp, methodWrapper);
             } else {
                 if (!resp.isCommitted()) {
-                    resp.setStatus(404);
-//                    resp.sendRedirect("/404");
+//                    resp.setStatus(404);
+                    resp.sendRedirect("/404");
                 } else {
                     log.error("重定向到/404");
                 }
@@ -270,9 +291,10 @@ public class DispatcherServlet extends HttpServlet implements ApplicationContext
         this.environment = environment;
     }
 
+
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        this.context = applicationContext;
+    public void setBeanFactory(ApplicationContext beanFactory) {
+        this.context = beanFactory;
     }
 }
 
