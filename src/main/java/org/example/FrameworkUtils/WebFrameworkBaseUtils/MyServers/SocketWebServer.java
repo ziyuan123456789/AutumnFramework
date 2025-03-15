@@ -43,7 +43,7 @@ import java.util.concurrent.Executors;
 @Slf4j
 //@MyComponent
 //@MyConditional(SocketServerConditionCheck.class)
-public class SocketServer implements MyServer, BeanFactoryAware {
+public class SocketWebServer implements MyWebServer, BeanFactoryAware {
     private ExecutorService threadPool;
     private ServerSocket serverSocket;
     private ApplicationContext beanFactory;

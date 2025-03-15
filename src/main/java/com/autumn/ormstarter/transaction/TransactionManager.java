@@ -5,7 +5,7 @@ import static com.autumn.ormstarter.transaction.Propagation.REQUIRES_NEW;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
-import org.example.FrameworkUtils.AutumnCore.Event.IocInitEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.ContextFinishRefreshEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.Orm.MineBatis.Io.TransactionContext;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSession;
@@ -20,7 +20,7 @@ import java.sql.SQLException;
  */
 
 @Slf4j
-public class TransactionManager implements ApplicationListener<IocInitEvent> {
+public class TransactionManager implements ApplicationListener<ContextFinishRefreshEvent> {
 
     @MyAutoWired
     private SqlSessionFactory sqlSessionFactory;
@@ -72,12 +72,12 @@ public class TransactionManager implements ApplicationListener<IocInitEvent> {
     }
 
     @Override
-    public void onApplicationEvent(IocInitEvent event) {
+    public void onApplicationEvent(ContextFinishRefreshEvent event) {
         log.warn("成功接收到开机信号,MineBatis事务处理器已成功注册");
     }
 
     @Override
     public boolean supportsEvent(ApplicationEvent event) {
-        return event instanceof IocInitEvent;
+        return event instanceof ContextFinishRefreshEvent;
     }
 }

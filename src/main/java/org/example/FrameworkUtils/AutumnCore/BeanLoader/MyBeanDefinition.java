@@ -37,10 +37,10 @@ public class MyBeanDefinition {
 
     private Class<?> beanClass;
 
-    //错误用法,即将弃用
+    //错误用法,已经弃用
     private boolean isStarter = false;
 
-    //错误用法,即将弃用
+    //错误用法,已经弃用
     private ObjectFactory<?> starterMethod;
 
     //xxx:是谁成产了这个@bean

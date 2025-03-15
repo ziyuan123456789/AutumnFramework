@@ -11,7 +11,7 @@ import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
 import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEventMulticaster;
 import org.example.FrameworkUtils.AutumnCore.Event.ContextClosedEvent;
-import org.example.FrameworkUtils.AutumnCore.Event.IocInitEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.ContextFinishRefreshEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Event.SimpleApplicationEventMulticaster;
 import org.example.FrameworkUtils.AutumnCore.compare.AnnotationInterfaceAwareOrderComparator;
@@ -57,14 +57,21 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
 
     /**
      * 三级缓存：对象工厂
-     * 原则上来说进需要二层缓存就可以解决循环依赖问题,但ObjectFactory存在的意义是为了AOP等替换bean实现
+     * 原则上来说进需要二层缓存就可以解决循环依赖问题,但ObjectFactory存在的意义是为了AOP等替换Bean实现
      */
     private final Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();
 
-    // Bean定义Map
+    /**
+     * Bean定义Map
+     * 在本项目中,我没有对Bean定义做任何抽象,也没有合并Bean定义相关的功能
+     * 在创建Bean定义构造方法中会自动扫描这个类的一些元信息,包装为AnnotationMetadata
+     * 所以不需要额外再手动处理注解,调用AnnotationMetadata的方法就可以
+     */
     private final Map<String, MyBeanDefinition> beanDefinitionMap = new LinkedHashMap<>();
 
-    //Bean工厂后置处理器,包含Bean定义后置处理器
+    /**
+     * Bean工厂后置处理器,包含Bean定义后置处理器
+     */
     private final List<BeanFactoryPostProcessor> beanFactoryPostProcessors = new ArrayList<>();
 
     //Bean后置处理器
@@ -73,7 +80,11 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     //实例化前后处理器
     private final List<InstantiationAwareBeanPostProcessor> instantiationAwareProcessors = new ArrayList<>();
 
-    //正在创建的单例bean
+    /**
+     * 正在创建的单例Bean
+     * 依靠这张Set我们可以追溯完整的依赖关系
+     * 依靠这个打印出循环依赖图
+     */
     private final Set<String> singletonsCurrentlyInCreation = new HashSet<>();
 
     //Aop工厂
@@ -147,7 +158,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
 
 
     private void finishRefresh() {
-        this.publishEvent(new IocInitEvent(new Object()));
+        this.publishEvent(new ContextFinishRefreshEvent(new Object()));
     }
 
     private void prepareBeanFactory(ConfigurableApplicationContext beanFactory) {
@@ -180,7 +191,6 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     private void registerListeners() {
         for (ApplicationListener<ApplicationEvent> listener : getApplicationListeners()) {
             addApplicationListener(listener);
-
         }
 
         for (MyBeanDefinition df : beanDefinitionMap.values()) {
@@ -639,6 +649,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
 
         if (mbd.getConstructor() != null) {
             Constructor<?> constructor = mbd.getConstructor();
+            constructor.setAccessible(true);
             try {
                 if (mbd.getParameters() == null || mbd.getParameters().length == 0) {
                     return constructor.newInstance();
@@ -651,7 +662,9 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         }
 
         try {
-            return mbd.getBeanClass().getConstructor().newInstance();
+            Constructor<?> constructor = mbd.getBeanClass().getConstructor();
+            constructor.setAccessible(true);
+            return constructor.newInstance();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new BeanCreationException(e);

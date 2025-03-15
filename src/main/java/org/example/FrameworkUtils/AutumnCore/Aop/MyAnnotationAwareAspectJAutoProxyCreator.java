@@ -46,6 +46,7 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements SmartInstantiat
 
     private List<AutumnAopFactory> factories = new ArrayList<>();
 
+
     private List<AutumnAopFactory> shouldCreateProxy(List<AutumnAopFactory> factories, Class<?> beanClass) {
         List<AutumnAopFactory> neededFactories = new ArrayList<>();
         for (AutumnAopFactory factory : factories) {
@@ -61,11 +62,6 @@ public class MyAnnotationAwareAspectJAutoProxyCreator implements SmartInstantiat
         Enhancer enhancer = new Enhancer();
 
         enhancer.setSuperclass(currentResult != null ? currentResult.getClass() : beanClass);
-        boolean shouldProxy = factories.stream()
-                .anyMatch(factory -> factory.shouldNeedAop(beanClass, beanFactory));
-        if (!shouldProxy) {
-            return (T) currentResult;
-        }
 
         enhancer.setCallback(new MethodInterceptor() {
             private final Object target = currentResult;

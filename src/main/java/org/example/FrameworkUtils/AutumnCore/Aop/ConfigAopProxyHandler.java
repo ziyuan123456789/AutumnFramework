@@ -30,7 +30,13 @@ public class ConfigAopProxyHandler implements AutumnAopFactory, BeanFactoryAware
 
     @Override
     public boolean shouldNeedAop(Class clazz, ApplicationContext myContext) {
-        return clazz.getAnnotation(MyConfig.class) != null;
+        if (clazz.getAnnotation(MyConfig.class) != null) {
+            log.debug("对配置类{}进行代理,保证@Bean方法的单例性", clazz.getName());
+            return true;
+        } else {
+            return false;
+        }
+
     }
 
     @Override

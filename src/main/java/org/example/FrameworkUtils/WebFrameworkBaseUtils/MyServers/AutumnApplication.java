@@ -69,7 +69,7 @@ public class AutumnApplication {
 
     public AutumnApplication(Class<?>... primarySources) {
         /**
-         * 非常感谢你能看到这里,能看到这段注释也说明你克隆了这段代码并且真的点进去看了,autumnFramework仅仅是对springboot的基础结构和基础功能进行简单的仿写
+         * 非常感谢你能看到这里,能看到这段注释也说明你克隆了这段代码并且真的点进去看了,AutumnFramework仅仅是对Springboot的基础结构和基础功能进行简单的仿写
          * 对于springboot这样的庞然大物想要去梳理结构甚至看到细枝末节都是一件极其不易的事情
          * 作为一个称霸整个javaWeb生态的框架肩负了太多历史包袱,控制反转和面对接口编程在spring的源码中体现的淋漓尽致
          * 对于我们这样的学习者来说无疑更是增加了不少困难,在阅读,整理,理解的过程中我也买了不少的书,翻遍了各种博客也问遍了各种ai
@@ -284,7 +284,7 @@ public class AutumnApplication {
 
     private void checkEnv() {
         try {
-            //如果不开额外的编译参数,Java会把方法参数名都去掉,这样框架就无法获取真实的方法参数名,就得使用参数注解来标记参数名字
+            //如果不开额外的编译参数,Java会把方法参数名都去掉变成例如arg1/arg2这样的无意义简写,框架无法获取真实的方法参数名,就得使用参数注解来标记参数名字
             Parameter[] parameters = AutumnApplication.class.getDeclaredMethod("test", String.class, String.class).getParameters();
             String[] expectedParamNames = {"test", "test2"};
             for (int i = 0; i < parameters.length; i++) {

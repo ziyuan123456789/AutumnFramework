@@ -8,7 +8,6 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyPostConstruct;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.AutumnCore.Aop.RequestContext;
-import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
@@ -72,8 +71,6 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
     @MyAutoWired
     private JsonFormatter jsonFormatter;
 
-    @MyAutoWired
-    private AnnotationScanner scanner;
 
     private Set<ControllerInjector> controllerInjectors = new HashSet<>();
 

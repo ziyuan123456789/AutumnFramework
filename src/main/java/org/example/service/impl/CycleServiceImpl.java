@@ -14,8 +14,23 @@ public class CycleServiceImpl implements CycleService {
     @MyAutoWired
     private CycleService cycleService;
 
+    @MyAutoWired
+    private wdwd wdwd;
+
     @Override
     public void cycle() {
         System.out.println("循环依赖");
     }
+
+    @MyService
+    static
+    class wdwd {
+
+        public wdwd() {
+
+        }
+
+    }
 }
+
+

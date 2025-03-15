@@ -18,8 +18,8 @@ public class AsyncServiceImpl implements AsyncService {
     public void asyncTest() {
         log.info("耗时方法调用开始");
         try{
-            Thread.sleep(5000);
-            log.info("耗时方法调用结束,花费了5000ms");
+            Thread.sleep(2000);
+            log.info("耗时方法调用结束,花费了2000ms");
         }catch (Exception e){
             log.error("异常", e);
         }

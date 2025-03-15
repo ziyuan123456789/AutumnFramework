@@ -11,7 +11,7 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 @Slf4j
 public class ServerRunner {
     @MyAutoWired
-    MyServer server;
+    MyWebServer server;
 
     public void run() {
         try {

@@ -3,7 +3,7 @@ package org.example.FrameworkUtils.AutumnCore.Ioc;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyServer;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyWebServer;
 
 /**
  * @author ziyuan
@@ -14,7 +14,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.MyServer;
 @EqualsAndHashCode(callSuper = false)
 public class AnnotationConfigServletWebServerApplicationContext extends AnnotationConfigApplicationContext {
 
-    private MyServer myServer;
+    private MyWebServer myWebServer;
 
     @Override
     protected void onRefresh() {
@@ -28,8 +28,8 @@ public class AnnotationConfigServletWebServerApplicationContext extends Annotati
     }
 
     private void createWebServer() throws Exception {
-        this.myServer = getBean(MyServer.class);
-        this.myServer.init();
+        this.myWebServer = getBean(MyWebServer.class);
+        this.myWebServer.init();
     }
 
 

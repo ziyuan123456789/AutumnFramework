@@ -51,6 +51,6 @@ public class SqlSessionFactoryBean implements FactoryBean<SqlSessionFactory>, Be
 
     @Override
     public void setBeanName(String beanName) {
-        log.info("我在IOC里的名字为:{}", beanName);
+        log.info("我在容器里的名字为:{}", beanName);
     }
 }

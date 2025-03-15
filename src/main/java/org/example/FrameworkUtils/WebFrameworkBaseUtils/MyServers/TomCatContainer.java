@@ -3,12 +3,13 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.Context;
+import org.apache.catalina.LifecycleException;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Tomcat;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
-import org.example.FrameworkUtils.AutumnCore.Event.IocInitEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.ContextFinishRefreshEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Ioc.EnvironmentAware;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
@@ -20,7 +21,7 @@ import org.example.FrameworkUtils.AutumnCore.env.Environment;
 
 @Slf4j
 @MyComponent
-public class TomCatContainer implements MyServer, ApplicationListener<IocInitEvent>, EnvironmentAware {
+public class TomCatContainer implements MyWebServer, ApplicationListener<ContextFinishRefreshEvent>, EnvironmentAware {
 
     private int port;
 
@@ -34,7 +35,7 @@ public class TomCatContainer implements MyServer, ApplicationListener<IocInitEve
 
 
     @Override
-    public void onApplicationEvent(IocInitEvent event) {
+    public void onApplicationEvent(ContextFinishRefreshEvent event) {
         new Thread(() -> {
             try {
                 Tomcat tomcat = new Tomcat();
@@ -49,8 +50,8 @@ public class TomCatContainer implements MyServer, ApplicationListener<IocInitEve
                 log.info("服务于{}端口启动", port);
                 log.info("http://localhost:{}/", port);
                 tomcat.getServer().await();
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
+            } catch (LifecycleException e) {
+                throw new RuntimeException(e);
             }
         }).start();
 
@@ -58,7 +59,7 @@ public class TomCatContainer implements MyServer, ApplicationListener<IocInitEve
 
     @Override
     public boolean supportsEvent(ApplicationEvent event) {
-        return event instanceof IocInitEvent;
+        return event instanceof ContextFinishRefreshEvent;
     }
 
 

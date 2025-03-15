@@ -1,5 +1,5 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
-public interface MyServer {
+public interface MyWebServer {
      void init() throws Exception;
 }

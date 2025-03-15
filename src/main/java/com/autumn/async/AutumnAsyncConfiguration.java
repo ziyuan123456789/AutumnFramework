@@ -31,7 +31,7 @@ public class AutumnAsyncConfiguration {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
-                thread.setName("Custom-Executor-" + threadId++);
+                thread.setName("Async-Executor-" + threadId++);
                 return thread;
             }
         });

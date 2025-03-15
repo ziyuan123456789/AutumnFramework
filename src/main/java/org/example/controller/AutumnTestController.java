@@ -45,6 +45,9 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
 
     private ApplicationContext beanFactory;
 
+    @MyAutoWired
+    private AsyncService asyncService;
+
     //测试配置文件注入器
     @Value("url")
     private String sqlUrl;
@@ -78,8 +81,6 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
     @MyAutoWired
     private AutumnResponse autumnResponse;
 
-    @MyAutoWired
-    private AsyncService asyncService;
 
     @MyAutoWired
     private CacheTestService cacheTestService;
@@ -127,6 +128,7 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
     @MyRequestMapping("/cache")
     public String cacheTest(String name) {
         return cacheTestService.cacheTest(name);
+
     }
 
 

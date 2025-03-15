@@ -49,14 +49,14 @@ public class CacheAopProxyHandler implements AutumnAopFactory, Ordered {
         if (Boolean.TRUE.equals(cacheManager.containsCache(cacheKey))) {
             Object cachedResult = cacheManager.getCache(cacheKey);
             if (method.getReturnType().isInstance(cachedResult)) {
-                log.info("缓存命中 {}", cacheKey);
+                log.info("缓存命中 - cacheKey 为 {} ", cacheKey);
                 return cachedResult;
             }
         }
-        log.info("缓存失效: {} 准备invoke目标方法", cacheKey);
+        log.info("缓存失效  - cacheKey 为 {} 准备invoke目标方法 ", cacheKey);
         Object result = method.invoke(obj, args);
         cacheManager.addCache(cacheKey, result);
-        log.info("缓存更新 {}", cacheKey);
+        log.info("缓存更新 - cacheKey 为 {}", cacheKey);
         return result;
     }
 
