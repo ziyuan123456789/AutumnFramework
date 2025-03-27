@@ -13,6 +13,7 @@
 
 ## 推荐:
 - [MiniReact:简单的React仿写](https://github.com/ziyuan123456789/mini-react)
+- [在线体验MiniReact](https://ziyuan123456789.github.io/)
 
 
 ## 注意事项:
@@ -593,8 +594,9 @@ public String injectTest(ColorMappingEnum color) {
 ### Web容器选择 如果你喜欢可以自行加入Jetty的适配器 可依靠条件注解实现无缝的容器切换
 ```java
 
+@Slf4j
 @MyComponent
-public class TomCatContainer implements MyServer, ApplicationListener<IocInitEvent>, EnvironmentAware {
+public class TomCatContainer implements MyWebServer, ApplicationListener<ContextFinishRefreshEvent>, EnvironmentAware {
 
   private int port;
 
@@ -608,7 +610,7 @@ public class TomCatContainer implements MyServer, ApplicationListener<IocInitEve
 
 
   @Override
-  public void onApplicationEvent(IocInitEvent event) {
+  public void onApplicationEvent(ContextFinishRefreshEvent event) {
     new Thread(() -> {
       try {
         Tomcat tomcat = new Tomcat();
@@ -623,8 +625,8 @@ public class TomCatContainer implements MyServer, ApplicationListener<IocInitEve
         log.info("服务于{}端口启动", port);
         log.info("http://localhost:{}/", port);
         tomcat.getServer().await();
-      } catch (Exception e) {
-        log.error(e.getMessage(), e);
+      } catch (LifecycleException e) {
+        throw new RuntimeException(e);
       }
     }).start();
 
@@ -632,7 +634,7 @@ public class TomCatContainer implements MyServer, ApplicationListener<IocInitEve
 
   @Override
   public boolean supportsEvent(ApplicationEvent event) {
-    return event instanceof IocInitEvent;
+    return event instanceof ContextFinishRefreshEvent;
   }
 
 
@@ -641,6 +643,7 @@ public class TomCatContainer implements MyServer, ApplicationListener<IocInitEve
     this.port = Integer.parseInt(environment.getProperty("port"));
   }
 }
+
 ```
 
 ## 代码示范 AOP章节

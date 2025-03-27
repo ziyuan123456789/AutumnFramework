@@ -34,7 +34,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -230,9 +229,9 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
                 objectList.add(null);
             }
         }
-        log.debug(String.valueOf(method));
-        log.debug(Arrays.toString(objectList.toArray()));
-        log.debug(String.valueOf(objectList.size()));
+//        log.debug(String.valueOf(method));
+//        log.debug(Arrays.toString(objectList.toArray()));
+//        log.debug(String.valueOf(objectList.size()));
         return new Tuple<>(method.invoke(instance, objectList.toArray()), method.getReturnType());
     }
 
