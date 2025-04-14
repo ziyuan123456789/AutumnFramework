@@ -13,7 +13,8 @@
 
 ## 推荐:
 - [MiniReact:简单的React仿写](https://github.com/ziyuan123456789/mini-react)
-- [在线体验MiniReact](https://ziyuan123456789.github.io/)
+- [MiniReact在线体验(如果打开白屏请F5刷新页面)](https://ziyuan123456789.github.io/)
+- [MineBatis:简单的Mybatis仿写](https://github.com/ziyuan123456789/MineBatis)
 
 
 ## 注意事项:
