@@ -1,6 +1,7 @@
 package org.example.FrameworkUtils.Utils;
 
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
+import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -20,7 +21,7 @@ public class AnnotationUtils {
         if (clazz == null) {
             throw new RuntimeException();
         }
-        if (clazz.getName().contains("$$EnhancerByCGLIB")) {
+        if (clazz.getName().contains(AutumnAopFactory.CGLIB_MARK)) {
             clazz = clazz.getSuperclass();
         }
         MyComponent ann = clazz.getAnnotation(MyComponent.class);
@@ -39,7 +40,7 @@ public class AnnotationUtils {
         if (clazz == null) {
             return new ArrayList<>();
         }
-        if (clazz.getName().contains("$$EnhancerByCGLIB")) {
+        if (clazz.getName().contains(AutumnAopFactory.CGLIB_MARK)) {
             clazz = clazz.getSuperclass();
         }
 
@@ -55,7 +56,7 @@ public class AnnotationUtils {
 
     // 查找类上的指定注解
     public static <T extends Annotation> Optional<T> findAnnotation(Class<?> clazz, Class<T> annotationClass) {
-        if (clazz.getName().contains("$$EnhancerByCGLIB")) {
+        if (clazz.getName().contains(AutumnAopFactory.CGLIB_MARK)) {
             clazz = clazz.getSuperclass();
         }
         Set<Annotation> visited = new HashSet<>();

@@ -6,214 +6,17 @@
     <title>正在加载中...</title>
     <link href="/favicon.ico" rel="icon" type="image/svg+xml"/>
 </head>
+<script type="module">
+    import '/getecharts';
+    import '/getminireact';
+    import '/getapp';
+</script>
 
 <body>
 <div class="container">
     <div id="root"></div>
     <div id="realdom"></div>
 </div>
-<script defer src="/getminireact"></script>
-<script defer src="/getecharts"></script>
-<script defer>
-    document.addEventListener("DOMContentLoaded", function () {
-        alert("JS加载完成，如果你发现后续虚拟DOM没有正常渲染,那么请F5刷新几次页面吧，我也不知道为什么会这样，我的本地环境无法复现，我猜测是JS加载的问题")
-        document.title = "MiniReactWithAutumnFramework";
-        startApp();
-    });
-    const App = () => {
-        const [elements, setElements] = Dong.useState([1, 2, 3, 4, 5]);
-        const [data, setData] = Dong.useState(114514);
-        const [backgroundColor, setBackgroundColor] = Dong.useState("");
-        const [xData, setXData] = Dong.useState([]);
-        const [yData, setYData] = Dong.useState([]);
-        const [vDomString] = Dong.useAware();
-
-        const inputRef = Dong.useRef(null);
-
-        const chartRef = Dong.useRef(null);
-
-
-        const handleRef = Dong.useCallBack(() => {
-            alert(inputRef.current?.value);
-        }, []);
-
-        Dong.useEffect(() => {
-            const realDomContainer = document.getElementById('realdom');
-            if (realDomContainer) {
-                realDomContainer.innerHTML = `
-        <h1>虚拟 DOM 展示</h1>
-        <h5>来自useEffect的消息:这是一个空数组依赖useEffect, 页面加载会运行一次</h5>
-        <div>这段内容已脱离虚拟DOM管理,MiniReact无法感知到这部分的变化</div>
-        <pre>${Dong.useAware()[0]}</pre>`;
-            }
-            return () => {
-                console.log("清理副作用");
-            };
-        }, []);
-
-        const testFunction = () => {
-            console.log('愚蠢的的MiniReact并不知道函数到底变了没');
-        };
-
-        const testFunctionWithUseCallBack = Dong.useCallBack(() => {
-            console.log('愚蠢的的MiniReact还是并不知道函数到底变了没,所以他打算引入一些外援');
-        }, []);
-
-        const [functionHandler] = Dong.useState(testFunction);
-
-        const [functionHandlerWithUseCallBack] = Dong.useState(testFunctionWithUseCallBack);
-
-        Dong.useEffect(() => {
-            if (testFunction === functionHandler) {
-                console.log('第一次运行,所以引用相同');
-            } else {
-                console.log('什么事情都是第一次好,第二次就不是一个感觉了');
-            }
-        });
-
-        Dong.useEffect(() => {
-            if (testFunctionWithUseCallBack === functionHandlerWithUseCallBack) {
-                console.log('useCallBack生效中');
-            } else {
-                console.log('useCallBack失效了');
-            }
-        });
-
-        Dong.useEffect(() => {
-            const realDomContainer = document.getElementById('realdom');
-            if (realDomContainer) {
-                realDomContainer.innerHTML = `
-        <h2>虚拟 DOM 展示</h2>
-        <div>这段内容已脱离虚拟DOM管理,MiniReact无法感知到这部分的变化</div>
-        <pre>${Dong.useAware()[0]}</pre>
-    `;
-            }
-        }, [vDomString])
-
-        Dong.useEffect(() => {
-            const realDomContainer = document.getElementById('realdom');
-            if (realDomContainer) {
-                realDomContainer.innerHTML = `
-        <h1>虚拟 DOM 展示</h1>
-        <h5>来自useEffect的消息:这个useEffect依赖于data, 页面加载会运行一次, data变动时也会触发，当前值为 ${data}</h5>
-        <div>这段内容已脱离虚拟DOM管理,MiniReact无法感知到这部分的变化</div>
-        <pre>${Dong.useAware()[0]}</pre>`;
-            }
-            return () => {
-                console.log("清理副作用");
-            };
-        }, [data]);
-
-        const generateRandomColor = Dong.useCallBack(() => {
-            const letters = '0123456789ABCDEF';
-            let color = '#';
-            for (let i = 0; i < 6; i++) {
-                color += letters[Math.floor(Math.random() * 16)];
-            }
-            return color;
-        }, []);
-
-
-        const handleClick = Dong.useCallBack(() => {
-            setData((temp) => temp + 1);
-            setBackgroundColor(generateRandomColor());
-        }, [generateRandomColor]);
-
-
-        Dong.useEffect(() => {
-            setTimeout(() => {
-                const chartDom = chartRef.current;
-                if (!chartDom) return;
-
-                const myChart = echarts.init(chartDom);
-
-                setXData(() => [...xData, 1]);
-                setYData(() => [...xData, 1]);
-                const option = {
-                    xAxis: {
-                        type: 'category',
-                        data: xData,
-                    },
-                    yAxis: {
-                        type: 'value',
-                    },
-                    series: [
-                        {
-                            data: yData,
-                            type: 'bar',
-                        },
-                    ],
-                };
-
-                myChart.setOption(option);
-
-                return () => {
-                    myChart.dispose();
-                };
-            }, 0);
-        }, [data]);
-
-        return Dong.createElement("div", {id: "app"},
-
-
-            Dong.createElement("h1", {
-                style: {backgroundColor: backgroundColor, transition: "background 0.5s"},
-                onClick: handleClick
-            }, "MiniReact - 点击触发一次 useState"),
-
-
-            Dong.createElement("h2", null, "打开F12查看MiniReact工作详情 当差异出现会绘制一个淡蓝色的边框包裹住更新的元素"),
-            Dong.createElement("h2", null, data),
-
-
-            Dong.createElement("input", {ref: inputRef}),
-
-
-            Dong.createElement("button", {onClick: handleRef}, "点击获取输入框内容"),
-
-
-            Dong.createElement("button", {
-                onClick: Dong.useCallBack(() => setElements((temp) => [...temp, ...temp]), [])
-            }, "点击触发一次useState,复制数组 [...temp, ...temp]"),
-
-
-            Dong.createElement("div", {
-                ref: chartRef,
-                style: {width: "600px", height: "400px"}
-            }),
-
-
-            Dong.createElement("ul", null,
-                ...elements.map((item, index) =>
-                    Dong.createElement("li", {key: index}, item)
-                )
-            )
-        );
-
-    };
-
-
-    //我不知道为什么,也许是echarts的依赖太大了,让我的渲染机制随机失效,我尝试放入了下一次事件循环
-    function startApp() {
-        setTimeout(() => {
-            // 渲染组件
-            const root = document.getElementById("root");
-            if (root) {
-                Dong.render(Dong.createElement(App, null), root);
-            }
-            const realDomContainer = document.getElementById('realdom');
-            if (realDomContainer) {
-                realDomContainer.innerHTML = `
-            <h2>虚拟 DOM 展示</h2>
-            <div>这段内容已脱离虚拟DOM管理, MiniReact无法感知到这部分的变化</div>
-            <pre>${Dong.useAware()[0]}</pre>
-        `;
-            }
-        }, 0);
-    }
-
-
-</script>
 </body>
 <style>
     body {
@@ -270,5 +73,25 @@
     .fade-in-border {
         animation: fadeInOutline 3s ease-in-out;
     }
-</style>
-</html>
+
+    button {
+        padding: 0.5rem 1rem;
+        background-color: #0078d4;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #005fa3;
+    }
+
+    input:focus {
+        outline-color: #0078d4;
+    }
+
+
+    <
+    /
+    html >

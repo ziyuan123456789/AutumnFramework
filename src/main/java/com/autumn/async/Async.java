@@ -10,6 +10,8 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2024.08
  */
+
+//用于标记异步方法
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.ToString;
 import org.example.FrameworkUtils.AutumnCore.Annotation.DependsOn;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
 import org.example.FrameworkUtils.AutumnCore.Ioc.FactoryBean;
 import org.example.FrameworkUtils.Exception.BeanDefinitionCreationException;
 
@@ -67,7 +68,7 @@ public class MyBeanDefinition {
     private Scope scope = Scope.SINGLETON;
 
     public Boolean isFactoryBean() {
-        if (beanClass.getName().contains("$$EnhancerByCGLIB")) {
+        if (beanClass.getName().contains(AutumnAopFactory.CGLIB_MARK)) {
             beanClass = beanClass.getSuperclass();
         }
         return FactoryBean.class.isAssignableFrom(beanClass);
@@ -120,7 +121,7 @@ public class MyBeanDefinition {
             return;
         }
 
-        if (beanClass.getName().contains("$$EnhancerByCGLIB")) {
+        if (beanClass.getName().contains(AutumnAopFactory.CGLIB_MARK)) {
             beanClass = beanClass.getSuperclass();
         }
 

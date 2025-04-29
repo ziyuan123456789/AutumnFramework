@@ -1,6 +1,7 @@
 package org.example.FrameworkUtils.AutumnCore.BeanLoader;
 
 import lombok.Getter;
+import org.example.FrameworkUtils.AutumnCore.Aop.AutumnAopFactory;
 import org.example.FrameworkUtils.Utils.AnnotationUtils;
 
 import java.lang.annotation.Annotation;
@@ -27,7 +28,7 @@ public class AnnotationMetadata {
         if (Proxy.isProxyClass(clazz)) {
             return true;
         }
-        return clazz.getName().contains("$$EnhancerByCGLIB");
+        return clazz.getName().contains(AutumnAopFactory.CGLIB_MARK);
     }
 
     //复合注解也会被一起扫描

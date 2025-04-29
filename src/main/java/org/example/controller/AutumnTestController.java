@@ -100,12 +100,6 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
         return beanTestConfig.giveMeWenJieCar().toString();
     }
 
-    @MyRequestMapping("/refresh")
-    public void refresh() {
-        beanFactory.refresh();
-        log.warn("你有没有感觉到环境有点不一样了?");
-    }
-
     //测试事务
     @MyRequestMapping("/transaction")
     public String transactionTest() throws SQLException {

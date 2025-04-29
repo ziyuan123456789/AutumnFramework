@@ -18,7 +18,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 public class AutumnBaseController implements BeanFactoryAware {
 
     @Value("baseHtml")
-    String baseHtml;
+    private String baseHtml;
 
     @MyAutoWired
     private AutumnMvcConfiguration autumnMvcConfiguration;

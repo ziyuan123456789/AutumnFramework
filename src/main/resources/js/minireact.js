@@ -1,1 +1,594 @@
-(function(i,h){typeof exports=="object"&&typeof module<"u"?h(exports):typeof define=="function"&&define.amd?define(["exports"],h):(i=typeof globalThis<"u"?globalThis:i||self,h(i.Dong={}))})(this,function(i){"use strict";function h(e,t,...n){return console.log("createElement生成的原始虚拟DOM如下"),e==null&&console.error("ERROR"),console.log({type:e,props:{...t,children:n.map(o=>typeof o=="object"?o:g(o))}}),{type:e,props:{...t,children:n.map(o=>typeof o=="object"?o:g(o))}}}function g(e){return{type:"TEXT_ELEMENT",props:{nodeValue:e,children:[]}}}let d=null,u=null,p=null,E=[],c=null,a=0;function C(e,t){u={dom:t,props:{children:[e]},alternate:p},d=u,console.log("render阶段结束,生成的wipRoot如下"),console.log(u)}requestIdleCallback(m);function m(e){let t=!1;for(;d&&!t;)d=N(d),t=e.timeRemaining()<1,t&&console.warn("空闲时间耗尽，生成虚拟 DOM 被打断，等待下次调度以便从上次中断的地方继续");!d&&u&&W(),d&&requestIdleCallback(m)}function N(e){if(c=e,typeof e.type=="function"&&(a=0,e.hooks=[]),V(e),e.child)return e.child;let t=e;for(;t;){if(t.sibling)return t.sibling;t=t.return}return null}function V(e){var t;if(typeof e.type=="function"){const n=e.type(e.props);Array.isArray(n)?k(e,n):k(e,[n])}else{e.dom||(e.dom=_(e));const n=((t=e.props)==null?void 0:t.children)||[];k(e,n)}}function H(e,t){if(e===t)return!0;const n=Object.keys(e),o=Object.keys(t);if(n.length!==o.length)return!1;for(let l of n){const s=e[l],r=t[l];if(l==="children"){if(Array.isArray(s)&&Array.isArray(r)){if(s.length!==r.length)return!1;if(s.length>1){for(let f=0;f<s.length;f++)if(s[f].type!==r[f].type)return!1}else if(s.length===1&&(Array.isArray(s[0])&&console.error(s[0]),!Array.isArray(s[0])))return s[0].props.nodeValue===r[0].props.nodeValue}}else{if(l.startsWith("on")&&typeof s=="function"&&typeof r=="function")return s===r;if(!D(s,r))return!1}}return!0}const D=(e,t)=>{if(e===t)return!0;if(typeof e!="object"||typeof t!="object"||e==null||t==null)return!1;const n=Object.keys(e),o=Object.keys(t);if(n.length!==o.length)return!1;for(let l of n)if(!o.includes(l)||!D(e[l],t[l]))return!1;return!0};function I(e,t){return e===t?!0:e.type!==t.type?!1:H(e.props,t.props)}function k(e,t){let n=0,o=null,l=e.alternate&&e.alternate.child,s=t.flat();for(;n<s.length||l!=null;){let r=s[n];typeof r!="object"&&(r=g(r));let f=null;l&&r&&r.type===l.type?!I(r,l)?(console.warn("节点与上一课fiber树不一致,需要进行节点更新,更新的fiber如下"),f={type:l.type,props:r.props,dom:l.dom,return:e,alternate:l,effectTag:"UPDATE",shouldHighlight:!0},console.log(f),console.log(l)):f={type:l.type,props:r.props,dom:l.dom,return:e,alternate:l,effectTag:"",shouldHighlight:!1}:(r&&(f={type:r.type,props:r.props,dom:null,return:e,alternate:null,effectTag:"PLACEMENT",shouldHighlight:!0}),l&&(l.effectTag="DELETION",E.push(l))),l&&(l=l.sibling),n===0?e.child=f:o&&(o.sibling=f),console.log("协调后的虚拟DOM如下"),o=f,console.log(o),n++}}function W(){E.forEach(y),E=[],y(u.child),T(u.child),p=u,u=null}function T(e){e&&(e.hooks&&e.hooks.forEach(t=>{t.effect&&t.hasEffect&&(t.cleanup=t.effect(),t.hasEffect=!1)}),T(e.child),T(e.sibling))}function y(e){if(!e)return;let t=e.return;for(;!t.dom;)t=t.return;const n=t.dom;if(e.effectTag==="PLACEMENT"&&e.dom!=null)n.appendChild(e.dom),n.classList.add("fade-in-border"),setTimeout(()=>{n.classList.remove("fade-in-border")},3e3),console.log("节点插入");else if(e.effectTag==="UPDATE"&&e.dom!=null)X(e.dom,e.alternate.props,e.props);else if(e.effectTag==="DELETION"){A(e,n),console.log("节点删除");return}y(e.child),y(e.sibling)}function A(e,t){e&&(e.dom?t.removeChild(e.dom):A(e.child,t),A(e.sibling,t))}function _(e){let t;e.type=="TEXT_ELEMENT"?t=document.createTextNode(e.props.nodeValue):t=document.createElement(e.type==null?"div":e.type);for(const n in e.props)B(t,n,e.props[n]);return console.log("真实DOM如下:"),console.log(t),t}function O(e,t){return typeof t=="function"&&e.startsWith("on")}function U(e,t){return e=="style"&&typeof t=="object"}function L(e,t){return typeof t!="object"&&typeof t!="function"}const B=(e,t,n)=>{if(t!=="children")if(t==="nodeValue")e.textContent=n;else if(O(t,n)){const o=t.slice(2).toLowerCase();e.addEventListener(o,n)}else U(t,n)?Object.assign(e.style,n):t==="ref"&&typeof n=="object"?n.current=e:L(t,n)&&e.setAttribute(t,n)};function X(e,t,n){if(e instanceof Text){t.nodeValue!==n.nodeValue&&(e.nodeValue=n.nodeValue);return}Object.entries(t).filter(([o,l])=>O(o,l)).forEach(([o,l])=>{const s=o.toLowerCase().substring(2);e.removeEventListener(s,l)}),Object.entries(n).filter(([o,l])=>O(o,l)).forEach(([o,l])=>{const s=o.toLowerCase().substring(2);e.addEventListener(s,l)}),Object.keys(t).filter(o=>L(o,t[o])).forEach(o=>{o in n||e.removeAttribute(o)}),Object.keys(n).filter(o=>L(o,n[o])).forEach(o=>{t[o]!==n[o]&&e.setAttribute(o,n[o])}),t.style&&Object.keys(t.style).forEach(o=>{(!n.style||!(o in n.style))&&(e.style[o]="")}),n.style&&Object.keys(n.style).forEach(o=>{(!t.style||t.style[o]!==n.style[o])&&(e.style[o]=n.style[o])}),e.classList.add("fade-in-border"),setTimeout(()=>{e.classList.remove("fade-in-border")},3e3)}function j(e){const t=c.alternate&&c.alternate.hooks?c.alternate.hooks[a]:null,n={state:t?t.state:e,queue:t?t.queue:[]};n.queue.forEach(l=>{console.log("处理hooks中"),console.log("action",l),n.state=l(n.state)}),n.queue.length=0;const o=l=>{console.log("setState调用"),n.queue.push(typeof l=="function"?l:()=>l),u={dom:p.dom,props:p.props,alternate:p},d=u,console.log("调用useState造成重新渲染"),requestIdleCallback(m)};return c.hooks.push(n),a++,[n.state,o]}function w(e,t){const n=c.alternate&&c.alternate.hooks?c.alternate.hooks[a]:null;let o;n&&t?o=t.some((s,r)=>!Object.is(s,n.deps[r])):o=!0;const l={deps:t,effect:e,cleanup:n?n.cleanup:null};if(o){l.cleanup&&l.cleanup();const s=e();l.cleanup=typeof s=="function"?s:null}c.hooks.push(l),a++}function R(e,t){const n=c.alternate&&c.alternate.hooks?c.alternate.hooks[a]:null;let o;n&&t?o=t.some((s,r)=>!Object.is(s,n.deps[r])):o=!0;const l={callback:o?e:n.callback,deps:t};return c.hooks.push(l),a++,l.callback}function S(){const e=new Set;function t(n,o){if(n==="dom"||n==="alternate")return"[忽略]";if(n==="props"&&typeof o=="object"&&o!==null){const l={};return Object.keys(o).forEach(s=>{(s==="children"||typeof o[s]!="function")&&(l[s]=o[s])}),l}if(typeof o=="object"&&o!==null){if(e.has(o))return"[循环引用]";e.add(o)}return o}return[JSON.stringify(u,t,2),u]}function q(e){const n=(c.alternate&&c.alternate.hooks?c.alternate.hooks[a]:null)||{current:e};return c.hooks.push(n),a++,n}const M={createElement:h,render:C,useState:j,useEffect:w,useAware:S,useCallBack:R,useRef:q};typeof window<"u"&&(window.Dong=M),i.default=M,i.render=C,i.useAware=S,i.useCallBack=R,i.useEffect=w,i.useRef=q,i.useState=j,Object.defineProperties(i,{__esModule:{value:!0},[Symbol.toStringTag]:{value:"Module"}})});
+var Dong = (() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, {get: all[name], enumerable: true});
+  };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, {
+            get: () => from[key],
+            enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+          });
+    }
+    return to;
+  };
+  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", {value: true}), mod);
+
+  // src/dong.ts
+  var dong_exports = {};
+  __export(dong_exports, {
+    default: () => dong_default,
+    render: () => render,
+    useAware: () => useAware,
+    useCallBack: () => useCallBack,
+    useEffect: () => useEffect,
+    useMemo: () => useMemo,
+    useRef: () => useRef,
+    useState: () => useState
+  });
+
+  function createElement(type, props, ...children) {
+    console.log("createElement\u751F\u6210\u7684\u539F\u59CB\u865A\u62DFDOM\u5982\u4E0B");
+    if (type == void 0) {
+      console.error("ERROR");
+    }
+    console.log({
+      type,
+      props: {
+        ...props,
+        children: children.map(
+            (child) => typeof child === "object" ? child : createTextElement(child)
+        )
+      }
+    });
+    return {
+      type,
+      props: {
+        ...props,
+        children: children.map(
+            (child) => typeof child === "object" ? child : createTextElement(child)
+        )
+      }
+    };
+  }
+
+  function createTextElement(text) {
+    return {
+      type: "TEXT_ELEMENT",
+      props: {
+        nodeValue: text,
+        children: []
+      }
+    };
+  }
+
+  var nextFiberReconcileWork = null;
+  var wipRoot = null;
+  var currentRoot = null;
+  var deletions = [];
+  var currentFiber = null;
+  var hookIndex = 0;
+
+  function render(element, container) {
+    wipRoot = {
+      dom: container,
+      //渲染的目标容器
+      props: {
+        children: [element]
+        //虚拟dom
+      },
+      alternate: currentRoot
+      //当前根Fiber树存入wipRoot.alternate
+    };
+    nextFiberReconcileWork = wipRoot;
+    console.log("render\u9636\u6BB5\u7ED3\u675F,\u751F\u6210\u7684wipRoot\u5982\u4E0B");
+    console.log(wipRoot);
+  }
+
+  requestIdleCallback(workLoop);
+
+  function workLoop(deadline) {
+    let shouldYield = false;
+    while (nextFiberReconcileWork && !shouldYield) {
+      nextFiberReconcileWork = performNextWork(nextFiberReconcileWork);
+      shouldYield = deadline.timeRemaining() < 1;
+      if (shouldYield) {
+        console.warn("\u7A7A\u95F2\u65F6\u95F4\u8017\u5C3D\uFF0C\u751F\u6210\u865A\u62DF DOM \u88AB\u6253\u65AD\uFF0C\u7B49\u5F85\u4E0B\u6B21\u8C03\u5EA6\u4EE5\u4FBF\u4ECE\u4E0A\u6B21\u4E2D\u65AD\u7684\u5730\u65B9\u7EE7\u7EED");
+      }
+    }
+    if (nextFiberReconcileWork) {
+      requestIdleCallback(workLoop);
+    }
+    if (!nextFiberReconcileWork && wipRoot) {
+      commitRoot();
+    }
+  }
+
+  function performNextWork(fiber) {
+    currentFiber = fiber;
+    if (typeof fiber.type === "function") {
+      hookIndex = 0;
+      fiber.hooks = [];
+    }
+    reconcile(fiber);
+    if (fiber.child) {
+      return fiber.child;
+    }
+    let nextFiber = fiber;
+    while (nextFiber) {
+      if (nextFiber.sibling) {
+        return nextFiber.sibling;
+      }
+      nextFiber = nextFiber.return;
+    }
+    return null;
+  }
+
+  function reconcile(fiber) {
+    var _a;
+    if (typeof fiber.type === "function") {
+      const child = fiber.type(fiber.props);
+      if (Array.isArray(child)) {
+        reconcileChildren(fiber, child);
+      } else {
+        reconcileChildren(fiber, [child]);
+      }
+    } else {
+      if (!fiber.dom) {
+        fiber.dom = createDom(fiber);
+      }
+      const children = ((_a = fiber.props) == null ? void 0 : _a.children) || [];
+      reconcileChildren(fiber, children);
+    }
+  }
+
+  function shallowEqual(obj1, obj2) {
+    if (obj1 === obj2) return true;
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    if (keys1.length !== keys2.length) return false;
+    for (let key of keys1) {
+      const value1 = obj1[key];
+      const value2 = obj2[key];
+      if (key === "children") {
+        if (Array.isArray(value1) && Array.isArray(value2)) {
+          if (value1.length !== value2.length) return false;
+          if (value1.length > 1) {
+            for (let i = 0; i < value1.length; i++) {
+              if (value1[i].type !== value2[i].type) {
+                return false;
+              }
+            }
+          } else if (value1.length === 1) {
+            if (Array.isArray(value1[0])) {
+              console.error(value1[0]);
+            }
+            if (!Array.isArray(value1[0])) {
+              return value1[0].props.nodeValue === value2[0].props.nodeValue;
+            }
+          }
+        }
+      } else {
+        if (key.startsWith("on") && typeof value1 === "function" && typeof value2 === "function") {
+          return value1 === value2;
+        }
+        if (!deepEqual(value1, value2)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  var deepEqual = (obj1, obj2) => {
+    if (obj1 === obj2) return true;
+    if (typeof obj1 !== "object" || typeof obj2 !== "object" || obj1 == null || obj2 == null) {
+      return false;
+    }
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    if (keys1.length !== keys2.length) return false;
+    for (let key of keys1) {
+      if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  function diff(oldfiber, newfiber) {
+    if (oldfiber === newfiber) return true;
+    if (oldfiber.type !== newfiber.type) return false;
+    return shallowEqual(oldfiber.props, newfiber.props);
+  }
+
+  function reconcileChildren(wipFiber, elements) {
+    let index = 0;
+    let prevSibling = null;
+    let oldFiber = wipFiber.alternate && wipFiber.alternate.child;
+    let flattenedElements = elements.flat();
+    while (index < flattenedElements.length || oldFiber != null) {
+      let element = flattenedElements[index];
+      if (typeof element !== "object") {
+        element = createTextElement(element);
+      }
+      let newFiber = null;
+      const sameType = oldFiber && element && element.type === oldFiber.type;
+      if (sameType) {
+        const shouldUpdate = !diff(element, oldFiber);
+        if (shouldUpdate) {
+          console.warn("\u8282\u70B9\u4E0E\u4E0A\u4E00\u8BFEfiber\u6811\u4E0D\u4E00\u81F4,\u9700\u8981\u8FDB\u884C\u8282\u70B9\u66F4\u65B0,\u66F4\u65B0\u7684fiber\u5982\u4E0B");
+          newFiber = {
+            type: oldFiber.type,
+            props: element.props,
+            dom: oldFiber.dom,
+            return: wipFiber,
+            alternate: oldFiber,
+            effectTag: "UPDATE"
+          };
+          console.log(newFiber);
+          console.log(oldFiber);
+        } else {
+          newFiber = {
+            type: oldFiber.type,
+            props: element.props,
+            dom: oldFiber.dom,
+            return: wipFiber,
+            alternate: oldFiber,
+            effectTag: ""
+          };
+        }
+      } else {
+        if (element) {
+          newFiber = {
+            type: element.type,
+            props: element.props,
+            dom: null,
+            return: wipFiber,
+            alternate: null,
+            effectTag: "PLACEMENT"
+          };
+        }
+        if (oldFiber) {
+          oldFiber.effectTag = "DELETION";
+          deletions.push(oldFiber);
+        }
+      }
+      if (oldFiber) {
+        oldFiber = oldFiber.sibling;
+      }
+      if (index === 0) {
+        wipFiber.child = newFiber;
+      } else if (prevSibling) {
+        prevSibling.sibling = newFiber;
+      }
+      console.log("\u534F\u8C03\u540E\u7684\u865A\u62DFDOM\u5982\u4E0B");
+      prevSibling = newFiber;
+      console.log(prevSibling);
+      index++;
+    }
+  }
+
+  function commitRoot() {
+    deletions.forEach(commitWork);
+    deletions = [];
+    commitWork(wipRoot.child);
+    runEffects(wipRoot.child);
+    currentRoot = wipRoot;
+    wipRoot = null;
+  }
+
+  function runEffects(fiber) {
+    if (!fiber) return;
+    if (fiber.hooks) {
+      fiber.hooks.forEach((hook) => {
+        if (hook.effect && hook.hasEffect) {
+          hook.cleanup = hook.effect();
+          hook.hasEffect = false;
+        }
+      });
+    }
+    runEffects(fiber.child);
+    runEffects(fiber.sibling);
+  }
+
+  function commitWork(fiber) {
+    if (!fiber) {
+      return;
+    }
+    let domParentFiber = fiber.return;
+    while (!domParentFiber.dom) {
+      domParentFiber = domParentFiber.return;
+    }
+    const domParent = domParentFiber.dom;
+    if (fiber.effectTag === "PLACEMENT" && fiber.dom != null) {
+      domParent.appendChild(fiber.dom);
+      domParent.classList.add("fade-in-border");
+      setTimeout(() => {
+        domParent.classList.remove("fade-in-border");
+      }, 3e3);
+      console.log("\u8282\u70B9\u63D2\u5165");
+    } else if (fiber.effectTag === "UPDATE" && fiber.dom != null) {
+      updateDom(fiber.dom, fiber.alternate.props, fiber.props);
+    } else if (fiber.effectTag === "DELETION") {
+      commitDeletion(fiber, domParent);
+      console.log("\u8282\u70B9\u5220\u9664");
+      return;
+    }
+    commitWork(fiber.child);
+    commitWork(fiber.sibling);
+  }
+
+  function commitDeletion(fiber, domParent) {
+    if (!fiber) return;
+    if (fiber.dom) {
+      domParent.removeChild(fiber.dom);
+    } else {
+      commitDeletion(fiber.child, domParent);
+    }
+    commitDeletion(fiber.sibling, domParent);
+  }
+
+  function createDom(fiber) {
+    let dom;
+    if (fiber.type == "TEXT_ELEMENT") {
+      dom = document.createTextNode(fiber.props.nodeValue);
+    } else {
+      dom = document.createElement(fiber.type == void 0 ? "div" : fiber.type);
+    }
+    for (const prop in fiber.props) {
+      setAttribute(dom, prop, fiber.props[prop]);
+    }
+    console.log("\u771F\u5B9EDOM\u5982\u4E0B:");
+    console.log(dom);
+    return dom;
+  }
+
+  function isEventListenerAttr(key, value) {
+    return typeof value == "function" && key.startsWith("on");
+  }
+
+  function isStyleAttr(key, value) {
+    return key == "style" && typeof value == "object";
+  }
+
+  function isPlainAttr(_key, value) {
+    return typeof value != "object" && typeof value != "function";
+  }
+
+  var setAttribute = (dom, key, value) => {
+    if (key === "children") {
+      return;
+    }
+    if (key === "nodeValue") {
+      dom.textContent = value;
+    } else if (isEventListenerAttr(key, value)) {
+      const eventType = key.slice(2).toLowerCase();
+      dom.addEventListener(eventType, value);
+    } else if (isStyleAttr(key, value)) {
+      Object.assign(dom.style, value);
+    } else if (key === "ref" && typeof value === "object") {
+      value.current = dom;
+    } else if (isPlainAttr(key, value)) {
+      dom.setAttribute(key, value);
+    }
+  };
+
+  function updateDom(dom, prevProps, nextProps) {
+    if (dom instanceof Text) {
+      if (prevProps.nodeValue !== nextProps.nodeValue) {
+        dom.nodeValue = nextProps.nodeValue;
+      }
+      return;
+    }
+    Object.entries(prevProps).filter(([key, value]) => isEventListenerAttr(key, value)).forEach(([name, value]) => {
+      const eventType = name.toLowerCase().substring(2);
+      dom.removeEventListener(eventType, value);
+    });
+    Object.entries(nextProps).filter(([key, value]) => isEventListenerAttr(key, value)).forEach(([name, value]) => {
+      const eventType = name.toLowerCase().substring(2);
+      dom.addEventListener(eventType, value);
+    });
+    Object.keys(prevProps).filter((key) => isPlainAttr(key, prevProps[key])).forEach((name) => {
+      if (!(name in nextProps)) {
+        dom.removeAttribute(name);
+      }
+    });
+    Object.keys(nextProps).filter((key) => isPlainAttr(key, nextProps[key])).forEach((name) => {
+      if (prevProps[name] !== nextProps[name]) {
+        dom.setAttribute(name, nextProps[name]);
+      }
+    });
+    if (prevProps.style) {
+      Object.keys(prevProps.style).forEach((key) => {
+        if (!nextProps.style || !(key in nextProps.style)) {
+          dom.style[key] = "";
+        }
+      });
+    }
+    if (nextProps.style) {
+      Object.keys(nextProps.style).forEach((key) => {
+        if (!prevProps.style || prevProps.style[key] !== nextProps.style[key]) {
+          dom.style[key] = nextProps.style[key];
+        }
+      });
+    }
+    dom.classList.add("fade-in-border");
+    setTimeout(() => {
+      dom.classList.remove("fade-in-border");
+    }, 3e3);
+  }
+
+  function useState(initialValue) {
+    const oldHook = currentFiber.alternate && currentFiber.alternate.hooks ? currentFiber.alternate.hooks[hookIndex] : null;
+    const hook = {
+      state: oldHook ? oldHook.state : initialValue,
+      queue: oldHook ? oldHook.queue : []
+    };
+    hook.queue.forEach((action) => {
+      console.log("\u5904\u7406hooks\u4E2D");
+      console.log("action", action);
+      hook.state = action(hook.state);
+    });
+    hook.queue.length = 0;
+    const setState = (action) => {
+      console.log("setState\u8C03\u7528");
+      hook.queue.push(typeof action === "function" ? action : () => action);
+      wipRoot = {
+        dom: currentRoot.dom,
+        props: currentRoot.props,
+        alternate: currentRoot
+      };
+      nextFiberReconcileWork = wipRoot;
+      console.log("\u8C03\u7528useState\u9020\u6210\u91CD\u65B0\u6E32\u67D3");
+      while (nextFiberReconcileWork) {
+        nextFiberReconcileWork = performNextWork(nextFiberReconcileWork);
+      }
+      if (!nextFiberReconcileWork && wipRoot) {
+        commitRoot();
+      }
+    };
+    currentFiber.hooks.push(hook);
+    hookIndex++;
+    return [hook.state, setState];
+  }
+
+  function useEffect(callback, deps) {
+    const oldHook = currentFiber.alternate && currentFiber.alternate.hooks ? currentFiber.alternate.hooks[hookIndex] : null;
+    let hasChangedDeps;
+    if (!oldHook) {
+      hasChangedDeps = true;
+    } else {
+      if (deps) {
+        hasChangedDeps = deps.some((dep, i) => {
+          return !Object.is(dep, oldHook.deps[i]);
+        });
+      } else {
+        hasChangedDeps = true;
+      }
+    }
+    const hook = {
+      deps,
+      // 当前的依赖项
+      effect: callback,
+      // 副作用函数
+      cleanup: oldHook ? oldHook.cleanup : null
+      // 保存旧的清理函数
+    };
+    if (hasChangedDeps) {
+      if (hook.cleanup) {
+        hook.cleanup();
+      }
+      const cleanup = callback();
+      hook.cleanup = typeof cleanup === "function" ? cleanup : null;
+    }
+    currentFiber.hooks.push(hook);
+    hookIndex++;
+  }
+
+  function useMemo(callback, deps) {
+    const oldHook = currentFiber.alternate && currentFiber.alternate.hooks ? currentFiber.alternate.hooks[hookIndex] : null;
+    let hasChangedDeps = false;
+    let memoizedValue;
+    if (!oldHook) {
+      hasChangedDeps = true;
+    } else {
+      if (deps) {
+        hasChangedDeps = deps.some((dep, i) => !Object.is(dep, oldHook.deps[i]));
+      } else {
+        hasChangedDeps = true;
+      }
+    }
+    if (hasChangedDeps) {
+      memoizedValue = callback();
+    } else {
+      memoizedValue = oldHook.memoizedValue;
+    }
+    const hook = {
+      memoizedValue,
+      deps
+    };
+    currentFiber.hooks.push(hook);
+    hookIndex++;
+    return memoizedValue;
+  }
+
+  function useCallBack(callback, deps) {
+    const oldHook = currentFiber.alternate && currentFiber.alternate.hooks ? currentFiber.alternate.hooks[hookIndex] : null;
+    let hasChangedDeps;
+    if (!oldHook) {
+      hasChangedDeps = true;
+    } else {
+      if (deps) {
+        hasChangedDeps = deps.some((dep, i) => !Object.is(dep, oldHook.deps[i]));
+      } else {
+        hasChangedDeps = true;
+      }
+    }
+    const hook = {
+      callback: hasChangedDeps ? callback : oldHook.callback,
+      deps
+    };
+    currentFiber.hooks.push(hook);
+    hookIndex++;
+    return hook.callback;
+  }
+
+  function useAware() {
+    const seen = /* @__PURE__ */ new Set();
+
+    function replacer(key, value) {
+      if (key === "dom" || key === "alternate") {
+        return "[\u5FFD\u7565]";
+      }
+      if (key === "props" && typeof value === "object" && value !== null) {
+        const filteredProps = {};
+        Object.keys(value).forEach((propKey) => {
+          if (propKey === "children" || typeof value[propKey] !== "function") {
+            filteredProps[propKey] = value[propKey];
+          }
+        });
+        return filteredProps;
+      }
+      if (typeof value === "object" && value !== null) {
+        if (seen.has(value)) {
+          return "[\u5FAA\u73AF\u5F15\u7528]";
+        }
+        seen.add(value);
+      }
+      return value;
+    }
+
+    return [JSON.stringify(wipRoot, replacer, 2), wipRoot];
+  }
+
+  function useRef(initialValue) {
+    const oldHook = currentFiber.alternate && currentFiber.alternate.hooks ? currentFiber.alternate.hooks[hookIndex] : null;
+    const hook = oldHook || {current: initialValue};
+    currentFiber.hooks.push(hook);
+    hookIndex++;
+    return hook;
+  }
+
+  var Dong = {
+    createElement,
+    render,
+    useState,
+    useEffect,
+    useAware,
+    useCallBack,
+    useRef,
+    useMemo
+  };
+  if (typeof window !== "undefined") {
+    window.Dong = Dong;
+  }
+  var dong_default = Dong;
+  return __toCommonJS(dong_exports);
+})();

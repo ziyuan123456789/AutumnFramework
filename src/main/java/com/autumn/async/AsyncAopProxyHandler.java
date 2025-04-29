@@ -17,6 +17,10 @@ import java.util.concurrent.ExecutorService;
  * @since 2024.08
  */
 
+/**
+ * 异步切面处理器
+ * 把任务挪到线程池运行,结合事务注解使用可能会出现问题
+ */
 
 @Slf4j
 @MyAspect

@@ -38,15 +38,20 @@ public class BaseController implements BeanFactoryAware {
         return new View("minireact.html");
     }
 
+    @MyRequestMapping("/getapp")
+    public void getAppJs(AutumnResponse response) {
+        ServletResponseAdapter servletResponseAdapter = (ServletResponseAdapter) response;
+        servletResponseAdapter.outputJavaScriptFile("js/app.js");
+    }
 
     @MyRequestMapping("/getminireact")
-    public void getminireact (AutumnResponse response) {
+    public void getMinireactJs(AutumnResponse response) {
         ServletResponseAdapter servletResponseAdapter=(ServletResponseAdapter) response;
         servletResponseAdapter.outputJavaScriptFile("js/minireact.js");
     }
 
     @MyRequestMapping("/getecharts")
-    public void getecharts(AutumnResponse response) {
+    public void getEchartsJs(AutumnResponse response) {
         ServletResponseAdapter servletResponseAdapter = (ServletResponseAdapter) response;
         servletResponseAdapter.outputJavaScriptFile("js/echarts.min.js");
     }

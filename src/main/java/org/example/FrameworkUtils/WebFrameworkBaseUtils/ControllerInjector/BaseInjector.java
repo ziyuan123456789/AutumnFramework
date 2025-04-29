@@ -6,8 +6,6 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.List;
-import java.util.Set;
 
 /**
  * @author ziyuan
@@ -18,28 +16,24 @@ import java.util.Set;
 public class BaseInjector implements ControllerInjector {
 
     @Override
-    public void inject(Method method, Object object, List<Object> methodParams, Set<Integer> processedIndices, AutumnRequest myRequest, AutumnResponse myResponse) {
+    public void inject(Method method, Object object, Object[] methodParams, AutumnRequest request, AutumnResponse response) {
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; i++) {
-            if (processedIndices.contains(i)) {
+            if (methodParams[i] != null) {
                 continue;
             }
+
             Parameter parameter = parameters[i];
-            String paramName = parameter.getName();
             Class<?> paramType = parameter.getType();
             if (paramType.equals(AutumnRequest.class)) {
-                methodParams.add(myRequest);
-                processedIndices.add(i);
+                methodParams[i] = request;
             } else if (paramType.equals(AutumnResponse.class)) {
-                methodParams.add(myResponse);
-                processedIndices.add(i);
+                methodParams[i] = response;
             } else {
-                Object paramValue = useUrlGetParam(paramName, myRequest);
-                if (paramValue != null) {
-                    if (paramName.equals(parameter.getName()) && checkParamType(paramType)) {
-                        methodParams.add(paramValue);
-                        processedIndices.add(i);
-                    }
+                String paramName = parameter.getName();
+                Object paramValue = useUrlGetParam(paramName, request);
+                if (paramValue != null && checkParamType(paramType)) {
+                    methodParams[i] = paramValue;
                 }
             }
         }

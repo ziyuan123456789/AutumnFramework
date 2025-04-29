@@ -1127,6 +1127,10 @@ MineBatis-configXML=minebatis-config.xml
 
 ## 更新记录:
 
+### 2025/4/29
+
+- 重写ControllerInjector部分,不再需要用户手动维护注册下标
+
 ### 2025/3/11
 
 - 增加了对InitializingBean的支持

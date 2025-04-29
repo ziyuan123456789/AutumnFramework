@@ -16,7 +16,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.Filter;
 public class UrlFilter implements Filter, Ordered {
 
     @MyAutoWired
-    IndexFilter indexFilter;
+    private IndexFilter indexFilter;
 
     @Override
     public boolean doChain(AutumnRequest autumnRequest, AutumnResponse autumnResponse) {

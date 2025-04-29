@@ -31,7 +31,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -81,6 +80,9 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 
 //    private PrefixTreeNode root =new  PrefixTreeNode();
 
+    /**
+     * 后续这里会使用前缀树进行重构,支持多级的url映射
+     */
     @MyPostConstruct
     private void initUrlMapping() {
         for (MyBeanDefinition mb : context.getBeanDefinitionMap().values()) {
@@ -172,7 +174,6 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 
     //xxx:输出异常信息
     private <T extends Exception> void exceptionPrinter(T e, String message) {
-        e.printStackTrace();
         log.error(message, e);
     }
 
@@ -215,26 +216,17 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
     }
 
 
-    private Tuple<Object, Class<?>> invokeMethod(MethodWrapper wrapper, AutumnRequest myRequest, AutumnResponse myResponse) throws InvocationTargetException, IllegalAccessException {
-        List<Object> objectList = new ArrayList<>();
+    private Tuple<Object, Class<?>> invokeMethod(MethodWrapper wrapper, AutumnRequest myRequest, AutumnResponse myResponse)
+            throws InvocationTargetException, IllegalAccessException {
         Method method = wrapper.method();
         Object instance = context.getBean(wrapper.beanName());
-        Set<Integer> processedIndices = new HashSet<>();
+        int paramCount = method.getParameterCount();
+        Object[] objectArgs = new Object[paramCount];
         for (ControllerInjector injector : controllerInjectors) {
-            injector.inject(method, instance, objectList, processedIndices, myRequest, myResponse);
+            injector.inject(method, instance, objectArgs, myRequest, myResponse);
         }
-        Parameter[] parameters = method.getParameters();
-        for (int i = 0; i < parameters.length; i++) {
-            if (!processedIndices.contains(i)) {
-                objectList.add(null);
-            }
-        }
-//        log.debug(String.valueOf(method));
-//        log.debug(Arrays.toString(objectList.toArray()));
-//        log.debug(String.valueOf(objectList.size()));
-        return new Tuple<>(method.invoke(instance, objectList.toArray()), method.getReturnType());
+        return new Tuple<>(method.invoke(instance, objectArgs), method.getReturnType());
     }
-
 
     private Object useUrlGetParam(String paramName, AutumnRequest myRequest) {
         Map<String, String> param = myRequest.getParameters();
@@ -260,11 +252,8 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
             else {
                 tomCatHtmlResponse.outPutMessageWriter(resp, 200, jsonFormatter.toJson(result), null);
             }
-        } catch (IOException e) {
-
         } catch (Exception e) {
             e.printStackTrace();
-
         }
     }
 
