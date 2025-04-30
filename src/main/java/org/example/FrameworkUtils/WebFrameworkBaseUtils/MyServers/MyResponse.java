@@ -61,9 +61,9 @@ public class MyResponse implements AutumnResponse {
     }
 
     @Override
-    public void outputErrorMessage() {
+    public void outputErrorMessage(String title, String text, int code) {
         try {
-            socketServerHtmlResponse.outPutErrorMessageWriter(socket, httpCode, responseText, new Date().toString(), null);
+            socketServerHtmlResponse.outPutErrorMessageWriter(socket, code, text, new Date().toString(), null);
         } catch (IOException e) {
             log.error("htmlResponse输出失败");
         }

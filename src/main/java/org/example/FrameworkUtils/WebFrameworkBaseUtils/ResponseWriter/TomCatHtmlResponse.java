@@ -36,7 +36,7 @@ public class TomCatHtmlResponse {
     }
 
     //xxx: 输出错误消息
-    public void outPutErrorMessageWriter(HttpServletResponse response, int statusCode, String errorMessage, String errorTime, javax.servlet.http.Cookie cookie) throws IOException {
+    public void outPutErrorMessageWriter(HttpServletResponse response, String title, int statusCode, String errorMessage, String errorTime, javax.servlet.http.Cookie cookie) throws IOException {
         String crossOrigin = crossOriginBean.getOrigins();
         response.setStatus(statusCode);
         response.setContentType("text/html;charset=UTF-8");
@@ -44,11 +44,13 @@ public class TomCatHtmlResponse {
         if (cookie != null) {
             response.addCookie(cookie);
         }
+        if (title == null || title.isEmpty()) {
+            title = "<p>服务器内部错误</p>";
+        }
         String responseHtml = "<html><body>" +
                 "<h1>" + statusCode + " Error Page</h1>" +
-                "<p>服务器内部错误</p>" +
+                title +
                 "<p id='created'>" + errorTime + "</p>" +
-                "<p>There was an unexpected error (type=Internal Server Error, status=" + statusCode + ").</p>" +
                 "<p id='created' style='color:red'>报错原因: " + errorMessage + "</p>" +
                 "</body></html>";
         PrintWriter out = response.getWriter();

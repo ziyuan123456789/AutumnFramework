@@ -590,6 +590,13 @@ public class WebSocketController implements WebSocketBaseConfig {
 public String injectTest(ColorMappingEnum color) {
     return color.getColorName();
 }
+
+@ErrorHandler(errorCode = 400, title = "参数校验异常")
+@MyRequestMapping("/notnull")
+public String notNullOrBlankTest(@AutumnNotBlank String id, @AutumnNotBlank String name) {
+  return id + "+" + name;
+}
+
 ```
 
 ### Web容器选择 如果你喜欢可以自行加入Jetty的适配器 可依靠条件注解实现无缝的容器切换
@@ -1126,6 +1133,10 @@ MineBatis-configXML=minebatis-config.xml
 - AOP再次重写,使用了包裹Bean的方式,而不是使用Cglib的`proxy.invokeSuper(obj, args)`方法
 
 ## 更新记录:
+
+### 2025/4/30
+
+- ControllerInjector部分支持NotNull/NotBlank注解 同时可以添加ErrorHandler自定义返回内容
 
 ### 2025/4/29
 

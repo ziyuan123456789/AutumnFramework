@@ -13,6 +13,8 @@ public interface AutumnResponse {
     AutumnResponse setCode(int code);
     AutumnResponse setResponseText(String responseText);
     void outputMessage();
-    void outputErrorMessage();
+
+    void outputErrorMessage(String title, String text, int code);
+
     void outputHtml();
 }

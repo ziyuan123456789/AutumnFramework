@@ -204,7 +204,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
                 }
 
                 try {
-                    tomCatHtmlResponse.outPutErrorMessageWriter(resp, 500, errorMessage, format.format(new Date()), null);
+                    tomCatHtmlResponse.outPutErrorMessageWriter(resp, null, 500, errorMessage, format.format(new Date()), null);
                 } catch (IOException ioException) {
                     log.error("发送错误响应时出现IO异常", ioException);
                 }

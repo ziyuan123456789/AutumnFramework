@@ -1,5 +1,7 @@
 package org.example.controller;
 
+import com.autumn.mvc.AutumnNotBlank;
+import com.autumn.mvc.ErrorHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
 import org.example.Annotations.EnableAop;
@@ -93,6 +95,13 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
 
     @MyAutoWired
     private BeanTestConfig beanTestConfig;
+
+
+    @ErrorHandler(errorCode = 400, title = "参数校验异常")
+    @MyRequestMapping("/notnull")
+    public String notNullOrBlankTest(@AutumnNotBlank String id, @AutumnNotBlank String name) {
+        return id + "+" + name;
+    }
 
     @MyRequestMapping("/cglib")
     public String getBean() {

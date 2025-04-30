@@ -6,7 +6,11 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.TomCatHtmlResponse;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -65,10 +69,10 @@ public class ServletResponseAdapter implements AutumnResponse {
     }
 
     @Override
-    public void outputErrorMessage() {
+    public void outputErrorMessage(String title, String text, int code) {
         try {
             String errorTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-            tomCatHtmlResponse.outPutErrorMessageWriter(response, httpCode, responseText, errorTime, null);
+            tomCatHtmlResponse.outPutErrorMessageWriter(response, title, code, text, errorTime, null);
         } catch (IOException e) {
             log.error("Error in outputErrorMessage", e);
         }
