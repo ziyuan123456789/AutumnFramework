@@ -39,7 +39,7 @@ public class Main {
   }
 
   @MyPreDestroy
-  public void sayBay(){
+  public void sayBye() {
     log.info("再见孩子们");
   }
 }
