@@ -17,7 +17,7 @@ public class ApplicationShutdownHook implements Runnable {
 
     public static final String THREAD_NAME = "AutumnApplicationShutdownHookThread";
 
-    private final Set<AnnotationConfigApplicationContext> contexts = new LinkedHashSet();
+    private final Set<AnnotationConfigApplicationContext> contexts = new LinkedHashSet<>();
 
     private final ApplicationListener<?> listener = new ApplicationContextClosedListener();
 

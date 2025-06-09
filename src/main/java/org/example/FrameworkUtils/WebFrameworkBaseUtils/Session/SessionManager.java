@@ -4,7 +4,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
-import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
+import org.example.FrameworkUtils.Orm.MyRedis.MyRedisTemplate;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.io.Serializable;
@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SessionManager implements Serializable {
     private ConcurrentHashMap<String, MySession> sessions = new ConcurrentHashMap<>();
     @MyAutoWired
-    MyReidsTemplate myReidsTemplate;
+    MyRedisTemplate myRedisTemplate;
 
     public MySession getSession(String sessionId) {
         if (sessionId != null && sessions.containsKey(sessionId)) {
@@ -31,8 +31,8 @@ public class SessionManager implements Serializable {
     }
     public void exitSave(){
         try{
-            myReidsTemplate.init();
-            myReidsTemplate.set("session",String.valueOf(sessions));
+            myRedisTemplate.init();
+            myRedisTemplate.set("session", String.valueOf(sessions));
             log.info("Session序列化到Redis成功");
         }catch (JedisConnectionException e){
             log.error("Session序列化到Redis失败,检查端口和ip是否正确?",e);

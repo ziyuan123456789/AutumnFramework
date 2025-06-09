@@ -19,7 +19,7 @@ import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.Orm.MineBatis.session.SqlSessionFactory;
-import org.example.FrameworkUtils.Orm.MyRedis.MyReidsTemplate;
+import org.example.FrameworkUtils.Orm.MyRedis.MyRedisTemplate;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
@@ -66,7 +66,7 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
 
     @MyAutoWired
     @Lazy
-    private MyReidsTemplate myReidsTemplate;
+    private MyRedisTemplate myRedisTemplate;
 
     @MyAutoWired("postProcessChange")
     private Car car;
@@ -151,7 +151,7 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
     //测试全局request功能
     @MyRequestMapping("/request")
     public String requestTestWithField() {
-        log.info(myReidsTemplate.getClass().toString());
+        log.info(myRedisTemplate.getClass().toString());
         log.info("{}{}{}", autumnRequest.getUrl(), autumnRequest.getMethod(), autumnRequest.getParameters());
         return autumnRequest.getUrl() + autumnRequest.getMethod() + autumnRequest.getParameters();
     }
@@ -199,9 +199,9 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
     //测试redis
     @MyRequestMapping("/redis")
     public String redis() {
-        myReidsTemplate.init();
-        myReidsTemplate.set("test", "test");
-        return myReidsTemplate.toString() + "\n" + myReidsTemplate.get("test");
+        myRedisTemplate.init();
+        myRedisTemplate.set("test", "test");
+        return myRedisTemplate.toString() + "\n" + myRedisTemplate.get("test");
     }
 
     //测试View层功能

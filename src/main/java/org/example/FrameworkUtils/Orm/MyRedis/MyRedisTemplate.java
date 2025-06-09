@@ -9,7 +9,7 @@ import redis.clients.jedis.Jedis;
  * @since 2023.11
  */
 @MyComponent
-public class MyReidsTemplate {
+public class MyRedisTemplate {
     @Value("redisHost")
     String host;
     @Value("redisPort")
