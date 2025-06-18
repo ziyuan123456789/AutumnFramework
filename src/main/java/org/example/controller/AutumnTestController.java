@@ -2,6 +2,7 @@ package org.example.controller;
 
 import com.autumn.mvc.AutumnNotBlank;
 import com.autumn.mvc.ErrorHandler;
+import com.autumn.mvc.SessionAttribute;
 import lombok.extern.slf4j.Slf4j;
 import org.example.Annotations.CheckParameter;
 import org.example.Annotations.EnableAop;
@@ -96,6 +97,20 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
     @MyAutoWired
     private BeanTestConfig beanTestConfig;
 
+    //测试session功能
+    @MyRequestMapping("/setSession")
+    public String setSession(AutumnRequest myRequest) {
+        String sessionId = myRequest.getSession().getSessionId();
+        myRequest.getSession().setAttribute("id", sessionId);
+        return "切换阅览器查看唯一标识符是否变化? 标识符如下:" + myRequest.getSession().getAttribute("id");
+    }
+
+
+    //测试sessionAttribute
+    @MyRequestMapping("/sessionattribute")
+    public String sessionAttributeTest(@SessionAttribute(name = "id") String id) {
+        return id;
+    }
 
     @ErrorHandler(errorCode = 400, title = "参数校验异常")
     @MyRequestMapping("/notnull")
@@ -210,14 +225,6 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
         return new View("AutumnFrameworkMainPage.html");
     }
 
-
-    //测试session功能
-    @MyRequestMapping("/session")
-    public String session(AutumnRequest myRequest) {
-        String sessionId = myRequest.getSession().getSessionId();
-        myRequest.getSession().setAttribute("name", sessionId);
-        return "切换阅览器查看唯一标识符是否变化? 标识符如下:" + myRequest.getSession().getAttribute("name");
-    }
 
     //测试WebSocket功能
     @MyRequestMapping("/websocket")

@@ -146,9 +146,12 @@ public void refresh() {
 ```java
 @MyController
 @Slf4j
-public class AutumnTestController implements BeanFactoryAware {
+public class AutumnTestController implements BeanFactoryAware, ApplicationListener<ContextClosedEvent> {
 
   private ApplicationContext beanFactory;
+
+  @MyAutoWired
+  private AsyncService asyncService;
 
   //测试配置文件注入器
   @Value("url")
@@ -166,13 +169,13 @@ public class AutumnTestController implements BeanFactoryAware {
 
   @MyAutoWired
   @Lazy
-  private MyReidsTemplate myReidsTemplate;
+  private MyRedisTemplate myRedisTemplate;
 
   @MyAutoWired("postProcessChange")
   private Car car;
 
   @MyAutoWired
-  private SqlSession sqlSession;
+  private SqlSessionFactory sqlSessionFactory;
 
   @MyAutoWired
   private Test test;
@@ -183,8 +186,6 @@ public class AutumnTestController implements BeanFactoryAware {
   @MyAutoWired
   private AutumnResponse autumnResponse;
 
-  @MyAutoWired
-  private AsyncService asyncService;
 
   @MyAutoWired
   private CacheTestService cacheTestService;
@@ -195,11 +196,34 @@ public class AutumnTestController implements BeanFactoryAware {
   @MyAutoWired
   private TransactionService transactionService;
 
-  //测试事务
-  @MyRequestMapping("/refresh")
-  public void refresh() {
-    beanFactory.refresh();
-    log.warn("你有没有感觉到环境有点不一样了?");
+  @MyAutoWired
+  private BeanTestConfig beanTestConfig;
+
+  //测试session功能
+  @MyRequestMapping("/setSession")
+  public String setSession(AutumnRequest myRequest) {
+    String sessionId = myRequest.getSession().getSessionId();
+    myRequest.getSession().setAttribute("id", sessionId);
+    return "切换阅览器查看唯一标识符是否变化? 标识符如下:" + myRequest.getSession().getAttribute("id");
+  }
+
+
+  //测试sessionAttribute
+  @MyRequestMapping("/sessionattribute")
+  public String sessionAttributeTest(@SessionAttribute(name = "id") String id) {
+    return id;
+  }
+
+  @ErrorHandler(errorCode = 400, title = "参数校验异常")
+  @MyRequestMapping("/notnull")
+  public String notNullOrBlankTest(@AutumnNotBlank String id, @AutumnNotBlank String name) {
+    return id + "+" + name;
+  }
+
+  @MyRequestMapping("/cglib")
+  public String getBean() {
+    log.debug(beanTestConfig.getClass().getName());
+    return beanTestConfig.giveMeWenJieCar().toString();
   }
 
   //测试事务
@@ -211,7 +235,7 @@ public class AutumnTestController implements BeanFactoryAware {
 
   //测试minebatis增删改查
   @MyRequestMapping("/crud")
-  public Object crudKing(@MyRequestParam("method") String method) {
+  public Object crudKing(String method) {
     return switch (method) {
       case "insert" -> updateMapper.insertUser("test", "0", "test", "收到");
       case "update" -> updateMapper.updateUserById("test1", "0", "test3", 1);
@@ -224,6 +248,7 @@ public class AutumnTestController implements BeanFactoryAware {
   @MyRequestMapping("/cache")
   public String cacheTest(String name) {
     return cacheTestService.cacheTest(name);
+
   }
 
 
@@ -243,16 +268,16 @@ public class AutumnTestController implements BeanFactoryAware {
   //测试全局request功能
   @MyRequestMapping("/request")
   public String requestTestWithField() {
-    log.info(myReidsTemplate.getClass().toString());
+    log.info(myRedisTemplate.getClass().toString());
     log.info("{}{}{}", autumnRequest.getUrl(), autumnRequest.getMethod(), autumnRequest.getParameters());
     return autumnRequest.getUrl() + autumnRequest.getMethod() + autumnRequest.getParameters();
   }
 
   //测试方法级request功能
   @MyRequestMapping("/requestmethod")
-  public String requestTestWithMethodParma(AutumnRequest autumn) {
-    log.info("{}{}{}", autumn.getUrl(), autumn.getMethod(), autumn.getParameters());
-    return autumn.getUrl() + autumn.getMethod() + autumn.getParameters();
+  public String requestTestWithMethodParma(AutumnRequest res) {
+    log.info("{}{}{}", res.getUrl(), res.getMethod(), res.getParameters());
+    return res.getUrl() + res.getMethod() + res.getParameters();
   }
 
 
@@ -269,7 +294,7 @@ public class AutumnTestController implements BeanFactoryAware {
   //测试参数注入
   @MyRequestMapping("/paramTest")
   public String paramTest(String name, String age) {
-    return name + age;
+    return name + "+" + age;
   }
 
   //循环依赖测试
@@ -291,9 +316,9 @@ public class AutumnTestController implements BeanFactoryAware {
   //测试redis
   @MyRequestMapping("/redis")
   public String redis() {
-    myReidsTemplate.init();
-    myReidsTemplate.set("test", "test");
-    return myReidsTemplate.toString() + "\n" + myReidsTemplate.get("test");
+    myRedisTemplate.init();
+    myRedisTemplate.set("test", "test");
+    return myRedisTemplate.toString() + "\n" + myRedisTemplate.get("test");
   }
 
   //测试View层功能
@@ -302,14 +327,6 @@ public class AutumnTestController implements BeanFactoryAware {
     return new View("AutumnFrameworkMainPage.html");
   }
 
-
-  //测试session功能
-  @MyRequestMapping("/session")
-  public String session(AutumnRequest myRequest) {
-    String sessionId = myRequest.getSession().getSessionId();
-    myRequest.getSession().setAttribute("name", sessionId);
-    return "切换阅览器查看唯一标识符是否变化? 标识符如下:"+myRequest.getSession().getAttribute("name");
-  }
 
   //测试WebSocket功能
   @MyRequestMapping("/websocket")
@@ -320,9 +337,9 @@ public class AutumnTestController implements BeanFactoryAware {
   //测试数据库功能
   @EnableAop
   @MyRequestMapping("/Login")
-  public String login(@CheckParameter String userId,
+  public String login(@CheckParameter String username,
                       String password) {
-    if (loginService.checkLogin(userId, password)) {
+    if (loginService.checkLogin(username, password)) {
       return "登录成功";
 
     } else {
@@ -341,6 +358,17 @@ public class AutumnTestController implements BeanFactoryAware {
   @Override
   public void setBeanFactory(ApplicationContext beanFactory) {
     this.beanFactory = beanFactory;
+  }
+
+  @Override
+  public void onApplicationEvent(ContextClosedEvent event) {
+    log.info(("接受到容器关闭信号"));
+
+  }
+
+  @Override
+  public boolean supportsEvent(ApplicationEvent event) {
+    return event instanceof ContextClosedEvent;
   }
 }
 

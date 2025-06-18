@@ -17,7 +17,7 @@ public class Car implements InitializingBean {
 
     @MyPostConstruct
     public void init() {
-        log.info("来自@PostConstruct的初始化方法: {}孩子们,我复活了", name);
+        log.info("来自@PostConstruct的初始化方法:孩子们,我复活了");
     }
 
     @MyPreDestroy

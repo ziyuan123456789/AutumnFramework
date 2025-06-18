@@ -3,6 +3,7 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector;
 import com.autumn.mvc.AutumnNotBlank;
 import com.autumn.mvc.AutumnNotNull;
 import com.autumn.mvc.ErrorHandler;
+import com.autumn.mvc.SessionAttribute;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Json.JsonFormatter;
@@ -39,10 +40,21 @@ public class BaseInjector implements ControllerInjector {
             }
             Parameter parameter = parameters[i];
             Class<?> paramType = parameter.getType();
+            SessionAttribute sessionAttribute = parameter.getAnnotation(SessionAttribute.class);
             if (paramType.equals(AutumnRequest.class)) {
                 methodParams[i] = request;
             } else if (paramType.equals(AutumnResponse.class)) {
                 methodParams[i] = response;
+            } else if (sessionAttribute != null && paramType.equals(String.class)) {
+                if (sessionAttribute.required()) {
+                    methodParams[i] = request.getSession().getAttribute(sessionAttribute.name());
+                    if (methodParams[i] == null && sessionAttribute.required()) {
+                        addError(errors, "Session 中的 '" + sessionAttribute.name() + "' 不存在",
+                                parameter, 400);
+                    }
+                } else {
+                    methodParams[i] = request.getSession().getAttribute(sessionAttribute.name());
+                }
             } else {
                 String paramName = parameter.getName();
                 Object paramValue = useUrlGetParam(paramName, request);
