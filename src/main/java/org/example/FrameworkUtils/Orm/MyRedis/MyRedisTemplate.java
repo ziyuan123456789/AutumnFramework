@@ -10,10 +10,12 @@ import redis.clients.jedis.Jedis;
  */
 @MyComponent
 public class MyRedisTemplate {
+
     @Value("redisHost")
-    String host;
+    private String host;
+
     @Value("redisPort")
-    Integer port;
+    private Integer port;
 
     private Jedis jedis;
 

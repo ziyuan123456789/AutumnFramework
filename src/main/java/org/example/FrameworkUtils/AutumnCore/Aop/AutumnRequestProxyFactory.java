@@ -10,6 +10,7 @@ import org.springframework.cglib.proxy.MethodInterceptor;
  * @since 2024.08
  */
 
+// 这个类用于创建AutumnRequest和AutumnResponse的代理对象
 
 public class AutumnRequestProxyFactory {
     public static AutumnRequest createAutumnRequestProxy() {

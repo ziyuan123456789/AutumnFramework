@@ -14,6 +14,7 @@ import java.lang.annotation.Target;
 /**
  * 用于启动自动配置,当声明这个注解之后框架会扫描所有jar包下的AutoConfiguration.imports 并进行实例化
  * 这样可以从配置文件引入Bean或者BeanDefinitionRegistryPostProcessor用来生产更多的Bean
+ * 此注解背后的处理器 ---->  ConfigurationClassPostProcessor
  */
 @Target({ElementType.TYPE})
 @Inherited

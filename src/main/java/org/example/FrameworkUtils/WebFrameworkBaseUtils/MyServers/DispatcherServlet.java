@@ -34,7 +34,6 @@ import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -47,9 +46,6 @@ import java.util.concurrent.Executors;
  * @since 2024.05
  */
 
-/**
- * 重构的风终究还是吹到了这里
- */
 @Slf4j
 @WebServlet("/*")
 @MyComponent
@@ -74,14 +70,13 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 
     private ExecutorService threadPool;
 
-    private List<Filter> filters = new ArrayList<>();
+    private final List<Filter> filters = new ArrayList<>();
 
-    private Map<String, MethodWrapper> urlMapping = new HashMap<>();
+    private final TrieTree tree = new TrieTree();
 
-//    private PrefixTreeNode root =new  PrefixTreeNode();
 
     /**
-     * 后续这里会使用前缀树进行重构,支持多级的url映射
+     * 已使用前缀树重构,未来将支持PostMapping/GetMapping等注解
      */
     @MyPostConstruct
     private void initUrlMapping() {
@@ -94,22 +89,24 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
             if (Filter.class.isAssignableFrom(clazz)) {
                 filters.add((Filter) context.getBean(mb.getName()));
             }
+            String baseUrl = "";
             if (clazz.isAnnotationPresent(MyController.class)) {
+                if (clazz.isAnnotationPresent(MyRequestMapping.class)) {
+                    baseUrl = clazz.getAnnotation(MyRequestMapping.class).value();
+                }
                 for (Method method : clazz.getDeclaredMethods()) {
                     MyRequestMapping myRequestMapping = method.getAnnotation(MyRequestMapping.class);
                     if (myRequestMapping != null) {
                         String url = myRequestMapping.value();
-                        if (url.startsWith("/")) {
-//                            url = url.substring(1);
-                            urlMapping.put(url, new MethodWrapper(method, mb.getName()));
-                        } else {
-                            throw new RuntimeException("url格式错误");
-                        }
+                        String fullUrl = baseUrl + url;
+                        tree.insert(fullUrl, new MethodWrapper(method, mb.getName()));
                     }
                 }
+
             }
         }
         comparator.compare(filters);
+        context.addBean("urlMappingTree", tree);
     }
 
 
@@ -137,12 +134,11 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
             AutumnResponse autumnResponse = new ServletResponseAdapter(resp, (TomCatHtmlResponse) context.getBean(TomCatHtmlResponse.class.getName()));
             String url = autumnRequest.getUrl();
             String baseUrl = extractPath(url);
-            MethodWrapper methodWrapper = urlMapping.get(baseUrl);
+            MethodWrapper methodWrapper = tree.search(baseUrl);
             if (methodWrapper != null) {
                 executeHandler(autumnRequest, autumnResponse, resp, methodWrapper);
             } else {
                 if (!resp.isCommitted()) {
-//                    resp.setStatus(404);
                     resp.sendRedirect("/404");
                 } else {
                     log.error("重定向到/404");
@@ -178,7 +174,6 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
     }
 
     private void executeHandler(AutumnRequest req, AutumnResponse res, HttpServletResponse resp, MethodWrapper handlerMethod) {
-        //这一块我还没想好是使用责任链还是注册表,先这样凑合写
         Filter filter = filters.get(0);
         if (!filter.doChain(req, res)) {
             try {
@@ -218,12 +213,12 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 
     private Tuple<Object, Class<?>> invokeMethod(MethodWrapper wrapper, AutumnRequest myRequest, AutumnResponse myResponse)
             throws InvocationTargetException, IllegalAccessException {
-        Method method = wrapper.method();
-        Object instance = context.getBean(wrapper.beanName());
+        Method method = wrapper.getMethod();
+        Object instance = context.getBean(wrapper.getBeanName());
         int paramCount = method.getParameterCount();
         Object[] objectArgs = new Object[paramCount];
         for (ControllerInjector injector : controllerInjectors) {
-            injector.inject(method, instance, objectArgs, myRequest, myResponse);
+            injector.inject(wrapper, instance, objectArgs, myRequest, myResponse);
         }
         return new Tuple<>(method.invoke(instance, objectArgs), method.getReturnType());
     }

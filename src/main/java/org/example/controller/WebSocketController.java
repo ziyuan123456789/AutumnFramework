@@ -8,6 +8,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.WebSocketBaseC
  * @author ziyuan
  * @since 2024.04
  */
+@Deprecated
 @MyWebSocketConfig("/websocket")
 @Slf4j
 public class WebSocketController implements WebSocketBaseConfig {

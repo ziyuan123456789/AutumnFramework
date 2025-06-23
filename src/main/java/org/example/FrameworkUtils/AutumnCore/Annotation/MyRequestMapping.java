@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2023.10
  */
+
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited

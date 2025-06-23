@@ -12,6 +12,7 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyPreDestroy;
 @Slf4j
 @Data
 public class CrossOriginBean {
+
     private String origins;
 
     @MyPostConstruct

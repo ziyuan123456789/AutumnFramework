@@ -143,42 +143,18 @@ public void refresh() {
 
 ## MVC章节
 ### Controller
+
+控制器支持Url传参注入,以及SessionAttribute注入,以及PathVariable注入
+支持类级别与方法级别的RequestMapping
 ```java
-@MyController
 @Slf4j
-public class AutumnTestController implements BeanFactoryAware, ApplicationListener<ContextClosedEvent> {
-
-  private ApplicationContext beanFactory;
-
-  @MyAutoWired
-  private AsyncService asyncService;
-
-  //测试配置文件注入器
-  @Value("url")
-  private String sqlUrl;
-
-  //测试自身循环依赖
-  @MyAutoWired
-  private AutumnTestController autumnTestController;
-
-  @MyAutoWired
-  private LoginService loginService;
-
-  @MyAutoWired
-  private UserMapper userMapper;
+@MyController
+@MyRequestMapping("/api")
+public class AutumnHttpServerController {
 
   @MyAutoWired
   @Lazy
   private MyRedisTemplate myRedisTemplate;
-
-  @MyAutoWired("postProcessChange")
-  private Car car;
-
-  @MyAutoWired
-  private SqlSessionFactory sqlSessionFactory;
-
-  @MyAutoWired
-  private Test test;
 
   @MyAutoWired
   private AutumnRequest autumnRequest;
@@ -186,21 +162,8 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
   @MyAutoWired
   private AutumnResponse autumnResponse;
 
-
-  @MyAutoWired
-  private CacheTestService cacheTestService;
-
-  @MyAutoWired
-  private UpdateMapper updateMapper;
-
-  @MyAutoWired
-  private TransactionService transactionService;
-
-  @MyAutoWired
-  private BeanTestConfig beanTestConfig;
-
   //测试session功能
-  @MyRequestMapping("/setSession")
+  @MyRequestMapping("/")
   public String setSession(AutumnRequest myRequest) {
     String sessionId = myRequest.getSession().getSessionId();
     myRequest.getSession().setAttribute("id", sessionId);
@@ -209,60 +172,30 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
 
 
   //测试sessionAttribute
-  @MyRequestMapping("/sessionattribute")
+  @MyRequestMapping("/attribute")
   public String sessionAttributeTest(@SessionAttribute(name = "id") String id) {
     return id;
   }
 
+
+  //测试路径传参
+  @MyRequestMapping("/test/{sn}")
+  public String pathVariable(@PathVariable("sn") String sn) {
+    return sn;
+  }
+
+  //测试参数注入
+  @MyRequestMapping("/paramTest")
+  public String paramTest(String name, String age) {
+    return name + "+" + age;
+  }
+
+
+  //测试ErrorHandler以及AutumnNotBlank与AutumnNotBlank
   @ErrorHandler(errorCode = 400, title = "参数校验异常")
   @MyRequestMapping("/notnull")
   public String notNullOrBlankTest(@AutumnNotBlank String id, @AutumnNotBlank String name) {
     return id + "+" + name;
-  }
-
-  @MyRequestMapping("/cglib")
-  public String getBean() {
-    log.debug(beanTestConfig.getClass().getName());
-    return beanTestConfig.giveMeWenJieCar().toString();
-  }
-
-  //测试事务
-  @MyRequestMapping("/transaction")
-  public String transactionTest() throws SQLException {
-    return transactionService.transactionTest();
-  }
-
-
-  //测试minebatis增删改查
-  @MyRequestMapping("/crud")
-  public Object crudKing(String method) {
-    return switch (method) {
-      case "insert" -> updateMapper.insertUser("test", "0", "test", "收到");
-      case "update" -> updateMapper.updateUserById("test1", "0", "test3", 1);
-      case "delete" -> updateMapper.deleteUserById(1);
-      default -> Integer.MAX_VALUE;
-    };
-  }
-
-  //测试缓存组件
-  @MyRequestMapping("/cache")
-  public String cacheTest(String name) {
-    return cacheTestService.cacheTest(name);
-
-  }
-
-
-  //测试自定义注入规则
-  @MyRequestMapping("/inject")
-  public String injectTest(ColorMappingEnum color) {
-    return color.getColorName();
-  }
-
-  //测试异步能力
-  @MyRequestMapping("/async")
-  public String asyncTest() {
-    asyncService.asyncTest();
-    return "异步测试";
   }
 
   //测试全局request功能
@@ -291,84 +224,11 @@ public class AutumnTestController implements BeanFactoryAware, ApplicationListen
             .outputHtml();
   }
 
-  //测试参数注入
-  @MyRequestMapping("/paramTest")
-  public String paramTest(String name, String age) {
-    return name + "+" + age;
-  }
-
-  //循环依赖测试
-  @MyRequestMapping("/cycletest")
-  public Map<String, Object> cycleTest() {
-    return autumnTestController.mapTest();
-  }
-
-  //测试@Bean("BeanName")功能是否正常,同时看看Json解析器好不好用
-  @MyRequestMapping("/map")
-  public Map<String, Object> mapTest() {
-    Map<String, Object> myMap = new HashMap<>();
-    myMap.put("url", sqlUrl);
-    log.info(car.toString());
-    log.info(test.toString());
-    return myMap;
-  }
-
-  //测试redis
-  @MyRequestMapping("/redis")
-  public String redis() {
-    myRedisTemplate.init();
-    myRedisTemplate.set("test", "test");
-    return myRedisTemplate.toString() + "\n" + myRedisTemplate.get("test");
-  }
 
   //测试View层功能
   @MyRequestMapping("/html")
   public View myhtml() {
     return new View("AutumnFrameworkMainPage.html");
-  }
-
-
-  //测试WebSocket功能
-  @MyRequestMapping("/websocket")
-  public MyWebSocket websocketTest() {
-    return new MyWebSocket();
-  }
-
-  //测试数据库功能
-  @EnableAop
-  @MyRequestMapping("/Login")
-  public String login(@CheckParameter String username,
-                      String password) {
-    if (loginService.checkLogin(username, password)) {
-      return "登录成功";
-
-    } else {
-      return "登录失败";
-    }
-
-  }
-
-  //测试数据库功能
-  @MyRequestMapping("/getall")
-  public String getAll() {
-    return userMapper.getAllUser(0).toString();
-  }
-
-
-  @Override
-  public void setBeanFactory(ApplicationContext beanFactory) {
-    this.beanFactory = beanFactory;
-  }
-
-  @Override
-  public void onApplicationEvent(ContextClosedEvent event) {
-    log.info(("接受到容器关闭信号"));
-
-  }
-
-  @Override
-  public boolean supportsEvent(ApplicationEvent event) {
-    return event instanceof ContextClosedEvent;
   }
 }
 
@@ -932,6 +792,7 @@ public class MapperFactoryBean<T> implements FactoryBean<T> {
   @MyAutoWired
   private SqlSessionFactory sqlSessionFactory;
 
+  // 整个项目唯一的构造器注入,不过请注意此处能注入成功是因为在BeanDefinitionRegistryPostProcessor中手动指定了构造器参数,才可以成功创建对象
   @MyAutoWired
   public MapperFactoryBean(Class<T> mapperInterface) {
     this.mapperInterface = mapperInterface;

@@ -18,6 +18,7 @@ import java.util.Set;
  * @since 2025.02
  */
 
+// 这个类用来保护@Bean的单例性,对MyConfig配置类进行代理
 @Slf4j
 @MyAspect
 @MyOrder(Integer.MIN_VALUE)

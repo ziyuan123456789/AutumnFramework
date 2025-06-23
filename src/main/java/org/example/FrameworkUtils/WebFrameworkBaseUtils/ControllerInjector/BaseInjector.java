@@ -3,9 +3,11 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector;
 import com.autumn.mvc.AutumnNotBlank;
 import com.autumn.mvc.AutumnNotNull;
 import com.autumn.mvc.ErrorHandler;
+import com.autumn.mvc.PathVariable;
 import com.autumn.mvc.SessionAttribute;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.DataStructure.MethodWrapper;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Json.JsonFormatter;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
@@ -25,14 +27,15 @@ import java.util.Map;
 @Injector
 @Slf4j
 public class BaseInjector implements ControllerInjector {
+    //TODO: 也许这个类应该使用注册的方法来拓展功能,硬编码进去有点多了,另外ErrorHandler应该要成为一个通用的设计,不仅仅用在@NotNull等注解上
 
     @MyAutoWired
     private JsonFormatter jsonFormatter;
 
     @Override
-    public void inject(Method method, Object object, Object[] methodParams,
+    public void inject(MethodWrapper wrapper, Object object, Object[] methodParams,
                        AutumnRequest request, AutumnResponse response) {
-        Parameter[] parameters = method.getParameters();
+        Parameter[] parameters = wrapper.getMethod().getParameters();
         List<Map<String, Object>> errors = new ArrayList<>();
         for (int i = 0; i < parameters.length; i++) {
             if (methodParams[i] != null) {
@@ -41,6 +44,12 @@ public class BaseInjector implements ControllerInjector {
             Parameter parameter = parameters[i];
             Class<?> paramType = parameter.getType();
             SessionAttribute sessionAttribute = parameter.getAnnotation(SessionAttribute.class);
+            PathVariable pathVariable = parameter.getAnnotation(PathVariable.class);
+            if (pathVariable != null && !pathVariable.value().isEmpty() && parameter.getType().equals(String.class)) {
+                String paramName = pathVariable.value();
+                String res = wrapper.getParamMap().get(paramName);
+                methodParams[i] = res;
+            }
             if (paramType.equals(AutumnRequest.class)) {
                 methodParams[i] = request;
             } else if (paramType.equals(AutumnResponse.class)) {
@@ -59,14 +68,14 @@ public class BaseInjector implements ControllerInjector {
                 String paramName = parameter.getName();
                 Object paramValue = useUrlGetParam(paramName, request);
 
-                validateParameter(parameter, paramValue, method, errors);
+                validateParameter(parameter, paramValue, wrapper.getMethod(), errors);
                 if (paramValue != null && checkParamType(paramType)) {
                     methodParams[i] = paramValue;
                 }
             }
         }
         if (!errors.isEmpty()) {
-            handleValidationErrors(method.getAnnotation(ErrorHandler.class), errors, response);
+            handleValidationErrors(wrapper.getMethod().getAnnotation(ErrorHandler.class), errors, response);
             Arrays.fill(methodParams, null);
         }
     }

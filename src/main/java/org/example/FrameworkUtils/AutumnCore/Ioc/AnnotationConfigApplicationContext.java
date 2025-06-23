@@ -118,37 +118,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     private long startupDate;
 
 
-    //容器开始刷新
-    @Override
-    public void refresh() {
-        //刷新前的准备
-        prepareRefresh();
-        //BeanFactory前准备
-        prepareBeanFactory(this);
-        try {
-            //模板方法
-            postProcessBeanFactory(this);
-            //调用BeanFactory后置处理器(在此处扫描全部的Bean定义,并倒入Starter)
-            invokeBeanFactoryPostProcessors();
-            //注册实例化Bean后置处理器(依赖注入处理器,感知处理器,Aop处理器在此处被导入)
-            registerBeanPostProcessors(this);
-            //初始化事件广播器
-            initApplicationEventMulticaster();
-            //模板方法
-            onRefresh();
-            //注册监听器
-            registerListeners();
-            //实例化所有的Bean
-            finishBeanFactoryInitialization(this);
-            //刷新完成
-            finishRefresh();
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-
-
-    }
+    public static final String ANSI_RESET = "\u001B[0m";
 
     protected void onRefresh() {
     }
@@ -171,22 +141,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
 
 
     }
-
-    private void prepareRefresh() {
-        /**
-         * 在AutumnApplication的run方法中,env已经生成,所以无需二次生成,spring的这种设计是为了防止你直接创建一个context出来而并非AutumnApplication来生成
-         * 因此需要检测env是否存在,没有的话重新创建一个,Z
-         */
-        this.startupDate = System.currentTimeMillis();
-        if (this.earlyApplicationListeners == null) {
-            this.earlyApplicationListeners = new LinkedHashSet<>(this.applicationListeners);
-        } else {
-            //refresh阶段可以二次调用,因此存在earlyApplicationListeners不为null的情况
-            this.applicationListeners.clear();
-            this.applicationListeners.addAll(this.earlyApplicationListeners);
-        }
-        this.earlyApplicationEvents = new HashSet<>();
-    }
+    public static final String ANSI_BLACK = "\u001B[30m";
 
     private void registerListeners() {
         for (ApplicationListener<ApplicationEvent> listener : getApplicationListeners()) {
@@ -394,11 +349,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     public List<Object> getBeansByAnnotation(Class<? extends Annotation> annotationClass) {
         return List.of();
     }
-
-    @Override
-    public void addBean(String name, Object bean) {
-
-    }
+    public static final String ANSI_RED = "\u001B[31m";
 
     @Override
     public <T> Map<String, T> getBeansOfType(Class<T> type) throws BeanCreationException {
@@ -782,25 +733,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         }
         return singletonObject;
     }
-
-    private void logCircularDependency(String beanName) {
-        List<String> creationList = new ArrayList<>(singletonsCurrentlyInCreation);
-        if (creationList.size() == 1) {
-            StringBuilder sb = new StringBuilder("\n");
-            sb.append("┌──->──┐\n");
-            sb.append("|  ").append(beanName).append("\n");
-            sb.append("└──<-──┘");
-            log.error(sb.toString());
-            return;
-        }
-        StringBuilder sb2 = new StringBuilder("\n");
-        sb2.append("┌──->──┐\n");
-        for (String string : creationList) {
-            sb2.append("|  ").append(string).append("\n");
-        }
-        sb2.append("└──<-──┘");
-        log.error(sb2.toString());
-    }
+    public static final String ANSI_GREEN = "\u001B[32m";
 
 
 
@@ -1049,6 +982,107 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
 
     @Override
     public void registerShutdownHook() {
+    }
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_BLUE = "\u001B[34m";
+    public static final String ANSI_PURPLE = "\u001B[35m";
+    public static final String ANSI_CYAN = "\u001B[36m";
+    public static final String ANSI_WHITE = "\u001B[37m";
+    public static final String ANSI_BOLD = "\u001B[1m";
+
+    //容器开始刷新
+    @Override
+    public void refresh() {
+        log.info(ANSI_BOLD + ANSI_GREEN + "==== 容器开始refresh ====" + ANSI_RESET);
+
+        //刷新前的准备
+        prepareRefresh();
+        log.info(ANSI_YELLOW + "==== prepareRefresh阶段结束, 容器刷新前做准备, 创建EarlyApplicationListeners ====" + ANSI_RESET);
+
+        //BeanFactory前准备
+        prepareBeanFactory(this);
+        log.info(ANSI_YELLOW + "==== prepareBeanFactory阶段结束, 创建ApplicationContextAwareProcessor ====" + ANSI_RESET);
+
+        try {
+            //模板方法
+            postProcessBeanFactory(this);
+            log.info(ANSI_YELLOW + "==== postProcessBeanFactory阶段结束, 本项目没有制作扩展 ====" + ANSI_RESET);
+
+            //调用BeanFactory后置处理器
+            invokeBeanFactoryPostProcessors();
+            log.info(ANSI_YELLOW + "==== invokeBeanFactoryPostProcessors阶段结束, 调用BeanFactory后置处理器, 允许引入更多BeanDefinition ====" + ANSI_RESET);
+
+            //注册实例化Bean后置处理器
+            registerBeanPostProcessors(this);
+            log.info(ANSI_YELLOW + "==== registerBeanPostProcessors阶段结束, AOP处理器等在此处被注册 ====" + ANSI_RESET);
+
+            //初始化事件广播器
+            initApplicationEventMulticaster();
+            log.info(ANSI_YELLOW + "==== initApplicationEventMulticaster阶段结束, 初始化事件广播器 ====" + ANSI_RESET);
+
+            //模板方法, Web容器初始化
+            onRefresh();
+            log.info(ANSI_YELLOW + "==== onRefresh阶段结束, Web容器初始化 ====" + ANSI_RESET);
+
+            //注册监听器
+            registerListeners();
+            log.info(ANSI_YELLOW + "==== registerListeners阶段结束, 注册监听器 ====" + ANSI_RESET);
+
+            //实例化所有的Bean
+            finishBeanFactoryInitialization(this);
+            log.info(ANSI_YELLOW + "==== finishBeanFactoryInitialization阶段结束, 所有非懒加载单例Bean均被初始化 ====" + ANSI_RESET);
+
+            //刷新完成
+            finishRefresh();
+            log.info(ANSI_BOLD + ANSI_GREEN + "==== 容器refresh结束, 刷新完成 ====" + ANSI_RESET);
+
+        } catch (Exception e) {
+            log.error(ANSI_RED + "容器刷新失败: " + e.getMessage() + ANSI_RESET, e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void prepareRefresh() {
+        /**
+         * 在AutumnApplication的run方法中,env已经生成,所以无需二次生成,spring的这种设计是为了防止你直接创建一个context出来而并非AutumnApplication来生成
+         * 因此需要检测env是否存在,没有的话重新创建一个
+         */
+        this.startupDate = System.currentTimeMillis();
+        if (this.earlyApplicationListeners == null) {
+            this.earlyApplicationListeners = new LinkedHashSet<>(this.applicationListeners);
+        } else {
+            //refresh阶段可以二次调用,因此存在earlyApplicationListeners不为null的情况
+            this.applicationListeners.clear();
+            this.applicationListeners.addAll(this.earlyApplicationListeners);
+        }
+        this.earlyApplicationEvents = new HashSet<>();
+    }
+
+    @Override
+    public void addBean(String name, Object bean) {
+        if (bean == null) {
+            throw new IllegalArgumentException("你怎么传递个空????????");
+        }
+        String beanName = transformedBeanName(name);
+        addSingleton(beanName, bean);
+    }
+
+    private void logCircularDependency(String beanName) {
+        List<String> creationList = new ArrayList<>(singletonsCurrentlyInCreation);
+        if (creationList.size() == 1) {
+            String sb = "\n" + "┌──->──┐\n" +
+                    "|  " + beanName + "\n" +
+                    "└──<-──┘";
+            log.error(sb);
+            return;
+        }
+        StringBuilder sb2 = new StringBuilder("\n");
+        sb2.append("┌──->──┐\n");
+        for (String string : creationList) {
+            sb2.append("|  ").append(string).append("\n");
+        }
+        sb2.append("└──<-──┘");
+        log.error(sb2.toString());
     }
 
 }

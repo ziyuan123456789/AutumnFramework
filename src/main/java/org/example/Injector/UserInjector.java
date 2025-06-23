@@ -1,11 +1,11 @@
 package org.example.Injector;
 
+import org.example.FrameworkUtils.DataStructure.MethodWrapper;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector.ControllerInjector;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector.Injector;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
 /**
@@ -17,8 +17,8 @@ public class UserInjector implements ControllerInjector {
 
 
     @Override
-    public void inject(Method method, Object object, Object[] methodParams, AutumnRequest myRequest, AutumnResponse myResponse) {
-        Parameter[] parameters = method.getParameters();
+    public void inject(MethodWrapper method, Object object, Object[] methodParams, AutumnRequest myRequest, AutumnResponse myResponse) {
+        Parameter[] parameters = method.getMethod().getParameters();
         for (int i = 0; i < parameters.length; i++) {
             if (methodParams[i] != null) {
                 continue;
