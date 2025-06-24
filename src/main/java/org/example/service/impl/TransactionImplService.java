@@ -26,7 +26,7 @@ public class TransactionImplService implements TransactionService {
     @Override
     @AutumnTransactional(rollbackFor = Exception.class,
             propagation = Propagation.REQUIRED,
-            isolation = Isolation.DEFAULT
+            isolation = Isolation.TRANSACTION_SERIALIZABLE
     )
     public String transactionTest() throws SQLException {
         updateMapper.insertUser("1", "1", "1", "1");

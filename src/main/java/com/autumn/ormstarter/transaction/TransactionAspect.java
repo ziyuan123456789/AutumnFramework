@@ -53,8 +53,9 @@ public class TransactionAspect implements AutumnAopFactory {
         AutumnTransactional transactional = method.getAnnotation(AutumnTransactional.class);
         if (transactional != null) {
             Propagation propagation = transactional.propagation();
+            Isolation isolation = transactional.isolation();
             try {
-                transactionManager.beginTransaction(propagation);
+                transactionManager.beginTransaction(propagation, isolation);
             } catch (SQLException e) {
                 throw new RuntimeException("开启事务失败", e);
             }

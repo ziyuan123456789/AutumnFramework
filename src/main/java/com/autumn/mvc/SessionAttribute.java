@@ -10,6 +10,8 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2025.06
  */
+
+//从Session中获取参数
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

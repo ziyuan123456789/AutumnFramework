@@ -26,13 +26,16 @@ public class TransactionManager implements ApplicationListener<ContextFinishRefr
     private SqlSessionFactory sqlSessionFactory;
 
     // 开始事务
-    public void beginTransaction(Propagation propagation) throws SQLException {
+    public void beginTransaction(Propagation propagation, Isolation isolation) throws SQLException {
         SqlSession sqlSession = sqlSessionFactory.openSession();
         switch (propagation) {
             case REQUIRED:
                 if (TransactionContext.getCurrentConnection() == null) {
                     Connection connection = sqlSession.getConnection();
                     connection.setAutoCommit(false);
+                    if (isolation != null) {
+                        connection.setTransactionIsolation(isolation.getValue());
+                    }
                     TransactionContext.pushConnection(connection);
                     log.info("开启事务,隔离等级为：{}", REQUIRED);
                 } else {

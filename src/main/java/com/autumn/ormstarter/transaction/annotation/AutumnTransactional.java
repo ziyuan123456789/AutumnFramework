@@ -17,7 +17,7 @@ import java.lang.annotation.Target;
 public @interface AutumnTransactional {
     Propagation propagation() default Propagation.REQUIRED;
 
-    Isolation isolation() default Isolation.DEFAULT;
+    Isolation isolation() default Isolation.TRANSACTION_READ_COMMITTED;
 
     Class<? extends Throwable>[] rollbackFor() default {RuntimeException.class};
 }
