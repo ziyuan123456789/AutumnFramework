@@ -67,6 +67,7 @@ public class AutumnApplication {
     private static final ApplicationShutdownHook shutdownHook = new ApplicationShutdownHook();
 
 
+    //在构造方法中确定了扫描的起点以及推断真正的程序入口,并对SPI机制进行初始化,从Meta-INF目录下读取配置文件,进行实例化
     public AutumnApplication(Class<?>... primarySources) {
         /**
          * 非常感谢你能看到这里,能看到这段注释也说明你克隆了这段代码并且真的点进去看了,AutumnFramework仅仅是对Springboot的基础结构和基础功能进行简单的仿写
@@ -90,7 +91,11 @@ public class AutumnApplication {
         //初始化SPI机制,读取meta-inf下的配置文件
         this.initAutumnSpi();
 
-        //读取默认的BootstrapRegistryInitializer实现类,可以预注册组件
+        /**
+         读取默认的BootstrapRegistryInitializer实现类,可以预注册组件,调用构造器创建实例对象
+         在 ApplicationContext 准备就绪 但尚未refresh之前,提供一个回调入口 对这个 ApplicationContext 实例本身进行编程化的修改和配置
+         一般而言可以用来动态加载一些配置
+         */
         this.bootstrapRegistryInitializers = this.getAutumnFactoriesInstances(BootstrapRegistryInitializer.class);
 
         //读取默认的ApplicationContextInitializer实现类,可以修改 ApplicationContext,在Context创建后启用
@@ -111,7 +116,7 @@ public class AutumnApplication {
         //初始化命令行参数
         this.sysArgs = args;
 
-        //创建DefaultBootstrapContext,在context没有创建之前提供一个容器
+        //创建DefaultBootstrapContext,在context没有创建之前提供一个容器,创建引导上下文
         DefaultBootstrapContext bootstrapContext = this.createBootstrapContext();
 
         //发布start事件
@@ -123,15 +128,16 @@ public class AutumnApplication {
         //包裹命令行/jvm/其他参数
         ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
 
-        //初始化环境配置,例如把主包,主类,主源进行写入保存
+        //初始化环境配置,例如把主包,主类,主源进行写入保存,准备环境
         environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
 
         //依照配置创建beanFactory,默认为`AnnotationConfigServletWebServerApplicationContext`
         beanFactory = createApplicationContext();
 
-
+        // 准备上下文
         prepareContext(bootstrapContext, beanFactory, environment, listeners, applicationArguments);
 
+        // 刷新上下文
         refreshContext((AnnotationConfigApplicationContext) beanFactory);
 
     }
@@ -139,6 +145,7 @@ public class AutumnApplication {
 
     private void prepareContext(DefaultBootstrapContext bootstrapContext, ApplicationContext context, ConfigurableEnvironment environment, List<AutumnApplicationRunListener> listeners, ApplicationArguments applicationArguments) {
         context.setEnvironment(environment);
+        bootstrapContext.setEnvironment(environment);
 
         for (ApplicationContextInitializer initializer : initializers) {
             initializer.initialize(context);
@@ -147,6 +154,7 @@ public class AutumnApplication {
             listener.contextPrepared(context);
         }
 
+        //打印banner
         log.info("""
                 
                 \033[35m                                _                         __  ____      _______\s
@@ -156,9 +164,15 @@ public class AutumnApplication {
                 \033[33m                  / ____ \\ |_| | |_| |_| | | | | | | | | | |  | |  \\  / | |____\s
                 \033[31m                 /_/    \\_\\__,_|\\__|\\__,_|_| |_| |_|_| |_|_|  |_|   \\/   \\_____|\033[0m"""
         );
+        //注册一些默认的bean,例如applicationArguments,environment等
         beanFactory.registerSingleton("applicationArguments", applicationArguments);
         beanFactory.registerSingleton("environment", environment);
         Set<Object> sources = getAllSources();
+
+        /**
+         *  load阶段,AnnotatedBeanDefinitionReader在此处被创建,委托创建BeanDefinitionHolder,进一步解析为BeanDefinition
+         *  同时ConfigurationClassPostProcessor于构造器中被创建,记住这个关键的类
+         */
         load(context, sources.toArray(new Object[0]));
         for (AutumnApplicationRunListener listener : listeners) {
             listener.contextLoaded(context);
@@ -173,6 +187,7 @@ public class AutumnApplication {
             return new AnnotationConfigServletWebServerApplicationContext();
         } else {
             try {
+                //AutumnCore.Ioc.MyContext 已彻底启用
                 Method getInstanceMethod = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext").getDeclaredMethod("getInstance");
                 getInstanceMethod.setAccessible(true);
                 return (ConfigurableApplicationContext) getInstanceMethod.invoke(null);
@@ -183,10 +198,15 @@ public class AutumnApplication {
     }
 
     private ConfigurableEnvironment prepareEnvironment(List<AutumnApplicationRunListener> listeners, DefaultBootstrapContext bootstrapContext, ApplicationArguments applicationArguments) {
+        //environment于此被创建
         DefaultEnvironment environment = new DefaultEnvironment(applicationArguments);
+        //TODO :应取消配置文件的硬编码
+        //委托environment去自行解析,不应该整成硬编码,日后修改
         environment.loadConfiguration("src/main/resources/test.properties", ConfigurableEnvironment.DEFAULT_PROFILE);
+        //拿到Properties对象,自己添加一些属性
         environment.getAllProperties().put("autumn.main.sources", mainApplicationClass.getName());
         environment.getAllProperties().put("autumn.main.package", mainApplicationClass.getPackageName());
+        //发布environmentPrepared事件
         for (AutumnApplicationRunListener listener : listeners) {
             listener.environmentPrepared(environment);
         }
@@ -201,9 +221,10 @@ public class AutumnApplication {
     }
 
     private void refreshContext(AnnotationConfigApplicationContext context) {
+        //注册关机钩子
         shutdownHook.registerApplicationContext(context);
+        //前期工作彻底准备完成,开始refresh
         beanFactory.refresh();
-
     }
 
 
@@ -291,6 +312,7 @@ public class AutumnApplication {
                 String paramName = parameters[i].getName();
                 if (!paramName.equals(expectedParamNames[i])) {
                     log.error("你应该打开编译参数: -parameters,现在框架无法获取真实的方法参数名");
+//                    throw new RuntimeException("请打开编译参数: -parameters");
                 }
 
             }

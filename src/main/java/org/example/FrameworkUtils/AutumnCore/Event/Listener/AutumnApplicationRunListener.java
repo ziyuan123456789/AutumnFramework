@@ -11,7 +11,7 @@ import org.example.FrameworkUtils.AutumnCore.env.ConfigurableEnvironment;
  */
 
 /**
- * 如果说ApplicationListener耳朵很尖,那么AutumnApplicationRunListener只会比她更厉害
+ * AutumnApplicationRunListener,监听容器的基础事件
  */
 public interface AutumnApplicationRunListener {
 

@@ -1,7 +1,7 @@
 package org.example.FrameworkUtils.AutumnCore.Bootstrap;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.controller.AutumnContextController;
+import org.example.FrameworkUtils.Utils.BeanUtils;
 
 /**
  * @author ziyuan
@@ -10,9 +10,14 @@ import org.example.controller.AutumnContextController;
 
 @Slf4j
 public class BaseBootstrapRegistryInitializer implements BootstrapRegistryInitializer {
+    static {
+        log.info("BaseBootstrapRegistryInitializer加载");
+    }
+
+
     @Override
     public void initialize(BootstrapRegistry registry) {
-        AutumnContextController test = new AutumnContextController();
-        registry.register(AutumnContextController.class, InstanceSupplier.of(test));
+        BeanUtils utils = new BeanUtils();
+        registry.register(BeanUtils.class, InstanceSupplier.of(utils));
     }
 }

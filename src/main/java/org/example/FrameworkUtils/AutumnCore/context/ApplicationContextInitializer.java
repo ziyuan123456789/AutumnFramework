@@ -1,7 +1,6 @@
 package org.example.FrameworkUtils.AutumnCore.context;
 
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
-import org.example.FrameworkUtils.AutumnCore.Ioc.MyContext;
 
 /**
  * @author ziyuan

@@ -995,9 +995,9 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     public void refresh() {
         log.info(ANSI_BOLD + ANSI_GREEN + "==== 容器开始refresh ====" + ANSI_RESET);
 
-        //刷新前的准备
+        //刷新前的准备,记录当前时间戳
         prepareRefresh();
-        log.info(ANSI_YELLOW + "==== prepareRefresh阶段结束, 容器刷新前做准备, 创建EarlyApplicationListeners ====" + ANSI_RESET);
+        log.info(ANSI_YELLOW + "==== prepareRefresh阶段结束, 容器刷新前做准备, 创建一些高人一等的EarlyApplicationListeners ====" + ANSI_RESET);
 
         //BeanFactory前准备
         prepareBeanFactory(this);
@@ -1008,7 +1008,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
             postProcessBeanFactory(this);
             log.info(ANSI_YELLOW + "==== postProcessBeanFactory阶段结束, 本项目没有制作扩展 ====" + ANSI_RESET);
 
-            //调用BeanFactory后置处理器
+            //调用BeanFactory后置处理器,因为 ConfigurationClassPostProcessor 的存在,绝大部分Bean定义包装完成
             invokeBeanFactoryPostProcessors();
             log.info(ANSI_YELLOW + "==== invokeBeanFactoryPostProcessors阶段结束, 调用BeanFactory后置处理器, 允许引入更多BeanDefinition ====" + ANSI_RESET);
 

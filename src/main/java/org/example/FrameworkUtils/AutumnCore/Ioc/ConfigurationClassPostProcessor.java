@@ -36,6 +36,7 @@ import java.util.Set;
 @Slf4j
 @MyOrder(1)
 public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPostProcessor, EnvironmentAware {
+
     public static final String CLASS_NAME = "org.example.FrameworkUtils.AutumnCore.Ioc.ConfigurationClassPostProcessor";
 
     private Environment environment;

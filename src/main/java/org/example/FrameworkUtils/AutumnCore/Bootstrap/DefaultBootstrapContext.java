@@ -1,5 +1,6 @@
 package org.example.FrameworkUtils.AutumnCore.Bootstrap;
 
+import lombok.Getter;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
 
 import java.util.HashMap;
@@ -17,6 +18,7 @@ public class DefaultBootstrapContext implements ConfigurableBootstrapContext {
 
     private final Map<Class<?>, InstanceSupplier<?>> instanceSuppliers = new HashMap<>();
 
+    @Getter
     private Environment environment;
 
     @Override
@@ -59,5 +61,6 @@ public class DefaultBootstrapContext implements ConfigurableBootstrapContext {
     public <T> InstanceSupplier<T> getRegisteredInstanceSupplier(Class<T> type) {
         return (InstanceSupplier<T>) instanceSuppliers.get(type);
     }
+
 }
 
