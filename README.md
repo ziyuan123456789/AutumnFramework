@@ -918,6 +918,12 @@ MineBatis-configXML=minebatis-config.xml
 - Logback-classic 实现彩色日志
 ```
 
+### 容器继承图
+
+<div style="text-align: center;">
+    <img src="pics/AnnotationConfigServletWebServerApplicationContext.png" alt="">
+</div>
+
 
 ## 更长远的想法:
 - 支持https
