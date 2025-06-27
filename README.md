@@ -25,11 +25,13 @@
 
 ## 启动类
 ```java
+
+@Slf4j
 @EnableAutumnAsync
 @EnableAutumnCache
 @EnableAutumnTransactional
+@ComponentScan({"org.example", "annotation.scan.test"})
 @AutumnBootApplication
-@Slf4j
 public class Main {
 
   public static void main(String[] args) {
@@ -43,6 +45,7 @@ public class Main {
     log.info("再见孩子们");
   }
 }
+
 ```
 
 ## 生命周期
@@ -50,14 +53,20 @@ public class Main {
 ### AutumnApplication构造方法:
 
 ```java
+//在构造方法中确定了扫描的起点以及推断真正的程序入口,并对SPI机制进行初始化,从Meta-INF目录下读取配置文件,进行实例化
 public AutumnApplication(Class<?>... primarySources) {
+
   //确定应用的主要配置来源,为Bean扫描的起点
   this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
 
-  //初始化SPI机制,读取meta-inf下的配置文件
+  //初始化SPI机制,读取Meta-inf下的配置文件
   this.initAutumnSpi();
 
-  //读取默认的BootstrapRegistryInitializer实现类,可以预注册组件
+  /**
+   读取默认的BootstrapRegistryInitializer实现类,可以预注册组件,调用构造器创建实例对象
+   在 ApplicationContext 准备就绪 但尚未refresh之前,提供一个回调入口 对这个 ApplicationContext 实例本身进行编程化的修改和配置
+   一般而言可以用来动态加载一些配置
+   */
   this.bootstrapRegistryInitializers = this.getAutumnFactoriesInstances(BootstrapRegistryInitializer.class);
 
   //读取默认的ApplicationContextInitializer实现类,可以修改 ApplicationContext,在Context创建后启用
@@ -82,7 +91,7 @@ public void run(String[] args) {
   //初始化命令行参数
   this.sysArgs = args;
 
-  //创建DefaultBootstrapContext,在context没有创建之前提供一个容器
+  //创建DefaultBootstrapContext,在context没有创建之前提供一个容器,创建引导上下文
   DefaultBootstrapContext bootstrapContext = this.createBootstrapContext();
 
   //发布start事件
@@ -94,14 +103,16 @@ public void run(String[] args) {
   //包裹命令行/jvm/其他参数
   ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
 
-  //初始化环境配置,例如把主包,主类,主源进行写入保存
+  //初始化环境配置,例如把主包,主类,主源进行写入保存,准备环境
   environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
 
   //依照配置创建beanFactory,默认为`AnnotationConfigServletWebServerApplicationContext`
   beanFactory = createApplicationContext();
 
+  // 准备上下文
   prepareContext(bootstrapContext, beanFactory, environment, listeners, applicationArguments);
 
+  // 刷新上下文
   refreshContext((AnnotationConfigApplicationContext) beanFactory);
 
 }
@@ -110,35 +121,45 @@ public void run(String[] args) {
 ### ApplicationContext中的refresh方法:
 
 ```java
-
 @Override
 public void refresh() {
-  //刷新前的准备
+  //刷新前的准备,记录当前时间戳
   prepareRefresh();
+
   //BeanFactory前准备
   prepareBeanFactory(this);
+
   try {
     //模板方法
     postProcessBeanFactory(this);
-    //调用BeanFactory后置处理器(在此处扫描全部的Bean定义,并倒入Starter)
+
+    //调用BeanFactory后置处理器,因为 ConfigurationClassPostProcessor 的存在,绝大部分Bean定义包装完成
     invokeBeanFactoryPostProcessors();
-    //注册实例化Bean后置处理器(依赖注入处理器,感知处理器,Aop处理器在此处被导入)
+
+    //注册实例化Bean后置处理器
     registerBeanPostProcessors(this);
+
     //初始化事件广播器
     initApplicationEventMulticaster();
-    //模板方法
+
+    //模板方法, Web容器初始化
     onRefresh();
+
     //注册监听器
     registerListeners();
+
     //实例化所有的Bean
     finishBeanFactoryInitialization(this);
+
     //刷新完成
     finishRefresh();
+
   } catch (Exception e) {
-    log.error(e.getMessage(), e);
+    log.error(ANSI_RED + "容器刷新失败: " + e.getMessage() + ANSI_RESET, e);
     throw new RuntimeException(e);
   }
 }
+
 ```
 
 ## MVC章节
