@@ -2,6 +2,7 @@ package org.example;
 
 import com.autumn.async.EnableAutumnAsync;
 import com.autumn.cache.EnableAutumnCache;
+import com.autumn.mvc.EnableMVCAutoConfiguration;
 import com.autumn.ormstarter.transaction.annotation.EnableAutumnTransactional;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBootApplication;
@@ -23,6 +24,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnApplicat
 @EnableAutumnAsync
 @EnableAutumnCache
 @EnableAutumnTransactional
+@EnableMVCAutoConfiguration
 @ComponentScan({"org.example", "annotation.scan.test"})
 @AutumnBootApplication
 public class Main {

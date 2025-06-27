@@ -33,7 +33,9 @@ public class BeanDefinitionHolder {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         BeanDefinitionHolder that = (BeanDefinitionHolder) o;
         return Objects.equals(beanDefinition, that.beanDefinition) && Objects.equals(beanName, that.beanName);
     }

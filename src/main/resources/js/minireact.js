@@ -1,40 +1,9 @@
-var Dong = (() => {
-  var __defProp = Object.defineProperty;
-  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-  var __getOwnPropNames = Object.getOwnPropertyNames;
-  var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __export = (target, all) => {
-    for (var name in all)
-      __defProp(target, name, {get: all[name], enumerable: true});
-  };
-  var __copyProps = (to, from, except, desc) => {
-    if (from && typeof from === "object" || typeof from === "function") {
-      for (let key of __getOwnPropNames(from))
-        if (!__hasOwnProp.call(to, key) && key !== except)
-          __defProp(to, key, {
-            get: () => from[key],
-            enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
-          });
-    }
-    return to;
-  };
-  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", {value: true}), mod);
-
-  // src/dong.ts
-  var dong_exports = {};
-  __export(dong_exports, {
-    default: () => dong_default,
-    render: () => render,
-    useAware: () => useAware,
-    useCallBack: () => useCallBack,
-    useEffect: () => useEffect,
-    useMemo: () => useMemo,
-    useRef: () => useRef,
-    useState: () => useState
-  });
-
+(function (global, factory) {
+  typeof exports === "object" && typeof module !== "undefined" ? factory(exports) : typeof define === "function" && define.amd ? define(["exports"], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory(global.Dong = {}));
+})(this, function (exports2) {
+  "use strict";
   function createElement(type, props, ...children) {
-    console.log("createElement\u751F\u6210\u7684\u539F\u59CB\u865A\u62DFDOM\u5982\u4E0B");
+    console.log("createElement生成的原始虚拟DOM如下");
     if (type == void 0) {
       console.error("ERROR");
     }
@@ -57,7 +26,6 @@ var Dong = (() => {
       }
     };
   }
-
   function createTextElement(text) {
     return {
       type: "TEXT_ELEMENT",
@@ -68,13 +36,12 @@ var Dong = (() => {
     };
   }
 
-  var nextFiberReconcileWork = null;
-  var wipRoot = null;
-  var currentRoot = null;
-  var deletions = [];
-  var currentFiber = null;
-  var hookIndex = 0;
-
+  let nextFiberReconcileWork = null;
+  let wipRoot = null;
+  let currentRoot = null;
+  let deletions = [];
+  let currentFiber = null;
+  let hookIndex = 0;
   function render(element, container) {
     wipRoot = {
       dom: container,
@@ -87,19 +54,17 @@ var Dong = (() => {
       //当前根Fiber树存入wipRoot.alternate
     };
     nextFiberReconcileWork = wipRoot;
-    console.log("render\u9636\u6BB5\u7ED3\u675F,\u751F\u6210\u7684wipRoot\u5982\u4E0B");
+    console.log("render阶段结束,生成的wipRoot如下");
     console.log(wipRoot);
   }
-
   requestIdleCallback(workLoop);
-
   function workLoop(deadline) {
     let shouldYield = false;
     while (nextFiberReconcileWork && !shouldYield) {
       nextFiberReconcileWork = performNextWork(nextFiberReconcileWork);
       shouldYield = deadline.timeRemaining() < 1;
       if (shouldYield) {
-        console.warn("\u7A7A\u95F2\u65F6\u95F4\u8017\u5C3D\uFF0C\u751F\u6210\u865A\u62DF DOM \u88AB\u6253\u65AD\uFF0C\u7B49\u5F85\u4E0B\u6B21\u8C03\u5EA6\u4EE5\u4FBF\u4ECE\u4E0A\u6B21\u4E2D\u65AD\u7684\u5730\u65B9\u7EE7\u7EED");
+        console.warn("空闲时间耗尽，生成虚拟 DOM 被打断，等待下次调度以便从上次中断的地方继续");
       }
     }
     if (nextFiberReconcileWork) {
@@ -109,7 +74,6 @@ var Dong = (() => {
       commitRoot();
     }
   }
-
   function performNextWork(fiber) {
     currentFiber = fiber;
     if (typeof fiber.type === "function") {
@@ -129,7 +93,6 @@ var Dong = (() => {
     }
     return null;
   }
-
   function reconcile(fiber) {
     var _a;
     if (typeof fiber.type === "function") {
@@ -147,7 +110,6 @@ var Dong = (() => {
       reconcileChildren(fiber, children);
     }
   }
-
   function shallowEqual(obj1, obj2) {
     if (obj1 === obj2) return true;
     const keys1 = Object.keys(obj1);
@@ -186,7 +148,7 @@ var Dong = (() => {
     return true;
   }
 
-  var deepEqual = (obj1, obj2) => {
+  const deepEqual = (obj1, obj2) => {
     if (obj1 === obj2) return true;
     if (typeof obj1 !== "object" || typeof obj2 !== "object" || obj1 == null || obj2 == null) {
       return false;
@@ -201,13 +163,11 @@ var Dong = (() => {
     }
     return true;
   };
-
   function diff(oldfiber, newfiber) {
     if (oldfiber === newfiber) return true;
     if (oldfiber.type !== newfiber.type) return false;
     return shallowEqual(oldfiber.props, newfiber.props);
   }
-
   function reconcileChildren(wipFiber, elements) {
     let index = 0;
     let prevSibling = null;
@@ -223,7 +183,7 @@ var Dong = (() => {
       if (sameType) {
         const shouldUpdate = !diff(element, oldFiber);
         if (shouldUpdate) {
-          console.warn("\u8282\u70B9\u4E0E\u4E0A\u4E00\u8BFEfiber\u6811\u4E0D\u4E00\u81F4,\u9700\u8981\u8FDB\u884C\u8282\u70B9\u66F4\u65B0,\u66F4\u65B0\u7684fiber\u5982\u4E0B");
+          console.warn("节点与上一课fiber树不一致,需要进行节点更新,更新的fiber如下");
           newFiber = {
             type: oldFiber.type,
             props: element.props,
@@ -268,27 +228,28 @@ var Dong = (() => {
       } else if (prevSibling) {
         prevSibling.sibling = newFiber;
       }
-      console.log("\u534F\u8C03\u540E\u7684\u865A\u62DFDOM\u5982\u4E0B");
+      console.log("协调后的虚拟DOM如下");
       prevSibling = newFiber;
       console.log(prevSibling);
       index++;
     }
   }
-
   function commitRoot() {
     deletions.forEach(commitWork);
     deletions = [];
     commitWork(wipRoot.child);
-    runEffects(wipRoot.child);
     currentRoot = wipRoot;
     wipRoot = null;
+    runEffects(currentRoot.child);
   }
-
   function runEffects(fiber) {
     if (!fiber) return;
     if (fiber.hooks) {
       fiber.hooks.forEach((hook) => {
         if (hook.effect && hook.hasEffect) {
+          if (hook.cleanup) {
+            hook.cleanup();
+          }
           hook.cleanup = hook.effect();
           hook.hasEffect = false;
         }
@@ -297,7 +258,6 @@ var Dong = (() => {
     runEffects(fiber.child);
     runEffects(fiber.sibling);
   }
-
   function commitWork(fiber) {
     if (!fiber) {
       return;
@@ -313,18 +273,17 @@ var Dong = (() => {
       setTimeout(() => {
         domParent.classList.remove("fade-in-border");
       }, 3e3);
-      console.log("\u8282\u70B9\u63D2\u5165");
+      console.log("节点插入");
     } else if (fiber.effectTag === "UPDATE" && fiber.dom != null) {
       updateDom(fiber.dom, fiber.alternate.props, fiber.props);
     } else if (fiber.effectTag === "DELETION") {
       commitDeletion(fiber, domParent);
-      console.log("\u8282\u70B9\u5220\u9664");
+      console.log("节点删除");
       return;
     }
     commitWork(fiber.child);
     commitWork(fiber.sibling);
   }
-
   function commitDeletion(fiber, domParent) {
     if (!fiber) return;
     if (fiber.dom) {
@@ -334,7 +293,6 @@ var Dong = (() => {
     }
     commitDeletion(fiber.sibling, domParent);
   }
-
   function createDom(fiber) {
     let dom;
     if (fiber.type == "TEXT_ELEMENT") {
@@ -345,26 +303,25 @@ var Dong = (() => {
     for (const prop in fiber.props) {
       setAttribute(dom, prop, fiber.props[prop]);
     }
-    console.log("\u771F\u5B9EDOM\u5982\u4E0B:");
+    console.log("真实DOM如下:");
     console.log(dom);
     return dom;
   }
-
   function isEventListenerAttr(key, value) {
     return typeof value == "function" && key.startsWith("on");
   }
-
   function isStyleAttr(key, value) {
     return key == "style" && typeof value == "object";
   }
-
   function isPlainAttr(_key, value) {
     return typeof value != "object" && typeof value != "function";
   }
 
-  var setAttribute = (dom, key, value) => {
+  const setAttribute = (dom, key, value) => {
     if (key === "children") {
       return;
+    } else if (key === "className") {
+      dom.setAttribute("class", value);
     }
     if (key === "nodeValue") {
       dom.textContent = value;
@@ -379,7 +336,6 @@ var Dong = (() => {
       dom.setAttribute(key, value);
     }
   };
-
   function updateDom(dom, prevProps, nextProps) {
     if (dom instanceof Text) {
       if (prevProps.nodeValue !== nextProps.nodeValue) {
@@ -424,7 +380,6 @@ var Dong = (() => {
       dom.classList.remove("fade-in-border");
     }, 3e3);
   }
-
   function useState(initialValue) {
     const oldHook = currentFiber.alternate && currentFiber.alternate.hooks ? currentFiber.alternate.hooks[hookIndex] : null;
     const hook = {
@@ -432,13 +387,13 @@ var Dong = (() => {
       queue: oldHook ? oldHook.queue : []
     };
     hook.queue.forEach((action) => {
-      console.log("\u5904\u7406hooks\u4E2D");
+      console.log("处理hooks中");
       console.log("action", action);
       hook.state = action(hook.state);
     });
     hook.queue.length = 0;
     const setState = (action) => {
-      console.log("setState\u8C03\u7528");
+      console.log("setState调用");
       hook.queue.push(typeof action === "function" ? action : () => action);
       wipRoot = {
         dom: currentRoot.dom,
@@ -446,7 +401,7 @@ var Dong = (() => {
         alternate: currentRoot
       };
       nextFiberReconcileWork = wipRoot;
-      console.log("\u8C03\u7528useState\u9020\u6210\u91CD\u65B0\u6E32\u67D3");
+      console.log("调用useState造成重新渲染");
       while (nextFiberReconcileWork) {
         nextFiberReconcileWork = performNextWork(nextFiberReconcileWork);
       }
@@ -458,40 +413,23 @@ var Dong = (() => {
     hookIndex++;
     return [hook.state, setState];
   }
-
   function useEffect(callback, deps) {
     const oldHook = currentFiber.alternate && currentFiber.alternate.hooks ? currentFiber.alternate.hooks[hookIndex] : null;
     let hasChangedDeps;
     if (!oldHook) {
       hasChangedDeps = true;
     } else {
-      if (deps) {
-        hasChangedDeps = deps.some((dep, i) => {
-          return !Object.is(dep, oldHook.deps[i]);
-        });
-      } else {
-        hasChangedDeps = true;
-      }
+      hasChangedDeps = deps ? deps.some((dep, i) => !Object.is(dep, oldHook.deps[i])) : true;
     }
     const hook = {
       deps,
-      // 当前的依赖项
       effect: callback,
-      // 副作用函数
-      cleanup: oldHook ? oldHook.cleanup : null
-      // 保存旧的清理函数
+      cleanup: oldHook ? oldHook.cleanup : null,
+      hasEffect: hasChangedDeps
     };
-    if (hasChangedDeps) {
-      if (hook.cleanup) {
-        hook.cleanup();
-      }
-      const cleanup = callback();
-      hook.cleanup = typeof cleanup === "function" ? cleanup : null;
-    }
     currentFiber.hooks.push(hook);
     hookIndex++;
   }
-
   function useMemo(callback, deps) {
     const oldHook = currentFiber.alternate && currentFiber.alternate.hooks ? currentFiber.alternate.hooks[hookIndex] : null;
     let hasChangedDeps = false;
@@ -518,7 +456,6 @@ var Dong = (() => {
     hookIndex++;
     return memoizedValue;
   }
-
   function useCallBack(callback, deps) {
     const oldHook = currentFiber.alternate && currentFiber.alternate.hooks ? currentFiber.alternate.hooks[hookIndex] : null;
     let hasChangedDeps;
@@ -539,13 +476,11 @@ var Dong = (() => {
     hookIndex++;
     return hook.callback;
   }
-
   function useAware() {
     const seen = /* @__PURE__ */ new Set();
-
     function replacer(key, value) {
       if (key === "dom" || key === "alternate") {
-        return "[\u5FFD\u7565]";
+        return "[忽略]";
       }
       if (key === "props" && typeof value === "object" && value !== null) {
         const filteredProps = {};
@@ -558,16 +493,14 @@ var Dong = (() => {
       }
       if (typeof value === "object" && value !== null) {
         if (seen.has(value)) {
-          return "[\u5FAA\u73AF\u5F15\u7528]";
+          return "[循环引用]";
         }
         seen.add(value);
       }
       return value;
     }
-
     return [JSON.stringify(wipRoot, replacer, 2), wipRoot];
   }
-
   function useRef(initialValue) {
     const oldHook = currentFiber.alternate && currentFiber.alternate.hooks ? currentFiber.alternate.hooks[hookIndex] : null;
     const hook = oldHook || {current: initialValue};
@@ -576,7 +509,7 @@ var Dong = (() => {
     return hook;
   }
 
-  var Dong = {
+  const Dong = {
     createElement,
     render,
     useState,
@@ -589,6 +522,13 @@ var Dong = (() => {
   if (typeof window !== "undefined") {
     window.Dong = Dong;
   }
-  var dong_default = Dong;
-  return __toCommonJS(dong_exports);
-})();
+  exports2.default = Dong;
+  exports2.render = render;
+  exports2.useAware = useAware;
+  exports2.useCallBack = useCallBack;
+  exports2.useEffect = useEffect;
+  exports2.useMemo = useMemo;
+  exports2.useRef = useRef;
+  exports2.useState = useState;
+  Object.defineProperties(exports2, {__esModule: {value: true}, [Symbol.toStringTag]: {value: "Module"}});
+});

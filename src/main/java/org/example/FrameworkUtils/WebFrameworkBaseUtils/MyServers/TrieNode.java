@@ -6,6 +6,7 @@ import org.example.FrameworkUtils.DataStructure.MethodWrapper;
 import java.util.HashMap;
 import java.util.Map;
 
+
 @Data
 public class TrieNode {
 

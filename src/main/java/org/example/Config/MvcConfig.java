@@ -12,7 +12,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 public class MvcConfig implements AutumnMvcConfiguration {
     @Override
     public View getMainPage() {
-        return new View("MySwagger.html");
+        return new View("NewSwagger.html");
     }
 
     @Override

@@ -2,18 +2,12 @@ package com.autumn.swaggerstarter;
 
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
-import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ServletResponseAdapter;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.TrieTree;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
-
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author ziyuan
@@ -36,6 +30,12 @@ public class BaseController implements BeanFactoryAware {
     @MyRequestMapping("/ReactPage")
     public View minireactPage() {
         return new View("minireact.html");
+    }
+
+    @MyRequestMapping("/get-new-swagger")
+    public void getNewSwagger(AutumnResponse response) {
+        ServletResponseAdapter servletResponseAdapter = (ServletResponseAdapter) response;
+        servletResponseAdapter.outputJavaScriptFile("js/newswagger.js");
     }
 
     @MyRequestMapping("/getapp")
@@ -61,35 +61,8 @@ public class BaseController implements BeanFactoryAware {
 
 
     @MyRequestMapping("/urlMapping")
-    public Map<String, Object> urlMapping() {
-        Map<String, Object> openApiMap = new HashMap<>();
-        for (MyBeanDefinition mb : beanFactory.getBeanDefinitionMap().values()) {
-            Class<?> clazz = mb.getBeanClass();
-            if (clazz.isAnnotationPresent(MyController.class)) {
-                for (Method method : clazz.getDeclaredMethods()) {
-                    MyRequestMapping myRequestMapping = method.getAnnotation(MyRequestMapping.class);
-                    if (myRequestMapping != null) {
-                        String url = myRequestMapping.value();
-                        if (url.startsWith("/")) {
-                            List<String> methodsName = new ArrayList<>();
-                            Class<?>[] paramTypes = method.getParameterTypes();
-                            for (Class<?> param : paramTypes) {
-                                methodsName.add(param.getSimpleName());
-                            }
-                            Class<?> returnType = method.getReturnType();
-                            Map<String, Object> methodInfo = new HashMap<>();
-                            methodInfo.put("parameters", methodsName);
-                            methodInfo.put("returnType", returnType.getSimpleName());
-                            openApiMap.put(url, methodInfo);
-                        } else {
-                            throw new RuntimeException("URL格式错误");
-                        }
-                    }
-                }
-            }
-        }
-
-        return openApiMap;
+    public TrieTree urlMapping() {
+        return (TrieTree) beanFactory.getBean("urlMappingTree");
     }
 
 

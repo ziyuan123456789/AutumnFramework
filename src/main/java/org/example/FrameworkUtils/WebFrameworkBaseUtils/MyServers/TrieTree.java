@@ -1,11 +1,13 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
+import lombok.Data;
 import org.example.FrameworkUtils.DataStructure.MethodWrapper;
 
 import java.util.HashMap;
 import java.util.Map;
 
 
+@Data
 public class TrieTree {
 
     private final TrieNode root = new TrieNode();
@@ -75,10 +77,5 @@ public class TrieTree {
         node.handlerInfo = handlerInfo;
     }
 
-    @Override
-    public String toString() {
-        return "TrieTree{" +
-                "root=" + root +
-                '}';
-    }
+
 }

@@ -1,6 +1,7 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
@@ -65,6 +66,8 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
     @MyAutoWired
     private JsonFormatter jsonFormatter;
 
+    @MyAutoWired
+    private ObjectMapper objectMapper;
 
     private Set<ControllerInjector> controllerInjectors = new HashSet<>();
 
@@ -118,12 +121,12 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         processRequest(req, resp);
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         processRequest(req, resp);
     }
 
@@ -154,8 +157,6 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 
     @Override
     public void destroy() {
-        RequestContext.clear();
-        log.info("请求对象生命周期结束");
     }
 
 
@@ -237,7 +238,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
             } else if (result instanceof Icon) {
                 tomCatHtmlResponse.outPutIconWriter(resp, ((Icon) result).getIconName(), null);
             } else if (result instanceof Map) {
-                tomCatHtmlResponse.outPutMessageWriter(resp, 200, jsonFormatter.toJson(result), null);
+                tomCatHtmlResponse.outPutMessageWriter(resp, 200, objectMapper.writeValueAsString(result), null);
             } else if (isPrimitiveOrWrapper(result.getClass())) {
                 tomCatHtmlResponse.outPutMessageWriter(resp, 200, result.toString(), null);
             }
@@ -245,7 +246,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 //                tomCatHtmlResponse.outPutSocketWriter(resp, myRequest.getBody(), myRequest.getUrl());
 //            }
             else {
-                tomCatHtmlResponse.outPutMessageWriter(resp, 200, jsonFormatter.toJson(result), null);
+                tomCatHtmlResponse.outPutMessageWriter(resp, 200, objectMapper.writeValueAsString(result), null);
             }
         } catch (Exception e) {
             e.printStackTrace();
