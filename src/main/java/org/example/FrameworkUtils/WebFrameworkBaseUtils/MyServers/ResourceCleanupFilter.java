@@ -1,8 +1,7 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Aop.RequestContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -14,15 +13,17 @@ import java.io.IOException;
  * @author ziyuan
  * @since 2025.06
  */
+@Slf4j
 public class ResourceCleanupFilter implements javax.servlet.Filter {
 
-    private static final Logger log = LoggerFactory.getLogger(ResourceCleanupFilter.class);
 
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         try {
+            //TODO:修一下
+//            ((HttpServletResponse) response).setHeader("Access-Control-Allow-Origin", "*");
             chain.doFilter(request, response);
         } finally {
             RequestContext.clear();

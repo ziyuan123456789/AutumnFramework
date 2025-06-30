@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>MiniReactWithJSX</title>
+    <title>AutumnFrameWork with MiniReact</title>
     <link href="/favicon.ico" rel="icon" type="image/svg+xml"/>
 </head>
 <body>
@@ -13,49 +13,82 @@
 </script>
 <div id="root"></div>
 
+<div class="modal-overlay" id="vdom-modal">
+    <div class="modal-content">
+        <div class="modal-header" id="vdom-modal-header">
+            <span class="modal-title">虚拟 DOM 树</span>
+            <button class="modal-close-btn" id="modal-close">&times;</button>
+        </div>
+        <pre class="modal-body" id="vdom-content"></pre>
+    </div>
+</div>
+
 </body>
 
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Open+Sans:wght@400;600;700&display=swap');
+
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
     :root {
-        /* Autumn Palette */
-        --color-get: #2E7D32; /* Deep Forest Green */
-        --color-post: #E65100; /* Burnt Orange */
-        --color-put: #F57F17; /* Golden Yellow */
-        --color-delete: #BF360C; /* Deep Red-Brown */
+        /* 色彩系统 - 温暖的秋季色调 */
+        --color-get: #16a34a; /* Forest Green */
+        --color-post: #2563eb; /* Deep Sky Blue */
+        --color-put: #d97706; /* Amber */
+        --color-delete: #dc2626; /* Rich Red */
+        --color-accent: #f97316; /* Vibrant Autumn Orange */
 
-        --color-bg-dark: #fdf5e6; /* Main Background - Old Lace */
-        --color-bg-light: #fff8f0; /* Headers/Items - Floral White */
-        --color-bg-panel: #faf0e6; /* Expanded Panels - Linen */
+        --color-bg-base: #2a201c; /* Base - Deep Coffee Brown */
+        --color-text: #f5e5d5; /* Text - Warm Off-white */
+        --color-text-darker: #bdaea1; /* Muted Text */
+        --color-text-header: #ffffff;
 
-        --color-text: #5D4037; /* Main Text - Deep Brown */
-        --color-text-darker: #795548; /* Lighter Brown Text */
-        --color-border: #A1887F; /* Muted Brown Border */
-        --font-primary: 'Open Sans', sans-serif;
-        --font-mono: 'Roboto Mono', monospace;
+        /* 玻璃效果颜色 */
+        --color-glass-bg: rgba(255, 235, 205, 0.05); /* Semi-transparent warm tint */
+        --color-glass-border: rgba(245, 229, 213, 0.2);
 
-        --status-success: var(--color-get);
-        --status-error: var(--color-delete);
-        --shadow: 0 3px 10px rgba(93, 64, 55, 0.15);
+        /* 字体 */
+        --font-primary: 'Inter', sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+
+        /* 效果 */
+        --glow-shadow: 0 8px 32px 0 rgba(249, 115, 22, 0.3); /* Orange Glow */
+        --border-radius: 12px;
     }
 
     * {
         box-sizing: border-box;
     }
 
+    /* 动态“液体”背景 */
+    @keyframes liquid-gradient {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
     body, html {
         margin: 0;
         padding: 0;
         font-family: var(--font-primary);
-        background-color: var(--color-bg-dark);
+        background-color: var(--color-bg-base);
+        /* 一个巨大、模糊、缓慢移动的径向渐变，模拟液体光感 */
+        background-image: radial-gradient(at 20% 20%, hsla(28, 90%, 60%, 0.2) 0px, transparent 50%),
+        radial-gradient(at 80% 80%, hsla(210, 90%, 70%, 0.1) 0px, transparent 50%);
+        background-size: 200% 200%;
+        animation: liquid-gradient 15s ease infinite;
         color: var(--color-text);
         line-height: 1.6;
         overflow: hidden;
     }
 
     /* =================================================================
-       Layout: Header + Main Content
+       玻璃拟态布局 (Glassmorphism Layout)
        ================================================================= */
     .layout {
         display: flex;
@@ -64,89 +97,98 @@
     }
 
     .header {
-        background-color: var(--color-bg-light);
-        padding: 20px 40px;
-        border-bottom: 2px solid #d35400; /* Strong Orange Accent */
-        box-shadow: var(--shadow);
+        position: sticky;
+        top: 0;
         z-index: 10;
+        padding: 16px 40px;
         flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+
+        /* 玻璃效果核心 */
+        background-color: var(--color-glass-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-bottom: 1px solid var(--color-glass-border);
     }
 
     .header-title {
-        margin: 0;
-        font-size: 2em;
+        font-size: 1.75em;
         font-weight: 700;
-        color: #d35400; /* Main Orange Title */
+        color: var(--color-text-header);
+        margin: 0;
+    }
+
+    .header-subtitle {
+        font-size: 1em;
+        font-weight: 400;
+        color: var(--color-text-darker);
+        flex-grow: 1;
+        margin: 0;
     }
 
     .content {
         flex-grow: 1;
         overflow-y: auto;
-        padding: 30px 40px;
+        padding: 24px 40px;
     }
 
-    /* =================================================================
-       Loading Spinner
-       ================================================================= */
     .loading-spinner {
         flex-grow: 1;
         display: flex;
         justify-content: center;
         align-items: center;
         font-size: 1.5em;
-        color: var(--color-text);
     }
 
     /* =================================================================
-       API Groups & Collapse Items
+       API 列表 - 琉璃卡片
        ================================================================= */
     .api-group {
-        margin-bottom: 40px;
+        margin-bottom: 32px;
     }
-
     .group-title {
-        font-size: 1.8em;
-        color: var(--color-text);
-        padding-bottom: 10px;
-        border-bottom: 1px solid var(--color-border);
-        margin-bottom: 20px;
-        font-weight: 600;
+        font-size: 1.25em;
+        font-weight: 500;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--color-glass-border);
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
-
     .collapse-item {
-        background-color: var(--color-bg-light);
-        border-radius: 8px;
-        margin-bottom: 10px;
-        box-shadow: var(--shadow);
-        border: 1px solid #ffe8d6;
+        border-radius: var(--border-radius);
+        margin-bottom: 16px;
         overflow: hidden;
-        transition: all 0.3s ease-in-out;
+        transition: all 0.3s ease;
+
+        /* 玻璃效果核心 */
+        background-color: var(--color-glass-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--color-glass-border);
     }
 
+    .collapse-item:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--glow-shadow);
+        border-color: var(--color-accent);
+    }
     .collapse-header {
         display: flex;
         align-items: center;
-        padding: 15px 20px;
+        gap: 12px;
+        padding: 14px 18px;
         cursor: pointer;
-        background-color: #ffe8d6;
-        border-left: 5px solid #d35400;
-        transition: background-color 0.2s ease;
     }
-
-    .collapse-header:hover {
-        background-color: #ffd6c1;
-    }
-
     .http-method {
         font-family: var(--font-mono);
         font-weight: 700;
-        padding: 6px 12px;
-        border-radius: 4px;
+        padding: 4px 10px;
+        border-radius: 999px; /* Pill shape */
         color: white;
-        font-size: 0.9em;
-        min-width: 60px;
-        text-align: center;
-        margin-right: 15px;
+        font-size: 0.85em;
     }
 
     .method-get {
@@ -167,192 +209,210 @@
 
     .endpoint-path {
         font-family: var(--font-mono);
-        font-size: 1em;
         color: var(--color-text);
-        font-weight: 600;
-        flex-grow: 1;
-        word-break: break-all;
+        font-weight: 500;
     }
 
     .endpoint-summary {
         font-size: 0.9em;
         color: var(--color-text-darker);
-        margin-left: 20px;
-        white-space: nowrap;
+        margin-left: auto;
     }
-
     .collapse-content {
-        background-color: var(--color-bg-panel);
-        border-top: 1px solid #ffe8d6;
+        background-color: rgba(0, 0, 0, 0.15);
+        border-top: 1px solid var(--color-glass-border);
         animation: fadeIn 0.5s ease;
     }
 
     @keyframes fadeIn {
         from {
             opacity: 0;
-            transform: translateY(-10px);
         }
         to {
             opacity: 1;
-            transform: translateY(0);
         }
     }
 
     /* =================================================================
-       API Details Panel
+       内部面板和表单
        ================================================================= */
     .api-details {
-        padding: 25px 30px;
+        padding: 24px;
     }
 
     .detail-item {
-        margin-bottom: 12px;
-        font-size: 0.95em;
-        display: flex;
-        flex-wrap: wrap;
+        margin-bottom: 8px;
+        font-size: 0.9em;
     }
 
     .detail-item-label {
-        font-weight: 600;
+        font-weight: 500;
         color: var(--color-text-darker);
-        margin-right: 10px;
-        width: 120px;
-        flex-shrink: 0;
+        margin-right: 8px;
     }
 
-    /* =================================================================
-       Parameters Section
-       ================================================================= */
     .parameter-section {
-        margin-top: 25px;
-        border-top: 1px dashed var(--color-border);
-        padding-top: 20px;
+        margin-top: 24px;
+        border-top: 1px dashed var(--color-glass-border);
+        padding-top: 24px;
     }
 
     .parameter-section h4 {
         margin-top: 0;
-        margin-bottom: 20px;
-        font-size: 1.2em;
-        color: var(--color-text);
-    }
-
-    @media (max-width: 768px) {
-        .param-input-group {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
-        }
-
-        .param-name,
-        .custom-input {
-            flex-basis: auto;
-            width: 100%;
-        }
+        margin-bottom: 16px;
+        font-size: 1.1em;
+        color: var(--color-text-header);
     }
 
     .param-input-group {
         display: flex;
-        align-items: center;
-        gap: 16px;
-        margin-bottom: 15px;
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 16px;
     }
 
     .param-name {
-        flex: 1 1 300px;
+        font-size: 0.9em;
         color: var(--color-text-darker);
+        margin-bottom: 8px;
     }
-
     .custom-input {
-        flex: 2 1 400px;
-        padding: 10px 15px;
-        background-color: #fff;
-        border: 1px solid var(--color-border);
-        border-radius: 4px;
+        width: 100%;
+        padding: 10px 12px;
+        background-color: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--color-glass-border);
+        border-radius: var(--border-radius);
         color: var(--color-text);
-        font-family: var(--font-primary);
-        font-size: 1em;
-        transition: border-color 0.2s, box-shadow 0.2s;
+        transition: all 0.2s ease;
     }
-
     .custom-input:focus {
         outline: none;
-        border-color: #d35400;
-        box-shadow: 0 0 0 2px rgba(211, 84, 0, 0.2);
+        border-color: var(--color-accent);
+        background-color: rgba(0, 0, 0, 0.1);
+        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
     }
 
     /* =================================================================
-       Button & Response
+       按钮和模态框
        ================================================================= */
-    .custom-button {
-        background-color: #d35400;
+    .dev-tools-toggle {
+        background: linear-gradient(45deg, var(--color-accent), #d97706);
         color: white;
         border: none;
-        padding: 12px 25px;
-        border-radius: 5px;
+        padding: 8px 16px;
+        border-radius: var(--border-radius);
         cursor: pointer;
-        font-size: 1em;
-        font-weight: 600;
-        transition: background-color 0.2s ease, transform 0.1s ease;
-        margin-top: 10px;
+        font-size: 0.9em;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
-    .custom-button:hover {
-        background-color: #a04000;
+    .dev-tools-toggle:hover {
+        transform: scale(1.05);
+        box-shadow: var(--glow-shadow);
     }
 
-    .custom-button:active {
-        transform: scale(0.98);
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
     }
 
-    .custom-button:disabled {
-        background-color: #A1887F;
-        cursor: not-allowed;
-        opacity: 0.7;
+    .modal-overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
     }
 
-    .response-card {
-        margin-top: 25px;
-        background-color: rgba(0, 0, 0, 0.02);
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
-        overflow: hidden;
+    .modal-content {
+        /* 模态框玻璃效果 */
+        background-color: rgba(42, 32, 28, 0.7); /* 更深的半透明背景 */
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid var(--color-glass-border);
+
+        box-shadow: var(--glow-shadow);
+        border-radius: 16px;
+        width: 700px;
+        max-width: 90vw;
+        height: 75vh;
+        display: flex;
+        flex-direction: column;
+        transform: scale(0.95);
+        transition: transform 0.3s ease;
     }
 
-    .response-header {
+    .modal-overlay.visible .modal-content {
+        transform: scale(1);
+    }
+
+    .modal-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background-color: rgba(0, 0, 0, 0.04);
-        padding: 10px 15px;
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--color-glass-border);
+        cursor: move;
+        user-select: none;
+    }
+
+    .modal-title {
         font-weight: 600;
+        color: var(--color-text-header);
     }
 
-    .status-tag {
-        padding: 5px 10px;
-        border-radius: 4px;
-        color: white;
-        font-size: 0.85em;
+    .modal-close-btn {
+        background: none;
+        border: none;
+        color: var(--color-text-darker);
+        font-size: 28px;
+        cursor: pointer;
+        padding: 0 8px;
+        line-height: 1;
+        transition: transform 0.2s ease;
     }
 
-    .status-success {
-        background-color: var(--status-success);
+    .modal-close-btn:hover {
+        color: var(--color-text-header);
+        transform: rotate(90deg);
     }
 
-    .status-error {
-        background-color: var(--status-error);
-    }
-
-    .response-body {
-        padding: 15px;
-        background-color: #fff8f0;
-        color: var(--color-text);
-        font-family: var(--font-mono);
-        font-size: 0.9em;
-        white-space: pre-wrap;
-        word-break: break-all;
+    .modal-body {
+        flex-grow: 1;
+        overflow: auto;
+        padding: 16px;
         margin: 0;
+        font-family: var(--font-mono);
+        font-size: 0.85em;
+        color: #e5e7eb;
+        white-space: pre;
     }
 
+    @keyframes fadeInOutline {
+        0% {
+            outline: 2px solid transparent;
+        }
+        50% {
+            outline: 2px solid lightblue;
+        }
+        100% {
+            outline: 2px solid transparent;
+        }
+    }
+
+    .fade-in-border {
+        animation: fadeInOutline 3s ease-in-out;
+    }
 </style>
 
 </html>
