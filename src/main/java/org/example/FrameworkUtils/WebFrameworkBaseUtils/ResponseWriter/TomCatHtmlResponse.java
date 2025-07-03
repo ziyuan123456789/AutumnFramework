@@ -8,6 +8,7 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.ResourceFinder;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -96,8 +97,9 @@ public class TomCatHtmlResponse {
     public void outPutJavaScriptWriter(HttpServletResponse response, String jsFileName) throws IOException {
         String filePath = resourceFinder.getHtmlLocation(jsFileName).replaceFirst("^/", "");
         Path path = Path.of(filePath);
-        byte[] responseBytes = Files.readAllBytes(path);
-        response.setContentType("application/javascript");
+        String htmlContent = Files.readString(path, StandardCharsets.UTF_8);
+        byte[] responseBytes = htmlContent.getBytes(StandardCharsets.UTF_8);
+        response.setContentType("application/javascript;charset=UTF-8");
         response.setContentLength(responseBytes.length);
         response.getOutputStream().write(responseBytes);
     }

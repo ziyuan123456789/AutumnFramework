@@ -69,6 +69,7 @@ public class BeanTestConfig {
 
     @MyPreDestroy
     public void destroy() {
+        log.warn("线程池销毁");
         executor.shutdown();
     }
 

@@ -19,7 +19,6 @@ import org.example.FrameworkUtils.DataStructure.MethodWrapper;
 import org.example.FrameworkUtils.DataStructure.Tuple;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector.ControllerInjector;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector.Injector;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Json.JsonFormatter;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Icon;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.TomCatHtmlResponse;
@@ -62,9 +61,6 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 
     @MyAutoWired
     private TomCatHtmlResponse tomCatHtmlResponse;
-
-    @MyAutoWired
-    private JsonFormatter jsonFormatter;
 
     @MyAutoWired
     private ObjectMapper objectMapper;

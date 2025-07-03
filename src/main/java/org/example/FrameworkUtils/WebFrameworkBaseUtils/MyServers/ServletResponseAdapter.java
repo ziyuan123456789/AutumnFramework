@@ -1,5 +1,6 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
@@ -19,6 +20,7 @@ import java.util.Date;
  * @since 2024.05
  */
 @Slf4j
+@Data
 public class ServletResponseAdapter implements AutumnResponse {
     private final TomCatHtmlResponse tomCatHtmlResponse;
     private final HttpServletResponse response;

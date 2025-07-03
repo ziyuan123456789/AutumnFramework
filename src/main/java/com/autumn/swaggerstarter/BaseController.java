@@ -47,6 +47,7 @@ public class BaseController implements BeanFactoryAware {
     @MyRequestMapping("/getminireact")
     public void getMinireactJs(AutumnResponse response) {
         ServletResponseAdapter servletResponseAdapter=(ServletResponseAdapter) response;
+        servletResponseAdapter.getResponse().setContentType("application/javascript;charset=UTF-8");
         servletResponseAdapter.outputJavaScriptFile("js/minireact.js");
     }
 

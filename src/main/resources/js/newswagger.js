@@ -80,7 +80,7 @@ const App = () => {
     const fetchApiData = async () => {
       setLoading(true);
       try {
-        const response = await fetch("/urlMapping");
+        const response = await fetch("http://localhost:81/urlMapping");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -132,16 +132,17 @@ const App = () => {
       [fullPath]: {...prev[fullPath], parameterValues: {...prev[fullPath].parameterValues, [paramName]: value}}
     }));
   }, []);
+  const temp = useCallBack(() => {
+    window.location.href = "https://github.com/ziyuan123456789/mini-react";
+  }, []);
   const getMethodClass = (methodName) => typeof methodName === "string" ? methodName.toLowerCase().startsWith("post") || methodName.toLowerCase().startsWith("create") ? "method-post" : methodName.toLowerCase().startsWith("put") || methodName.toLowerCase().startsWith("update") ? "method-put" : methodName.toLowerCase().startsWith("delete") || methodName.toLowerCase().startsWith("remove") ? "method-delete" : "method-get" : "method-get";
   const guessMethod = (methodName) => typeof methodName === "string" ? methodName.toLowerCase().startsWith("post") || methodName.toLowerCase().startsWith("create") ? "POST" : methodName.toLowerCase().startsWith("put") || methodName.toLowerCase().startsWith("update") ? "PUT" : methodName.toLowerCase().startsWith("delete") || methodName.toLowerCase().startsWith("remove") ? "DELETE" : "GET" : "GET";
-  return /* @__PURE__ */ Dong.createElement("div", {className: "layout"}, /* @__PURE__ */ Dong.createElement("header", {className: "header"}, /* @__PURE__ */ Dong.createElement("h1", {className: "header-title"}, "AutumnFramework"), /* @__PURE__ */ Dong.createElement("h3", {className: "header-subtitle"}, "\u6B64\u9875\u9762\u7531 MiniReact \u6846\u67B6\u6E32\u67D3,", /* @__PURE__ */ Dong.createElement(
+  return /* @__PURE__ */ Dong.createElement("div", {className: "layout"}, /* @__PURE__ */ Dong.createElement("header", {className: "header"}, /* @__PURE__ */ Dong.createElement("h1", {className: "header-title"}, "AutumnFramework"), /* @__PURE__ */ Dong.createElement("h3", {className: "header-subtitle"}, "\u6B64\u9875\u9762\u7531 MiniReact \u6846\u67B6\u6E32\u67D3,\u6253\u5F00F12\u67E5\u770BDiff\u8FC7\u7A0B,\u5DEE\u5F02\u51FA\u73B0\u65F6\u4F1A\u7ED8\u5236\u4E00\u4E2A\u6DE1\u84DD\u8272\u8FB9\u6846\u63D0\u793A\u5143\u7D20\u66F4\u65B0,", /* @__PURE__ */ Dong.createElement(
       "span",
       {
-        onClick: () => {
-          window.location.href = "https://github.com/ziyuan123456789/mini-react";
-        }
+        onClick: temp
       },
-      "\u70B9\u51FB\u8DF3\u8F6C\u5230MiniReact\u4ECB\u7ECD\u9875\u9762"
+      "\u6B64\u5916\u70B9\u51FB\u8DF3\u8F6C\u5230MiniReact\u4ECB\u7ECD\u9875\u9762"
   )), /* @__PURE__ */ Dong.createElement("button", {
     className: "dev-tools-toggle",
     onClick: () => setIsVdomVisible(true)

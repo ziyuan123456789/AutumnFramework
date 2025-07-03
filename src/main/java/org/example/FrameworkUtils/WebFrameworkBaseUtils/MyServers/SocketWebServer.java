@@ -41,6 +41,7 @@ import java.util.concurrent.Executors;
  * @since 2023.10
  */
 @Slf4j
+@Deprecated
 //@MyComponent
 //@MyConditional(SocketServerConditionCheck.class)
 public class SocketWebServer implements MyWebServer, BeanFactoryAware {
