@@ -18,6 +18,8 @@ public class MethodWrapper {
     @JsonIgnore
     private Method method;
 
+    private HttpMethod httpMethod;
+
     private String beanName;
 
     private String methodName;
@@ -31,11 +33,12 @@ public class MethodWrapper {
     private Map<String, String> paramMap;
 
 
-    public MethodWrapper(Method method, String beanName) {
+    public MethodWrapper(Method method, String beanName, HttpMethod httpMethod) {
         this.method = method;
         this.beanName = beanName;
         this.methodName = method.getName();
         this.returnType = method.getReturnType().getSimpleName();
+        this.httpMethod = httpMethod;
 
         this.parameterTypes = Stream.of(method.getParameterTypes())
                 .map(Class::getSimpleName)

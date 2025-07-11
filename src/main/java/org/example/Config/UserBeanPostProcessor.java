@@ -3,7 +3,7 @@ package org.example.Config;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
-import org.example.FrameworkUtils.AutumnCore.Event.ContextFinishRefreshEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.ContextRefreshedEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanPostProcessor;
 import org.example.FrameworkUtils.AutumnCore.Ioc.Ordered;
@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @MyComponent
-public class UserBeanPostProcessor implements BeanPostProcessor, Ordered, ApplicationListener<ContextFinishRefreshEvent> {
+public class UserBeanPostProcessor implements BeanPostProcessor, Ordered, ApplicationListener<ContextRefreshedEvent> {
 
     private final Map<String, Long> startTimeMap = new ConcurrentHashMap<>();
 
@@ -59,7 +59,7 @@ public class UserBeanPostProcessor implements BeanPostProcessor, Ordered, Applic
 
 
     @Override
-    public void onApplicationEvent(ContextFinishRefreshEvent event) {
+    public void onApplicationEvent(ContextRefreshedEvent event) {
         List<Map.Entry<String, Long>> top10Beans = getTop10LongestInitializationBeans();
         log.info("=====耗时最长的BEAN======");
         top10Beans
@@ -70,6 +70,6 @@ public class UserBeanPostProcessor implements BeanPostProcessor, Ordered, Applic
 
     @Override
     public boolean supportsEvent(ApplicationEvent event) {
-        return event instanceof ContextFinishRefreshEvent;
+        return event instanceof ContextRefreshedEvent;
     }
 }

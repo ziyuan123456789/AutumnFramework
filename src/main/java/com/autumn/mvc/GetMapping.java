@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2025.07
  */
-@Target(ElementType.PARAMETER)
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface GetMapping {
 }

@@ -49,7 +49,7 @@ public class TomCatHtmlResponse {
             title = "<p>服务器内部错误</p>";
         }
         String responseHtml = "<html><body>" +
-                "<h1>" + statusCode + " Error Page</h1>" +
+                "<h1>" + statusCode + " Page</h1>" +
                 title +
                 "<p id='created'>" + errorTime + "</p>" +
                 "<p id='created' style='color:red'>报错原因: " + errorMessage + "</p>" +

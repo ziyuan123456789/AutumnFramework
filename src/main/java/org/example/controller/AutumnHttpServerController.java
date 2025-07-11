@@ -2,7 +2,9 @@ package org.example.controller;
 
 import com.autumn.mvc.AutumnNotBlank;
 import com.autumn.mvc.ErrorHandler;
+import com.autumn.mvc.GetMapping;
 import com.autumn.mvc.PathVariable;
+import com.autumn.mvc.PostMapping;
 import com.autumn.mvc.SessionAttribute;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Lazy;
@@ -35,6 +37,20 @@ public class AutumnHttpServerController {
 
     @MyAutoWired
     private AutumnResponse autumnResponse;
+
+    //测试GetMapping
+    @GetMapping
+    @MyRequestMapping("/getMappingTest")
+    public String getMappingTest() {
+        return "GetMapping测试成功";
+    }
+
+    //测试PostMapping
+    @PostMapping
+    @MyRequestMapping("/postMappingTest")
+    public String postMappingTest() {
+        return "PostMapping测试成功";
+    }
 
     //测试session功能
     @MyRequestMapping("/")

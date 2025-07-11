@@ -10,7 +10,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse
 
 /**
  * RequestContext是一个任劳任怨的类,他总是忍气吞声的接受各种Holder
- * 但可悲的是,clear有bug,似乎永远无法触发
+ * 但可悲的是,clear有bug,似乎永远无法触发,当然,现在已经修好了
  * 你们最好不要让RequestContext知道这件事
  */
 public class RequestContext {

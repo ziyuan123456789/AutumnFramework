@@ -1,6 +1,8 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
+import com.autumn.mvc.Exception.HttpMethodNotSupportedException;
 import lombok.Data;
+import org.example.FrameworkUtils.DataStructure.HttpMethod;
 import org.example.FrameworkUtils.DataStructure.MethodWrapper;
 
 import java.util.HashMap;
@@ -12,7 +14,7 @@ public class TrieTree {
 
     private final TrieNode root = new TrieNode();
 
-    public MethodWrapper search(String path) {
+    public MethodWrapper search(String path, HttpMethod httpMethod) {
         String[] segments = path.split("/");
         TrieNode currentNode = this.root;
         Map<String, String> pathParameters = new HashMap<>();
@@ -34,9 +36,12 @@ public class TrieTree {
             }
         }
         if (currentNode != null && currentNode.isEndpoint) {
-            MethodWrapper res = currentNode.handlerInfo;
-            res.setParamMap(pathParameters);
-            return currentNode.handlerInfo;
+            MethodWrapper handlerInfo = currentNode.handlerInfo;
+            if (handlerInfo.getHttpMethod() != null && handlerInfo.getHttpMethod() != httpMethod) {
+                throw new HttpMethodNotSupportedException("405!");
+            }
+            handlerInfo.setParamMap(pathParameters);
+            return handlerInfo;
         }
         return null;
     }

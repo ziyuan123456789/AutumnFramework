@@ -168,6 +168,21 @@ public void refresh() {
 控制器支持Url传参注入,以及SessionAttribute注入,以及PathVariable注入
 支持类级别与方法级别的RequestMapping
 ```java
+import com.autumn.mvc.AutumnNotBlank;
+import com.autumn.mvc.ErrorHandler;
+import com.autumn.mvc.GetMapping;
+import com.autumn.mvc.PathVariable;
+import com.autumn.mvc.PostMapping;
+import com.autumn.mvc.SessionAttribute;
+import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.AutumnCore.Annotation.Lazy;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
+import org.example.FrameworkUtils.Orm.MyRedis.MyRedisTemplate;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
+
 @Slf4j
 @MyController
 @MyRequestMapping("/api")
@@ -182,6 +197,20 @@ public class AutumnHttpServerController {
 
   @MyAutoWired
   private AutumnResponse autumnResponse;
+
+  //测试GetMapping
+  @GetMapping
+  @MyRequestMapping("/getMappingTest")
+  public String getMappingTest() {
+    return "GetMapping测试成功";
+  }
+
+  //测试PostMapping
+  @PostMapping
+  @MyRequestMapping("/postMappingTest")
+  public String postMappingTest() {
+    return "PostMapping测试成功";
+  }
 
   //测试session功能
   @MyRequestMapping("/")

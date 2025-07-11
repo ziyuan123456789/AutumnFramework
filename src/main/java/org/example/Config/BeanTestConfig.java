@@ -26,7 +26,7 @@ public class BeanTestConfig {
 
 
     @MyAutoWired
-    UserMapper userMapper;
+    private UserMapper userMapper;
 
     ExecutorService executor = Executors.newSingleThreadExecutor();
 

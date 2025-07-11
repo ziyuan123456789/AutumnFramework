@@ -1,20 +1,24 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 
+import com.autumn.mvc.Exception.HttpMethodNotSupportedException;
+import com.autumn.mvc.GetMapping;
+import com.autumn.mvc.PostMapping;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyPostConstruct;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.AutumnCore.Aop.RequestContext;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
+import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.ContextRefreshedEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
-import org.example.FrameworkUtils.AutumnCore.Ioc.EnvironmentAware;
 import org.example.FrameworkUtils.AutumnCore.compare.AnnotationInterfaceAwareOrderComparator;
-import org.example.FrameworkUtils.AutumnCore.env.Environment;
+import org.example.FrameworkUtils.DataStructure.HttpMethod;
 import org.example.FrameworkUtils.DataStructure.MethodWrapper;
 import org.example.FrameworkUtils.DataStructure.Tuple;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ControllerInjector.ControllerInjector;
@@ -38,8 +42,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * @author ziyuan
@@ -49,7 +51,7 @@ import java.util.concurrent.Executors;
 @Slf4j
 @WebServlet("/*")
 @MyComponent
-public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, EnvironmentAware {
+public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, ApplicationListener<ContextRefreshedEvent> {
 
     private final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -57,7 +59,6 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 
     private ApplicationContext context;
 
-    private Environment environment;
 
     @MyAutoWired
     private TomCatHtmlResponse tomCatHtmlResponse;
@@ -67,7 +68,6 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 
     private Set<ControllerInjector> controllerInjectors = new HashSet<>();
 
-    private ExecutorService threadPool;
 
     private final List<Filter> filters = new ArrayList<>();
 
@@ -77,8 +77,8 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
     /**
      * 已使用前缀树重构,未来将支持PostMapping/GetMapping等注解
      */
-    @MyPostConstruct
-    private void initUrlMapping() {
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
         for (MyBeanDefinition mb : context.getBeanDefinitionMap().values()) {
             Class<?> clazz = mb.getBeanClass();
             if (clazz.isAnnotationPresent(Injector.class)) {
@@ -94,11 +94,20 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
                     baseUrl = clazz.getAnnotation(MyRequestMapping.class).value();
                 }
                 for (Method method : clazz.getDeclaredMethods()) {
+                    HttpMethod httpMethod = null;
+                    GetMapping getMapping = method.getAnnotation(GetMapping.class);
+                    if (getMapping != null) {
+                        httpMethod = HttpMethod.GET;
+                    }
+                    PostMapping postMapping = method.getAnnotation(PostMapping.class);
+                    if (postMapping != null) {
+                        httpMethod = HttpMethod.POST;
+                    }
                     MyRequestMapping myRequestMapping = method.getAnnotation(MyRequestMapping.class);
                     if (myRequestMapping != null) {
                         String url = myRequestMapping.value();
                         String fullUrl = baseUrl + url;
-                        tree.insert(fullUrl, new MethodWrapper(method, mb.getName()));
+                        tree.insert(fullUrl, new MethodWrapper(method, mb.getName(), httpMethod));
                     }
                 }
 
@@ -112,8 +121,6 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
     @Override
     public void init() throws ServletException {
         super.init();
-        int threadNums = 10;
-        threadPool = Executors.newFixedThreadPool(threadNums);
     }
 
     @Override
@@ -128,21 +135,39 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
+            //适配请求
             AutumnRequest autumnRequest = new HttpServletRequestAdapter(req);
+            //ThreadLocal存储请求,可以使用AutoWired注入类级别的Request代理
             RequestContext.setRequest(autumnRequest);
             AutumnResponse autumnResponse = new ServletResponseAdapter(resp, (TomCatHtmlResponse) context.getBean(TomCatHtmlResponse.class.getName()));
             String url = autumnRequest.getUrl();
             String baseUrl = extractPath(url);
-            MethodWrapper methodWrapper = tree.search(baseUrl);
-            if (methodWrapper != null) {
-                executeHandler(autumnRequest, autumnResponse, resp, methodWrapper);
-            } else {
-                if (!resp.isCommitted()) {
-                    resp.sendRedirect("/404");
+            //从前缀树中查找对应的处理方法
+            HttpMethod httpMethod = null;
+            if ("GET".equalsIgnoreCase(req.getMethod())) {
+                httpMethod = HttpMethod.GET;
+            } else if ("POST".equalsIgnoreCase(req.getMethod())) {
+                httpMethod = HttpMethod.POST;
+            }
+            try {
+                MethodWrapper methodWrapper = tree.search(baseUrl, httpMethod);
+                if (methodWrapper != null) {
+                    //执行方法用方法的返回值确定使用哪种处理器
+                    executeHandler(autumnRequest, autumnResponse, resp, methodWrapper);
                 } else {
-                    log.error("重定向到/404");
+                    //没找到则重定向到404页面
+                    if (!resp.isCommitted()) {
+                        resp.sendRedirect("/404");
+                    } else {
+                        log.error("重定向到/404");
+                    }
+                }
+            } catch (HttpMethodNotSupportedException e) {
+                if (!resp.isCommitted()) {
+                    tomCatHtmlResponse.outPutErrorMessageWriter(resp, "当前HTTP方法不被支持 ", 405, "Method Not Allowed", format.format(new Date()), null);
                 }
             }
+
         } catch (Exception e) {
             log.error("Error processing request", e);
             if (!resp.isCommitted()) {
@@ -171,6 +196,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
     }
 
     private void executeHandler(AutumnRequest req, AutumnResponse res, HttpServletResponse resp, MethodWrapper handlerMethod) {
+        //TODO:错误做法,日后修改
         Filter filter = filters.get(0);
         if (!filter.doChain(req, res)) {
             try {
@@ -226,7 +252,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
     }
 
 
-    //xxx:依照方法的返回值来确定选择哪种返回器
+    //依照方法的返回值来确定选择哪种返回器
     private void handleSocketOutputByType(Object result, HttpServletResponse resp) {
         try {
             if (result instanceof View) {
@@ -245,7 +271,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
                 tomCatHtmlResponse.outPutMessageWriter(resp, 200, objectMapper.writeValueAsString(result), null);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("处理输出时发生错误", e);
         }
     }
 
@@ -264,14 +290,14 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 
 
     @Override
-    public void setEnvironment(Environment environment) {
-        this.environment = environment;
+    public void setBeanFactory(ApplicationContext beanFactory) {
+        this.context = beanFactory;
     }
 
 
     @Override
-    public void setBeanFactory(ApplicationContext beanFactory) {
-        this.context = beanFactory;
+    public boolean supportsEvent(ApplicationEvent event) {
+        return event instanceof ContextRefreshedEvent;
     }
 }
 

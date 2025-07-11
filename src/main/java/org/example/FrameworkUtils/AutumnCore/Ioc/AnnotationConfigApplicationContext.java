@@ -11,7 +11,7 @@ import org.example.FrameworkUtils.AutumnCore.BeanLoader.ObjectFactory;
 import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEventMulticaster;
 import org.example.FrameworkUtils.AutumnCore.Event.ContextClosedEvent;
-import org.example.FrameworkUtils.AutumnCore.Event.ContextFinishRefreshEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.ContextRefreshedEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Event.SimpleApplicationEventMulticaster;
 import org.example.FrameworkUtils.AutumnCore.compare.AnnotationInterfaceAwareOrderComparator;
@@ -128,7 +128,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
 
 
     private void finishRefresh() {
-        this.publishEvent(new ContextFinishRefreshEvent(new Object()));
+        this.publishEvent(new ContextRefreshedEvent(new Object()));
     }
 
     private void prepareBeanFactory(ConfigurableApplicationContext beanFactory) {

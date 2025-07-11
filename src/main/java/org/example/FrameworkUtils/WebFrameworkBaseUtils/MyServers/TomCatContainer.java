@@ -11,7 +11,7 @@ import org.apache.tomcat.util.descriptor.web.FilterMap;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
-import org.example.FrameworkUtils.AutumnCore.Event.ContextFinishRefreshEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.ContextRefreshedEvent;
 import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Ioc.EnvironmentAware;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
@@ -23,7 +23,7 @@ import org.example.FrameworkUtils.AutumnCore.env.Environment;
 
 @Slf4j
 @MyComponent
-public class TomCatContainer implements MyWebServer, ApplicationListener<ContextFinishRefreshEvent>, EnvironmentAware {
+public class TomCatContainer implements MyWebServer, ApplicationListener<ContextRefreshedEvent>, EnvironmentAware {
 
     private int port;
 
@@ -37,7 +37,7 @@ public class TomCatContainer implements MyWebServer, ApplicationListener<Context
 
 
     @Override
-    public void onApplicationEvent(ContextFinishRefreshEvent event) {
+    public void onApplicationEvent(ContextRefreshedEvent event) {
         new Thread(() -> {
             try {
                 Tomcat tomcat = new Tomcat();
@@ -71,7 +71,7 @@ public class TomCatContainer implements MyWebServer, ApplicationListener<Context
 
     @Override
     public boolean supportsEvent(ApplicationEvent event) {
-        return event instanceof ContextFinishRefreshEvent;
+        return event instanceof ContextRefreshedEvent;
     }
 
 
