@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -20,6 +21,8 @@ public class MethodWrapper {
 
     private HttpMethod httpMethod;
 
+    private List<String> crossOrigin;
+
     private String beanName;
 
     private String methodName;
@@ -33,12 +36,13 @@ public class MethodWrapper {
     private Map<String, String> paramMap;
 
 
-    public MethodWrapper(Method method, String beanName, HttpMethod httpMethod) {
+    public MethodWrapper(Method method, String beanName, HttpMethod httpMethod, List<String> crossOrigin) {
         this.method = method;
         this.beanName = beanName;
         this.methodName = method.getName();
         this.returnType = method.getReturnType().getSimpleName();
         this.httpMethod = httpMethod;
+        this.crossOrigin = crossOrigin;
 
         this.parameterTypes = Stream.of(method.getParameterTypes())
                 .map(Class::getSimpleName)

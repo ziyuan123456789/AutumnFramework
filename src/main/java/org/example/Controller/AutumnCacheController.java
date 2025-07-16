@@ -1,4 +1,4 @@
-package org.example.controller;
+package org.example.Controller;
 
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;

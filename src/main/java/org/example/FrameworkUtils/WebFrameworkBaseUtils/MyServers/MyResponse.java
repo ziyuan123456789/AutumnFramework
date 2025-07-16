@@ -8,6 +8,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.SocketSer
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author ziyuan
@@ -61,7 +62,7 @@ public class MyResponse implements AutumnResponse {
     }
 
     @Override
-    public void outputErrorMessage(String title, String text, int code) {
+    public void outputErrorMessage(String title, String text, int code, List<String> origins) {
         try {
             socketServerHtmlResponse.outPutErrorMessageWriter(socket, code, text, new Date().toString(), null);
         } catch (IOException e) {

@@ -22,7 +22,6 @@ import java.util.List;
  * @since 2024.04
  */
 @Slf4j
-//xxx:如何水代码行数?
 public class DefaultSqlSession implements SqlSession {
     private final Configuration configuration;
     @Getter

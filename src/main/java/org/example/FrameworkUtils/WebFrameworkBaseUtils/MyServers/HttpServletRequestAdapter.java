@@ -101,7 +101,7 @@ public class HttpServletRequestAdapter implements AutumnRequest {
         return body.toString();
     }
 
-    public class CookieConverter {
+    public static class CookieConverter {
         public static Cookie[] convert(javax.servlet.http.Cookie[] servletCookies) {
             if (servletCookies == null) {
                 return new Cookie[0];

@@ -1,6 +1,7 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 
+import com.autumn.mvc.CrossOrigin;
 import com.autumn.mvc.Exception.HttpMethodNotSupportedException;
 import com.autumn.mvc.GetMapping;
 import com.autumn.mvc.PostMapping;
@@ -28,7 +29,6 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter.TomCatHtmlResponse;
 
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -49,7 +49,6 @@ import java.util.Set;
  */
 
 @Slf4j
-@WebServlet("/*")
 @MyComponent
 public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, ApplicationListener<ContextRefreshedEvent> {
 
@@ -59,7 +58,6 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 
     private ApplicationContext context;
 
-
     @MyAutoWired
     private TomCatHtmlResponse tomCatHtmlResponse;
 
@@ -68,14 +66,13 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 
     private Set<ControllerInjector> controllerInjectors = new HashSet<>();
 
-
     private final List<Filter> filters = new ArrayList<>();
 
     private final TrieTree tree = new TrieTree();
 
 
     /**
-     * 已使用前缀树重构,未来将支持PostMapping/GetMapping等注解
+     * 已使用前缀树重构
      */
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
@@ -90,6 +87,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
             }
             String baseUrl = "";
             if (clazz.isAnnotationPresent(MyController.class)) {
+                CrossOrigin crossOriginOnClass = clazz.getAnnotation(CrossOrigin.class);
                 if (clazz.isAnnotationPresent(MyRequestMapping.class)) {
                     baseUrl = clazz.getAnnotation(MyRequestMapping.class).value();
                 }
@@ -105,9 +103,18 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
                     }
                     MyRequestMapping myRequestMapping = method.getAnnotation(MyRequestMapping.class);
                     if (myRequestMapping != null) {
+                        List<String> origins = new ArrayList<>();
+                        CrossOrigin crossOriginOnMethod = method.getAnnotation(CrossOrigin.class);
+                        if (crossOriginOnMethod != null) {
+                            origins = List.of(crossOriginOnMethod.value());
+                        } else {
+                            if (crossOriginOnClass != null) {
+                                origins = List.of(crossOriginOnClass.value());
+                            }
+                        }
                         String url = myRequestMapping.value();
                         String fullUrl = baseUrl + url;
-                        tree.insert(fullUrl, new MethodWrapper(method, mb.getName(), httpMethod));
+                        tree.insert(fullUrl, new MethodWrapper(method, mb.getName(), httpMethod, origins));
                     }
                 }
 
@@ -164,7 +171,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
                 }
             } catch (HttpMethodNotSupportedException e) {
                 if (!resp.isCommitted()) {
-                    tomCatHtmlResponse.outPutErrorMessageWriter(resp, "当前HTTP方法不被支持 ", 405, "Method Not Allowed", format.format(new Date()), null);
+                    tomCatHtmlResponse.outPutErrorMessageWriter(resp, "当前HTTP方法不被支持 ", 405, "Method Not Allowed", format.format(new Date()), null, null);
                 }
             }
 
@@ -205,7 +212,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
                     return;
                 }
                 if (result.first != null) {
-                    handleSocketOutputByType(result.first, resp);
+                    handleSocketOutputByType(result.first, res, resp, handlerMethod.getCrossOrigin());
                 } else {
                     resp.setContentType("text/html;charset=UTF-8");
                     resp.getWriter().write("");
@@ -222,7 +229,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
                 }
 
                 try {
-                    tomCatHtmlResponse.outPutErrorMessageWriter(resp, null, 500, errorMessage, format.format(new Date()), null);
+                    tomCatHtmlResponse.outPutErrorMessageWriter(resp, null, 500, errorMessage, format.format(new Date()), null, null);
                 } catch (IOException ioException) {
                     log.error("发送错误响应时出现IO异常", ioException);
                 }
@@ -253,22 +260,22 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 
 
     //依照方法的返回值来确定选择哪种返回器
-    private void handleSocketOutputByType(Object result, HttpServletResponse resp) {
+    private void handleSocketOutputByType(Object result, AutumnResponse res, HttpServletResponse resp, List<String> crossOrigin) {
         try {
             if (result instanceof View) {
-                tomCatHtmlResponse.outPutHtmlWriter(resp, ((View) result).getHtmlName(), null);
+                tomCatHtmlResponse.outPutHtmlWriter(resp, ((View) result).getHtmlName(), null, crossOrigin);
             } else if (result instanceof Icon) {
-                tomCatHtmlResponse.outPutIconWriter(resp, ((Icon) result).getIconName(), null);
+                tomCatHtmlResponse.outPutIconWriter(resp, ((Icon) result).getIconName(), null, crossOrigin);
             } else if (result instanceof Map) {
-                tomCatHtmlResponse.outPutMessageWriter(resp, 200, objectMapper.writeValueAsString(result), null);
+                tomCatHtmlResponse.outPutMessageWriter(resp, 200, objectMapper.writeValueAsString(result), null, crossOrigin);
             } else if (isPrimitiveOrWrapper(result.getClass())) {
-                tomCatHtmlResponse.outPutMessageWriter(resp, 200, result.toString(), null);
+                tomCatHtmlResponse.outPutMessageWriter(resp, 200, result.toString(), null, crossOrigin);
             }
 //            else if (result instanceof MyWebSocket) {
 //                tomCatHtmlResponse.outPutSocketWriter(resp, myRequest.getBody(), myRequest.getUrl());
 //            }
             else {
-                tomCatHtmlResponse.outPutMessageWriter(resp, 200, objectMapper.writeValueAsString(result), null);
+                tomCatHtmlResponse.outPutMessageWriter(resp, 200, objectMapper.writeValueAsString(result), null, crossOrigin);
             }
         } catch (Exception e) {
             log.error("处理输出时发生错误", e);

@@ -101,6 +101,7 @@ public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, En
             myBeanDefinition.setName(typeHandler.getName());
             myBeanDefinition.setBeanClass(typeHandler);
             registry.registerBeanDefinition(typeHandler.getName(), myBeanDefinition);
+            log.info("{}注册TypeHandler:{}", this.getClass().getSimpleName(), typeHandler.getName());
         });
     }
 

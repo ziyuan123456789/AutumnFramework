@@ -14,6 +14,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author ziyuan
@@ -71,10 +72,10 @@ public class ServletResponseAdapter implements AutumnResponse {
     }
 
     @Override
-    public void outputErrorMessage(String title, String text, int code) {
+    public void outputErrorMessage(String title, String text, int code, List<String> origins) {
         try {
             String errorTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-            tomCatHtmlResponse.outPutErrorMessageWriter(response, title, code, text, errorTime, null);
+            tomCatHtmlResponse.outPutErrorMessageWriter(response, title, code, text, errorTime, null, origins);
         } catch (IOException e) {
             log.error("Error in outputErrorMessage", e);
         }

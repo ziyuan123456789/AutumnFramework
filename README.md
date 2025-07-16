@@ -25,18 +25,18 @@
 
 ## 启动类
 ```java
-
 @Slf4j
 @EnableAutumnAsync
 @EnableAutumnCache
 @EnableAutumnTransactional
+@EnableMVCAutoConfiguration
 @ComponentScan({"org.example", "annotation.scan.test"})
 @AutumnBootApplication
 public class Main {
 
   public static void main(String[] args) {
     AutumnApplication autumnApplication = new AutumnApplication(Main.class);
-//        autumnApplication.addInitializers(new BaseBootstrapRegistryInitializer());
+    //        autumnApplication.addInitializers(new BaseBootstrapRegistryInitializer());
     autumnApplication.run(args);
   }
 
@@ -167,8 +167,10 @@ public void refresh() {
 
 控制器支持Url传参注入,以及SessionAttribute注入,以及PathVariable注入
 支持类级别与方法级别的RequestMapping
+
 ```java
 import com.autumn.mvc.AutumnNotBlank;
+import com.autumn.mvc.CrossOrigin;
 import com.autumn.mvc.ErrorHandler;
 import com.autumn.mvc.GetMapping;
 import com.autumn.mvc.PathVariable;
@@ -186,6 +188,7 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse
 @Slf4j
 @MyController
 @MyRequestMapping("/api")
+@CrossOrigin("http://localhost:8080")
 public class AutumnHttpServerController {
 
   @MyAutoWired
@@ -997,11 +1000,13 @@ MineBatis-configXML=minebatis-config.xml
 - 实体书籍
   - 图灵图书: 《图解HTTP》
   - 异步图书：《Spring Boot源码解读与原理分析》
-  - 机械工业出版社：《看透Spring MVC源代码分析与实践》
+  - 机械工业出版社：《看透Spring MVC源代码分析与实践》 《JavaScript权威指南》
   - 异步图书：《Effective Java》
   - 黑皮书系列：《Java编程思想》、《计算机网络》
 
-- IDE/插件
+
+- IDE/插件/AI
   - **Jetbrains** 提供的开源支持：IDEA / PyCharm / Rider / CLion License
   - **GitHub** 提供的学生免费 Copilot
+  - **Google** Gemini 2.5Pro
 

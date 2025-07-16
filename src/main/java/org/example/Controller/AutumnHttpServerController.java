@@ -1,4 +1,4 @@
-package org.example.controller;
+package org.example.Controller;
 
 import com.autumn.mvc.AutumnNotBlank;
 import com.autumn.mvc.ErrorHandler;

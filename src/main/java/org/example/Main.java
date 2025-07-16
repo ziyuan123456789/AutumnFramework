@@ -17,8 +17,8 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnApplicat
  */
 
 /*
-默认扫描Main方法所在的包也就是org.example
-你可以注意到com.autumn与org.example平级,用于模拟jar包,避免Bean发现机制扫描到
+    默认扫描Main方法所在的包也就是org.example
+    你可以注意到com.autumn与org.example平级,用于模拟jar包,避免Bean发现机制扫描到
  */
 @Slf4j
 @EnableAutumnAsync

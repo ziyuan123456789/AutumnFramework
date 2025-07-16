@@ -1,4 +1,4 @@
-package org.example.controller;
+package org.example.Controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
@@ -8,6 +8,8 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.WebSocketBaseC
  * @author ziyuan
  * @since 2024.04
  */
+
+//暂时弃用
 @Deprecated
 @MyWebSocketConfig("/websocket")
 @Slf4j

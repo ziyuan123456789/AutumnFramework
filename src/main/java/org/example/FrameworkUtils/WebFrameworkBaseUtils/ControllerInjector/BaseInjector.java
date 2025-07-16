@@ -114,7 +114,7 @@ public class BaseInjector implements ControllerInjector {
                 .findFirst()
                 .orElse(500);
         String title = errorHandler != null ? errorHandler.title() : "ERROR";
-        response.outputErrorMessage(title, errorResponse.toString(), statusCode);
+        response.outputErrorMessage(title, errorResponse.toString(), statusCode, null);
 
     }
 

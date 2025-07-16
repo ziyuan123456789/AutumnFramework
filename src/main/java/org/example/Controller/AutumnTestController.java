@@ -1,4 +1,4 @@
-package org.example.controller;
+package org.example.Controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
@@ -16,7 +16,7 @@ public class AutumnTestController {
     //测试WebSocket功能,弃用
     @MyRequestMapping("/websocket")
     public MyWebSocket websocketTest() {
-        return new MyWebSocket();
+        return MyWebSocket.getInstance();
     }
 
 }

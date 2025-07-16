@@ -1,4 +1,4 @@
-package org.example.controller;
+package org.example.Controller;
 
 import org.example.Annotations.CheckParameter;
 import org.example.Annotations.EnableAop;
