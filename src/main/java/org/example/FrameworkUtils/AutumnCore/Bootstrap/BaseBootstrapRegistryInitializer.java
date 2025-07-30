@@ -8,6 +8,7 @@ import org.example.FrameworkUtils.Utils.BeanUtils;
  * @since 2025.01
  */
 
+
 @Slf4j
 public class BaseBootstrapRegistryInitializer implements BootstrapRegistryInitializer {
     static {

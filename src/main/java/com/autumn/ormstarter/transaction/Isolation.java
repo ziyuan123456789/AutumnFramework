@@ -4,6 +4,7 @@ package com.autumn.ormstarter.transaction;
  * @author ziyuan
  * @since 2024.11
  */
+
 //事务隔离等级
 public enum Isolation {
 

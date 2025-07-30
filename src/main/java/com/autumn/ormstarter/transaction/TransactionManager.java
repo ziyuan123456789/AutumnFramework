@@ -19,6 +19,10 @@ import java.sql.SQLException;
  * @since 2024.11
  */
 
+/**
+ * 事务管理器 负责处理事务的开始提交和回滚
+ */
+
 @Slf4j
 public class TransactionManager implements ApplicationListener<ContextRefreshedEvent> {
 

@@ -10,6 +10,11 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2023.11
  */
+
+/**
+ * 手动声明一些参数的名称
+ */
+
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited

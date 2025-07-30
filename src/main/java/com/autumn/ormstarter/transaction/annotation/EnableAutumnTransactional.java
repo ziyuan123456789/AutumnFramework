@@ -14,6 +14,11 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2024.09
  */
+
+/**
+ * 引入事务相关配置
+ * 背后的处理器 -> TransactionAspect, TransactionManager
+ */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited

@@ -16,14 +16,10 @@ import java.io.IOException;
 @Slf4j
 public class ResourceCleanupFilter implements javax.servlet.Filter {
 
-
-
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         try {
-            //TODO:修一下
-//            ((HttpServletResponse) response).setHeader("Access-Control-Allow-Origin", "*");
             chain.doFilter(request, response);
         } finally {
             RequestContext.clear();

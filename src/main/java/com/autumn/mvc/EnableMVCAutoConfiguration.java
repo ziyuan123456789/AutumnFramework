@@ -12,6 +12,11 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2025.06
  */
+
+/**
+ * 引入ObjectMapper相关配置
+ */
+
 @Target({ElementType.TYPE})
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)

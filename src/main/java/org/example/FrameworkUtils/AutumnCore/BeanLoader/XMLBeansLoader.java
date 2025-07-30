@@ -5,6 +5,7 @@ import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryPostProcessor;
+
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -16,12 +17,7 @@ import java.util.List;
  * @since 2024.05
  */
 
-/**
- * XMLBeansLoader最近很生气,为什么不用她了呢? 她高性能,易表达,怎么就被
- * Annotation这个小绿茶取代了呢?
- * 其实这个问题很简单,因为Annotation更灵活,在运行时还能反差一下,灵活的底线谁不喜欢呢?
- * 你看看,不灵活的XMLBeansLoader现在还带了一顶@Deprecated的帽子了呢
- */
+
 @Deprecated
 public class XMLBeansLoader {
     public List<Class<BeanFactoryPostProcessor>> loadStarterClasses(String directoryPath) throws DocumentException, ClassNotFoundException {

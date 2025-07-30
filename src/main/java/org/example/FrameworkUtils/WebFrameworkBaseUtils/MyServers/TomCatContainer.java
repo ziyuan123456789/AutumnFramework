@@ -57,7 +57,6 @@ public class TomCatContainer implements MyWebServer, ApplicationListener<Context
                 context.addFilterMap(filterMap);
                 Tomcat.addServlet(context, "dispatcherServlet", dispatcherServlet);
                 context.addServletMappingDecoded("/", "dispatcherServlet");
-                context.addServletMappingDecoded("/", "dispatcherServlet");
                 tomcat.start();
                 log.info("服务于{}端口启动", port);
                 log.info("http://localhost:{}/", port);

@@ -1037,7 +1037,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
             log.info(ANSI_BOLD + ANSI_GREEN + "==== 容器refresh结束, 刷新完成 ====" + ANSI_RESET);
 
         } catch (Exception e) {
-            log.error(ANSI_RED + "容器刷新失败: " + e.getMessage() + ANSI_RESET, e);
+            log.error(ANSI_RED + "容器刷新失败: {}" + ANSI_RESET, e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }

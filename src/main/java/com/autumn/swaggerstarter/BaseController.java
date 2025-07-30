@@ -1,10 +1,13 @@
 package com.autumn.swaggerstarter;
 
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
-import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
-import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
+import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.ContextRefreshedEvent;
+import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
+import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.DispatcherServlet;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.ServletResponseAdapter;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.TrieTree;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
@@ -20,9 +23,12 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
  * TODO:日后通过getBean(TrieTree)方式修改
  */
 @MyController
-public class BaseController implements BeanFactoryAware {
+public class BaseController implements ApplicationListener<ContextRefreshedEvent> {
 
-    private ApplicationContext beanFactory;
+    @MyAutoWired
+    private DispatcherServlet dispatcherServlet;
+
+    private TrieTree tree;
 
     @MyRequestMapping("/myswagger")
     public View myswagger() {
@@ -59,17 +65,18 @@ public class BaseController implements BeanFactoryAware {
     }
 
 
-
-
-
     @MyRequestMapping("/urlMapping")
     public TrieTree urlMapping() {
-        return (TrieTree) beanFactory.getBean("urlMappingTree");
+        return tree;
     }
 
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        tree = dispatcherServlet.getTree();
+    }
 
     @Override
-    public void setBeanFactory(ApplicationContext beanFactory) {
-        this.beanFactory = beanFactory;
+    public boolean supportsEvent(ApplicationEvent event) {
+        return event instanceof ContextRefreshedEvent;
     }
 }

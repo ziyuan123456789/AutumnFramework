@@ -17,6 +17,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2024.07
  */
 
+
+/**
+ * 事务切面负责处理事务的开启提交和回滚
+ * 如果有@AutumnTransactional 注解则开启事务 在方法执行后提交事务 如果发生异常则回滚
+ * 具体事情委托给TransactionManager完成
+ */
 @MyAspect
 @Slf4j
 public class TransactionAspect implements AutumnAopFactory {

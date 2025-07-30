@@ -10,10 +10,9 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyPreDestroy;
  * @since 2023.11
  */
 
-
-//TODO: 重构这里,字典树已经准备好了,不再需要全局的CrossOrigin了
 @Slf4j
 @Data
+@Deprecated
 public class CrossOriginBean {
 
     private String origins;

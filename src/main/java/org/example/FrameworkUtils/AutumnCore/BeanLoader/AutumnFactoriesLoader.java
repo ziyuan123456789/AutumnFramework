@@ -19,8 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 
 /**
- * 宇宙大爆炸和SPI到底哪个更重要?
- * 据一个活得很久的黑框眼镜长者说,当年上帝就是用SPI创造了宇宙,其实宇宙就是一个autumn.factories中的配置文件
+ * 用于加载Autumn框架的配置文件和自动配置文件
+ * 解析META-INF/autumn/autumn.factories和META-INF/autumn/AutoConfiguration.imports
+ * 将配置项存储在Map中，便于后续使用
  */
 @Slf4j
 public class AutumnFactoriesLoader {

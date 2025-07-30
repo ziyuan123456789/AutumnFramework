@@ -6,6 +6,7 @@ import com.autumn.mvc.Exception.HttpMethodNotSupportedException;
 import com.autumn.mvc.GetMapping;
 import com.autumn.mvc.PostMapping;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
@@ -13,11 +14,9 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyRequestMapping;
 import org.example.FrameworkUtils.AutumnCore.Aop.RequestContext;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
-import org.example.FrameworkUtils.AutumnCore.Event.ApplicationEvent;
-import org.example.FrameworkUtils.AutumnCore.Event.ContextRefreshedEvent;
-import org.example.FrameworkUtils.AutumnCore.Event.Listener.ApplicationListener;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
+import org.example.FrameworkUtils.AutumnCore.Ioc.InitializingBean;
 import org.example.FrameworkUtils.AutumnCore.compare.AnnotationInterfaceAwareOrderComparator;
 import org.example.FrameworkUtils.DataStructure.HttpMethod;
 import org.example.FrameworkUtils.DataStructure.MethodWrapper;
@@ -48,9 +47,17 @@ import java.util.Set;
  * @since 2024.05
  */
 
+/**
+ * DispatcherServlet
+ * 混合了太多不该属于他的职责,未来进行拆分
+ * 目前作用是动态扫描Controller,并将其注册到前缀树中
+ * 接管请求,所有流量经过自身并分配到对应的Controller上
+ * 按照方法返回值确认返回内容
+ */
+
 @Slf4j
 @MyComponent
-public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, ApplicationListener<ContextRefreshedEvent> {
+public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, InitializingBean {
 
     private final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -68,61 +75,8 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
 
     private final List<Filter> filters = new ArrayList<>();
 
+    @Getter
     private final TrieTree tree = new TrieTree();
-
-
-    /**
-     * 已使用前缀树重构
-     */
-    @Override
-    public void onApplicationEvent(ContextRefreshedEvent event) {
-        for (MyBeanDefinition mb : context.getBeanDefinitionMap().values()) {
-            Class<?> clazz = mb.getBeanClass();
-            if (clazz.isAnnotationPresent(Injector.class)) {
-                controllerInjectors.add((ControllerInjector) context.getBean(mb.getName()));
-            }
-
-            if (Filter.class.isAssignableFrom(clazz)) {
-                filters.add((Filter) context.getBean(mb.getName()));
-            }
-            String baseUrl = "";
-            if (clazz.isAnnotationPresent(MyController.class)) {
-                CrossOrigin crossOriginOnClass = clazz.getAnnotation(CrossOrigin.class);
-                if (clazz.isAnnotationPresent(MyRequestMapping.class)) {
-                    baseUrl = clazz.getAnnotation(MyRequestMapping.class).value();
-                }
-                for (Method method : clazz.getDeclaredMethods()) {
-                    HttpMethod httpMethod = null;
-                    GetMapping getMapping = method.getAnnotation(GetMapping.class);
-                    if (getMapping != null) {
-                        httpMethod = HttpMethod.GET;
-                    }
-                    PostMapping postMapping = method.getAnnotation(PostMapping.class);
-                    if (postMapping != null) {
-                        httpMethod = HttpMethod.POST;
-                    }
-                    MyRequestMapping myRequestMapping = method.getAnnotation(MyRequestMapping.class);
-                    if (myRequestMapping != null) {
-                        List<String> origins = new ArrayList<>();
-                        CrossOrigin crossOriginOnMethod = method.getAnnotation(CrossOrigin.class);
-                        if (crossOriginOnMethod != null) {
-                            origins = List.of(crossOriginOnMethod.value());
-                        } else {
-                            if (crossOriginOnClass != null) {
-                                origins = List.of(crossOriginOnClass.value());
-                            }
-                        }
-                        String url = myRequestMapping.value();
-                        String fullUrl = baseUrl + url;
-                        tree.insert(fullUrl, new MethodWrapper(method, mb.getName(), httpMethod, origins));
-                    }
-                }
-
-            }
-        }
-        comparator.compare(filters);
-        context.addBean("urlMappingTree", tree);
-    }
 
 
     @Override
@@ -302,9 +256,55 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
     }
 
 
+
     @Override
-    public boolean supportsEvent(ApplicationEvent event) {
-        return event instanceof ContextRefreshedEvent;
+    public void afterPropertiesSet() {
+        for (MyBeanDefinition mb : context.getBeanDefinitionMap().values()) {
+            Class<?> clazz = mb.getBeanClass();
+            if (clazz.isAnnotationPresent(Injector.class)) {
+                controllerInjectors.add((ControllerInjector) context.getBean(mb.getName()));
+            }
+
+            if (Filter.class.isAssignableFrom(clazz)) {
+                filters.add((Filter) context.getBean(mb.getName()));
+            }
+            String baseUrl = "";
+            if (clazz.isAnnotationPresent(MyController.class)) {
+                CrossOrigin crossOriginOnClass = clazz.getAnnotation(CrossOrigin.class);
+                if (clazz.isAnnotationPresent(MyRequestMapping.class)) {
+                    baseUrl = clazz.getAnnotation(MyRequestMapping.class).value();
+                }
+                for (Method method : clazz.getDeclaredMethods()) {
+                    HttpMethod httpMethod = null;
+                    GetMapping getMapping = method.getAnnotation(GetMapping.class);
+                    if (getMapping != null) {
+                        httpMethod = HttpMethod.GET;
+                    }
+                    PostMapping postMapping = method.getAnnotation(PostMapping.class);
+                    if (postMapping != null) {
+                        httpMethod = HttpMethod.POST;
+                    }
+                    MyRequestMapping myRequestMapping = method.getAnnotation(MyRequestMapping.class);
+                    if (myRequestMapping != null) {
+                        List<String> origins = new ArrayList<>();
+                        CrossOrigin crossOriginOnMethod = method.getAnnotation(CrossOrigin.class);
+                        if (crossOriginOnMethod != null) {
+                            origins = List.of(crossOriginOnMethod.value());
+                        } else {
+                            if (crossOriginOnClass != null) {
+                                origins = List.of(crossOriginOnClass.value());
+                            }
+                        }
+                        String url = myRequestMapping.value();
+                        String fullUrl = baseUrl + url;
+                        tree.insert(fullUrl, new MethodWrapper(method, mb.getName(), httpMethod, origins));
+                    }
+                }
+
+            }
+        }
+        comparator.compare(filters);
+        context.addBean("urlMappingTree", tree);
     }
 }
 
