@@ -1,5 +1,7 @@
 package org.example.FrameworkUtils.AutumnCore.Annotation;
 
+import com.autumn.AutoConfiguration.EnableAutoConfiguration;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;

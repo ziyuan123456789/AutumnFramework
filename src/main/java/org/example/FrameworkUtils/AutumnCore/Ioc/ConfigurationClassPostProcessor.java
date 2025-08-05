@@ -3,10 +3,10 @@ package org.example.FrameworkUtils.AutumnCore.Ioc;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBean;
 import org.example.FrameworkUtils.AutumnCore.Annotation.ComponentScan;
-import org.example.FrameworkUtils.AutumnCore.Annotation.EnableAutoConfiguration;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyOrder;
+import org.example.FrameworkUtils.AutumnCore.AutoConfiguration.ImportSelector;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotatedBeanDefinitionReader;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationMetadata;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
@@ -17,7 +17,6 @@ import org.example.FrameworkUtils.Exception.BeanCreationException;
 import org.example.FrameworkUtils.Utils.AnnotationUtils;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,11 +38,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
     public static final String CLASS_NAME = "org.example.FrameworkUtils.AutumnCore.Ioc.ConfigurationClassPostProcessor";
 
-    private Environment environment;
 
-    private Map<String, List<String>> spiMap;
-
-    private Map<String, List<String>> autoConfigurationMap;
+    private final Map<String, List<String>> spiMap = AutumnFactoriesLoader.getSimpleBeans();
 
     private AnnotationScanner scanner;
 
@@ -58,7 +54,6 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
     @Override
     public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
-        initAutumnSpi();
         this.scanner = scanner;
         this.conditionEvaluator = new ConditionEvaluator(registry);
         this.annotatedBeanDefinitionReader = new AnnotatedBeanDefinitionReader(registry);
@@ -69,19 +64,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
         Set<Class<?>> cache = new HashSet<>();
 
 
-        if (!AnnotationUtils.findAnnotation(mainClass, EnableAutoConfiguration.class).isEmpty()) {
-            List<String> allProcessors = new ArrayList<>(autoConfigurationMap.get("BeanDefinitionRegistryPostProcessor"));
-            allProcessors.addAll(autoConfigurationMap.get("BeanFactoryPostProcessor"));
-            for (String className : allProcessors) {
-                try {
-                    Class<?> clazz = Class.forName(className);
-                    processImports(annotatedClasses, clazz, cache);
-                } catch (ClassNotFoundException e) {
-                    log.error(e.getMessage(), e);
-                }
-            }
-
-            for (String className : spiMap.get("Beans")) {
+        for (String className : spiMap.get("Beans")) {
                 try {
                     Class<?> clazz = Class.forName(className);
                     annotatedClasses.add(clazz);
@@ -90,7 +73,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
                     log.error(e.getMessage(), e);
                 }
             }
-        }
+
 
         //递归处理所有通过@Import注解引入的类
         for (Class<?> clazz : annotatedClasses.toArray(new Class[0])) {
@@ -199,16 +182,6 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
     }
 
 
-    private void initAutumnSpi() {
-        try {
-            spiMap = AutumnFactoriesLoader.parseConfigurations();
-            autoConfigurationMap = AutumnFactoriesLoader.parseAutoConfigurations();
-        } catch (Exception e) {
-            log.error("加载spi配置文件失败", e);
-            throw new RuntimeException(e);
-        }
-    }
-
     private void processImports(Set<Class<?>> annotatedClasses, Class<?> clazz, Set<Class<?>> cacache) {
 
         if (cacache.add(clazz)) {
@@ -221,15 +194,35 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
             for (Import importAnnotation : importAnnotations) {
                 if (importAnnotation.value() != null) {
                     for (Class<?> importClass : importAnnotation.value()) {
-                        if (importClass.isInterface() || importClass.isAnnotation()) {
-                            throw new RuntimeException("Import注解不能引入接口或注解: " + importClass.getName());
+                        if (ImportSelector.class.isAssignableFrom(importClass)) {
+                            try {
+                                ImportSelector selector = (ImportSelector) importClass.getDeclaredConstructor().newInstance();
+                                String[] selectedClassNames = selector.selectImports(new AnnotationMetadata(clazz));
+                                for (String className : selectedClassNames) {
+                                    Class<?> selectedClass = Class.forName(className);
+                                    if (!annotatedClasses.contains(selectedClass)) {
+                                        log.info("通过 ImportSelector [{}] 导入了 {}", importClass.getSimpleName(), selectedClass.getName());
+                                        processImports(annotatedClasses, selectedClass, cacache);
+                                    }
+
+                                }
+                            } catch (Exception e) {
+                                log.error(" ImportSelector [{}] 失败", importClass.getName(), e);
+                                throw new BeanCreationException(" ImportSelector 失败:" + importClass.getName(), e);
+                            }
+                        } else {
+                            if (importClass.isInterface() || importClass.isAnnotation()) {
+                                throw new BeanCreationException("Import注解不能引入接口或注解: " + importClass.getName());
+                            }
+
+                            if (!annotatedClasses.contains(importClass)) {
+                                log.info("通过Import机制导入了{}", importClass.getName());
+                                // 递归导入
+                                processImports(annotatedClasses, importClass, cacache);
+                            }
                         }
 
-                        if (!annotatedClasses.contains(importClass)) {
-                            log.info("通过Import机制导入了{}", importClass.getName());
-                            // 递归导入
-                            processImports(annotatedClasses, importClass, cacache);
-                        }
+
                     }
                 }
             }
@@ -242,7 +235,6 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
     @Override
     public void setEnvironment(Environment environment) {
-        this.environment = environment;
         mainPackage = environment.getProperty("autumn.main.package");
         mainClass = environment.getProperty("autumn.main.sources");
     }

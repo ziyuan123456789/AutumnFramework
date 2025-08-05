@@ -58,7 +58,7 @@ public class TomCatContainer implements MyWebServer, ApplicationListener<Context
                 Tomcat.addServlet(context, "dispatcherServlet", dispatcherServlet);
                 context.addServletMappingDecoded("/", "dispatcherServlet");
                 tomcat.start();
-                log.info("服务于{}端口启动", port);
+                log.info("接受到{}信号,服务于{}端口启动", event.getClass().getSimpleName(), port);
                 log.info("http://localhost:{}/", port);
                 tomcat.getServer().await();
             } catch (LifecycleException e) {

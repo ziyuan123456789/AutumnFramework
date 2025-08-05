@@ -2,8 +2,6 @@ package com.autumn.ormstarter;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
-import org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.MyBeanDefinition;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
@@ -52,7 +50,6 @@ import java.util.Set;
 <p>因此，在 <code>BeanDefinitionRegistry</code> 阶段进行依赖注入并不优雅，推荐的替代方案是使用 Spring 的 Aware 接口来获取早期依赖（如 <code>ApplicationContextAware</code> 或 <code>EnvironmentAware</code> 等）。</p>
  */
 @Slf4j
-@Import({SqlSessionFactoryBean.class, JokePostProcessor.class})
 public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, EnvironmentAware, PriorityOrdered, BeanFactoryAware {
 
 

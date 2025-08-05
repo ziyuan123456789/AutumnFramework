@@ -58,10 +58,7 @@ public AutumnApplication(Class<?>... primarySources) {
 
   //确定应用的主要配置来源,为Bean扫描的起点
   this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
-
-  //初始化SPI机制,读取Meta-inf下的配置文件
-  this.initAutumnSpi();
-
+  
   /**
    读取默认的BootstrapRegistryInitializer实现类,可以预注册组件,调用构造器创建实例对象
    在 ApplicationContext 准备就绪 但尚未refresh之前,提供一个回调入口 对这个 ApplicationContext 实例本身进行编程化的修改和配置
@@ -312,9 +309,46 @@ public class UrlFilter implements Filter, Ordered {
     return 100;
   }
 }
-
 ```
+
+### 自动装配机制
+
+```java
+
+@Target({ElementType.TYPE})
+@Inherited
+@Retention(RetentionPolicy.RUNTIME)
+@Import(AutoConfigurationImportSelector.class)
+public @interface EnableAutoConfiguration {
+
+}
+```
+
+借助AutoConfigurationImportSelector这个ImportSelector,可在ConfigurationClassPostProcessor阶段接管
+读取Meta-INF/autumn/AutoConfiguration.imports文件,获取自动装配的类,进行条件判断后进行生产
+
 ### 整合Minebatis
+
+```java
+import com.autumn.ormstarter.MineBatisStarter;
+import com.autumn.ormstarter.SqlSessionFactoryBean;
+import lombok.extern.slf4j.Slf4j;
+import org.example.FrameworkUtils.AutumnCore.Annotation.AutumnBean;
+import org.example.FrameworkUtils.AutumnCore.Annotation.Import;
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyConfig;
+import org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor;@MyConfig
+@Slf4j
+@Import({SqlSessionFactoryBean.class, JokePostProcessor.class})
+public class MineBatisAutoConfiguration {
+
+    @AutumnBean
+    public MineBatisStarter createMineBatisStarter() {
+        return new MineBatisStarter();
+    }
+
+}
+```
+
 ```java
 public interface UserMapper {
     List<User> getOneUser(Integer userId);

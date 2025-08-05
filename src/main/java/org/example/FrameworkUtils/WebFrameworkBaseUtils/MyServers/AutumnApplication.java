@@ -54,9 +54,7 @@ public class AutumnApplication {
 
     private List<ApplicationListener> listeners;
 
-    private Map<String, List<String>> spiMap;
-
-    private Map<String, List<String>> autoConfigurationMap;
+    private Map<String, List<String>> spiMap = AutumnFactoriesLoader.getSimpleBeans();
 
     private String[] sysArgs;
 
@@ -88,8 +86,6 @@ public class AutumnApplication {
         //确定应用的主要配置来源,为Bean扫描的起点
         this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
 
-        //初始化SPI机制,读取meta-inf下的配置文件
-        this.initAutumnSpi();
 
         /**
          读取默认的BootstrapRegistryInitializer实现类,可以预注册组件,调用构造器创建实例对象
@@ -229,15 +225,6 @@ public class AutumnApplication {
 
 
 
-    private void initAutumnSpi() {
-        try {
-            spiMap = AutumnFactoriesLoader.parseConfigurations();
-            autoConfigurationMap = AutumnFactoriesLoader.parseAutoConfigurations();
-        } catch (Exception e) {
-            log.error("加载spi配置文件失败", e);
-            throw new RuntimeException(e);
-        }
-    }
 
     public void setListeners(List<ApplicationListener> listeners) {
         this.listeners = new ArrayList<>(listeners);

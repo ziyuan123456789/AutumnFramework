@@ -1,1 +1,2 @@
-BeanDefinitionRegistryPostProcessor=com.autumn.ormstarter.MineBatisStarter
+com.autumn.ormstarter.MineBatisAutoConfiguration
+com.autumn.AutoConfiguration.AutoConfigurationTest
