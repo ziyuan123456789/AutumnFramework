@@ -339,7 +339,20 @@ public class WebSocketController implements WebSocketEndpoint {
 
 ```
 
-### 自动装配机制
+### 自定Converter
+
+使用`@Inject`注解标记一个类并实现`ControllerInjector`接口,就可以注入一个自定义注入器,来指导Controller方法参数的注入
+例如下面这个例子,我们使用自定义注入器指导框架去正确处理并注入一个枚举
+
+```java
+
+@MyRequestMapping("/inject")
+public String injectTest(ColorMappingEnum color) {
+    return color.getColorName();
+}
+```
+
+### 自动装配机制入口
 
 ```java
 
@@ -352,8 +365,6 @@ public @interface EnableAutoConfiguration {
 }
 ```
 
-借助AutoConfigurationImportSelector这个ImportSelector,可在ConfigurationClassPostProcessor阶段接管
-读取Meta-INF/autumn/AutoConfiguration.imports文件,获取自动装配的类,进行条件判断后进行生产
 
 ### 整合Minebatis
 
@@ -540,108 +551,89 @@ public class LoginServiceImpl implements LoginService {
     }
 }
 ```
-### WebSocket握手 目前仅支持SocketServer运行环境
-```java
-@MyRequestMapping("/websocketTest")
-public MyWebSocket websocketTest(){
-    //websocket初始化工作
-    return new MyWebSocket();
-}
-```
-### WebSocket处理器
-```java
-@MyWebSocketConfig("/websocketTest")
-@Slf4j
-public class WebSocketController implements WebSocketBaseConfig {
-
-    @Override
-    public void onOpen() {
-        log.warn("切换到WebSocket");
-    }
-
-    @Override
-    public void onClose() {
-        log.warn("用户离开");
-    }
-
-    @Override
-    public String onMsg(String text) {
-        log.info("接受的讯息为"+text);
-        return text;
-    }
-}
-```
-### 自定Converter
-
-使用`@Inject`注解标记一个类并实现`ControllerInjector`接口,就可以注入一个自定义注入器,来指导Controller方法参数的注入
-例如下面这个例子,我们使用自定义注入器指导框架去正确处理并注入一个枚举
-```java
-@MyRequestMapping("/inject")
-public String injectTest(ColorMappingEnum color) {
-    return color.getColorName();
-}
-
-@ErrorHandler(errorCode = 400, title = "参数校验异常")
-@MyRequestMapping("/notnull")
-public String notNullOrBlankTest(@AutumnNotBlank String id, @AutumnNotBlank String name) {
-  return id + "+" + name;
-}
-
-```
 
 ### Web容器选择 如果你喜欢可以自行加入Jetty的适配器 可依靠条件注解实现无缝的容器切换
 ```java
-
 @Slf4j
 @MyComponent
-public class TomCatContainer implements MyWebServer, ApplicationListener<ContextFinishRefreshEvent>, EnvironmentAware {
+public class TomCatContainer implements MyWebServer, ApplicationListener<ContextRefreshedEvent>, EnvironmentAware, BeanFactoryAware {
 
-  private int port;
+    private int port = 80;
 
-  @MyAutoWired
-  private DispatcherServlet dispatcherServlet;
+    private ApplicationContext beanFactory;
 
-  @Override
-  public void init() throws Exception {
-    log.info("切换到TomCat容器");
-  }
+    @MyAutoWired
+    private DispatcherServlet dispatcherServlet;
 
 
-  @Override
-  public void onApplicationEvent(ContextFinishRefreshEvent event) {
-    new Thread(() -> {
-      try {
-        Tomcat tomcat = new Tomcat();
-        Connector connector = new Connector();
-        connector.setPort(port);
-        connector.setURIEncoding("UTF-8");
-        tomcat.getService().addConnector(connector);
-        Context context = tomcat.addContext("/", null);
-        Tomcat.addServlet(context, "dispatcherServlet", dispatcherServlet);
-        context.addServletMappingDecoded("/", "dispatcherServlet");
-        tomcat.start();
-        log.info("服务于{}端口启动", port);
-        log.info("http://localhost:{}/", port);
-        tomcat.getServer().await();
-      } catch (LifecycleException e) {
-        throw new RuntimeException(e);
-      }
-    }).start();
-
-  }
-
-  @Override
-  public boolean supportsEvent(ApplicationEvent event) {
-    return event instanceof ContextFinishRefreshEvent;
-  }
+    @Override
+    public void init() throws Exception {
+        log.info("切换到TomCat容器");
+    }
 
 
-  @Override
-  public void setEnvironment(Environment environment) {
-    this.port = Integer.parseInt(environment.getProperty("port"));
-  }
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        new Thread(() -> {
+            try {
+                Tomcat tomcat = new Tomcat();
+                Connector connector = new Connector();
+                connector.setPort(port);
+                connector.setURIEncoding("UTF-8");
+                tomcat.getService().addConnector(connector);
+                Context context = tomcat.addContext("", null);
+                context.addServletContainerInitializer(new org.apache.tomcat.websocket.server.WsSci(), null);
+                ResourceCleanupFilter cleanupFilter = new ResourceCleanupFilter();
+                FilterDef filterDef = new FilterDef();
+                filterDef.setFilterName("resourceCleanupFilter");
+                filterDef.setFilter(cleanupFilter);
+                context.addFilterDef(filterDef);
+                FilterMap filterMap = new FilterMap();
+                filterMap.setFilterName("resourceCleanupFilter");
+                filterMap.addURLPattern("/*");
+                context.addFilterMap(filterMap);
+                Tomcat.addServlet(context, "dispatcherServlet", dispatcherServlet);
+                context.addServletMappingDecoded("/", "dispatcherServlet");
+                tomcat.start();
+                ServerContainer serverContainer = (ServerContainer)
+                        context.getServletContext().getAttribute(ServerContainer.class.getName());
+
+                DispatchWebSocketServlet dispatcherEndpoint = beanFactory.getBean(DispatchWebSocketServlet.class);
+                WebSocketConfigurator configurator = new WebSocketConfigurator(dispatcherEndpoint);
+                for (String path : dispatcherEndpoint.getController().keySet()) {
+                    ServerEndpointConfig config = ServerEndpointConfig.Builder
+                            .create(DispatchWebSocketServlet.class, path)
+                            .configurator(configurator)
+                            .build();
+                    serverContainer.addEndpoint(config);
+                    log.info("开始注册WebSocket端点:{}", path);
+                }
+                log.info("接受到{}信号,服务于{}端口启动", event.getClass().getSimpleName(), port);
+                log.info("http://localhost:{}/", port);
+                tomcat.getServer().await();
+            } catch (LifecycleException | DeploymentException e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
+
+    }
+
+    @Override
+    public boolean supportsEvent(ApplicationEvent event) {
+        return event instanceof ContextRefreshedEvent;
+    }
+
+
+    @Override
+    public void setEnvironment(Environment environment) {
+        this.port = Integer.parseInt(environment.getProperty("port"));
+    }
+
+    @Override
+    public void setBeanFactory(ApplicationContext beanFactory) {
+        this.beanFactory = beanFactory;
+    }
 }
-
 ```
 
 ## 代码示范 AOP章节
@@ -746,9 +738,8 @@ public String asyncTest() {
 ### 自动装配机制:自定义后置处理器干预Bean定义生成
 你可以选择在resources文件夹下建立META-INF/autumn/`AutoConfiguration.imports` 文件,声明自动装配依赖的类.框架会自动扫描并创建依赖,同时Jar包下的相同路径也会被扫描
 ```text
-BeanDefinitionRegistryPostProcessor=com.autumn.ormstarter.MineBatisStarter
-BeanFactoryPostProcessor=org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor
-Beans=com.autumn.ormstarter.SqlSessionFactoryBean
+com.autumn.ormstarter.MineBatisAutoConfiguration
+com.autumn.AutoConfiguration.AutoConfigurationTest
 ```
 你可以选择使用上述的`AutumnSpi`来导入对应的依赖,也可也使用`Import机制`来连锁导入需要的类,就像SpringBoot那样,添加一个注解开启服务,这个注解为一个复合注解,背后真正有用的元信息的还是`@Import`注解
 ```java
@@ -759,83 +750,69 @@ Beans=com.autumn.ormstarter.SqlSessionFactoryBean
 public @interface EnableAutumnAsync {
 }
 ```
-```java
-@Slf4j
-@Import({SqlSessionFactoryBean.class, JokePostProcessor.class})
-public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, PriorityOrdered{}
-```
 
 #### 利用这个后置处理器,我们可以扫描Mapper把他们也纳入容器,同时生成代理类
 ```java
 @Slf4j
-@Import({SqlSessionFactoryBean.class, JokePostProcessor.class})
 public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, EnvironmentAware, PriorityOrdered, BeanFactoryAware {
 
+    private ApplicationContext beanFactory;
 
-  private ApplicationContext beanFactory;
+    private Environment environment;
 
-  private Environment environment;
+    @Override
+    public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
 
-  static {
-    Properties p = new Properties(System.getProperties());
-    p.put("com.mchange.v2.log.MLog", "com.mchange.v2.log.FallbackMLog");
-    p.put("com.mchange.v2.log.FallbackMLog.DEFAULT_CUTOFF_LEVEL", "OFF");
-    System.setProperties(p);
-  }
-
-  @Override
-  public void postProcessBeanFactory(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
-
-  }
-
-
-  @Override
-  public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
-    String minebatisXml = environment.getProperty("MineBatis-configXML");
-    InputStream inputStream;
-    if (minebatisXml == null || minebatisXml.isEmpty()) {
-      inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
-    } else {
-      inputStream = Resources.getResourceAsSteam(minebatisXml);
-    }
-    SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-    inputStream.close();
-    Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
-    for (Class<?> clazz : classSet) {
-      MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
-      log.warn("{}包装Mapper:{}", this.getClass().getSimpleName(), clazz.getName());
-      myBeanDefinition.setName(clazz.getName());
-      myBeanDefinition.setBeanClass(MapperFactoryBean.class);
-      myBeanDefinition.setConstructor(MapperFactoryBean.class.getDeclaredConstructor(Class.class));
-      Object[] parameters = new Object[]{clazz};
-      myBeanDefinition.setParameters(parameters);
-      registry.registerBeanDefinition(clazz.getName(), myBeanDefinition);
     }
 
-    AnnotationScanner.findAnnotatedClasses(environment.getProperty(Environment.GET_MAIN_PACKAGE), TypeHandler.class).forEach(typeHandler -> {
-      MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
-      myBeanDefinition.setName(typeHandler.getName());
-      myBeanDefinition.setBeanClass(typeHandler);
-      registry.registerBeanDefinition(typeHandler.getName(), myBeanDefinition);
-    });
-  }
+    @Override
+    public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
+        String minebatisXml = environment.getProperty("MineBatis-configXML");
+        InputStream inputStream;
+        if (minebatisXml == null || minebatisXml.isEmpty()) {
+            inputStream = Resources.getResourceAsSteam("minebatis-config.xml");
+        } else {
+            inputStream = Resources.getResourceAsSteam(minebatisXml);
+        }
+        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+        inputStream.close();
+        Set<Class<?>> classSet = sqlSessionFactory.getConfiguration().getMapperLocations();
+        for (Class<?> clazz : classSet) {
+            MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
+            log.warn("{}包装Mapper:{},替换实现为{}", this.getClass().getSimpleName(), clazz.getName(), MapperFactoryBean.class);
+            myBeanDefinition.setName(clazz.getName());
+            myBeanDefinition.setBeanClass(MapperFactoryBean.class);
+            myBeanDefinition.setConstructor(MapperFactoryBean.class.getDeclaredConstructor(Class.class));
+            Object[] parameters = new Object[]{clazz};
+            myBeanDefinition.setParameters(parameters);
+            registry.registerBeanDefinition(clazz.getName(), myBeanDefinition);
+        }
 
-  @Override
-  public int getOrder() {
-    return 4;
-  }
+        AnnotationScanner.findAnnotatedClasses(environment.getProperty(Environment.GET_MAIN_PACKAGE), TypeHandler.class).forEach(typeHandler -> {
+            MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
+            myBeanDefinition.setName(typeHandler.getName());
+            myBeanDefinition.setBeanClass(typeHandler);
+            registry.registerBeanDefinition(typeHandler.getName(), myBeanDefinition);
+            log.info("{}注册TypeHandler:{}", this.getClass().getSimpleName(), typeHandler.getName());
+        });
+    }
 
+    @Override
+    public int getOrder() {
+        return 4;
+    }
+    
+    @Override
+    public void setBeanFactory(ApplicationContext beanFactory) {
+        this.beanFactory = beanFactory;
+    }
 
-  @Override
-  public void setBeanFactory(ApplicationContext beanFactory) {
-    this.beanFactory = beanFactory;
-  }
-
-  @Override
-  public void setEnvironment(Environment environment) {
-    this.environment = environment;
-  }
+    @Override
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
+    }
 }
+
 ```
 
 ### BeanPostProcessor 在Bean创建完整前后提供拓展
