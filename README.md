@@ -311,6 +311,34 @@ public class UrlFilter implements Filter, Ordered {
 }
 ```
 
+### WebSocket
+
+```java
+
+@Slf4j
+@MyWebSocketEndpoint("/WebSocket")
+public class WebSocketController implements WebSocketEndpoint {
+
+
+    @Override
+    public void onOpen() {
+        log.warn("切换到WebSocket");
+    }
+
+    @Override
+    public void onClose() {
+        log.warn("用户离开");
+    }
+
+    @Override
+    public String onMsg(String text) {
+        log.info("接受的讯息为{}", text);
+        return text;
+    }
+}
+
+```
+
 ### 自动装配机制
 
 ```java
@@ -1042,5 +1070,5 @@ MineBatis-configXML=minebatis-config.xml
 - IDE/插件/AI
   - **Jetbrains** 提供的开源支持：IDEA / PyCharm / Rider / CLion License
   - **GitHub** 提供的学生免费 Copilot
-  - **Google** Gemini 2.5Pro
+  - **Google** Gemini 2.5Pro GPT-5
 

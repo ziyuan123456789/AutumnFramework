@@ -1,5 +1,7 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseWriter;
 
+
+import com.autumn.mvc.WebSocket.WebSocketEndpoint;
 import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
@@ -8,8 +10,6 @@ import org.example.FrameworkUtils.AutumnCore.Ioc.ApplicationContext;
 import org.example.FrameworkUtils.AutumnCore.Ioc.BeanFactoryAware;
 import org.example.FrameworkUtils.AutumnCore.Ioc.ResourceFinder;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.Cookie.Cookie;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.MyWebSocketConfig;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket.WebSocketBaseConfig;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -219,7 +218,7 @@ public class SocketServerHtmlResponse implements BeanFactoryAware {
 
     public void outPutSocketWriter(Socket clientSocket, String requestHeaders, String url) throws IOException {
 
-        WebSocketBaseConfig webSocketMaster = null;
+        WebSocketEndpoint webSocketMaster = null;
         Pattern pattern = Pattern.compile("Sec-WebSocket-Key: (.+)");
         Matcher matcher = pattern.matcher(requestHeaders);
         if (!matcher.find()) {
@@ -236,7 +235,7 @@ public class SocketServerHtmlResponse implements BeanFactoryAware {
 
             StringBuilder responseHeader = new StringBuilder();
             responseHeader.append("HTTP/1.1 101 Switching Protocols\r\n");
-            responseHeader.append("Upgrade: websocket\r\n");
+            responseHeader.append("Upgrade: WebSocket\r\n");
             responseHeader.append("Connection: Upgrade\r\n");
             responseHeader.append("Sec-WebSocket-Accept: ").append(responseKey).append("\r\n");
             responseHeader.append("\r\n");
@@ -246,8 +245,8 @@ public class SocketServerHtmlResponse implements BeanFactoryAware {
 //            for (Map.Entry<String, Object> entry : beanFactory.getIocContainer().entrySet()) {
 //                try{
 //                    Class<?> clazz = Class.forName(entry.getKey());
-//                    if (clazz.isAnnotationPresent(MyWebSocketConfig.class)) {
-//                        MyWebSocketConfig annotation = clazz.getAnnotation(MyWebSocketConfig.class);
+//                    if (clazz.isAnnotationPresent(MyWebSocketEndpoint.class)) {
+//                        MyWebSocketEndpoint annotation = clazz.getAnnotation(MyWebSocketEndpoint.class);
 //                        if (url.equals(annotation.value())) {
 //                            webSocketMaster = (WebSocketBaseConfig) beanFactory.getBean(entry.getKey());
 //                            break;

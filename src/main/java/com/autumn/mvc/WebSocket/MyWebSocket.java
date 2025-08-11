@@ -1,4 +1,4 @@
-package org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket;
+package com.autumn.mvc.WebSocket;
 
 /**
  * @author ziyuan

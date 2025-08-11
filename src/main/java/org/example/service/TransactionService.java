@@ -9,6 +9,7 @@ import java.sql.SQLException;
 
 public interface TransactionService {
     String transactionTest() throws SQLException;
+
     void transactionRequireNew() throws SQLException;
 
     void transactionRequire() throws SQLException;

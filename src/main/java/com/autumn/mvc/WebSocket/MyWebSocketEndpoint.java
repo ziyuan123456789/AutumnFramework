@@ -1,4 +1,6 @@
-package org.example.FrameworkUtils.WebFrameworkBaseUtils.WebSocket;
+package com.autumn.mvc.WebSocket;
+
+import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -13,6 +15,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.PARAMETER,ElementType.TYPE})
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
-public @interface MyWebSocketConfig {
+@MyComponent
+public @interface MyWebSocketEndpoint {
     String value();
 }
