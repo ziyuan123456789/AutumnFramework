@@ -1,6 +1,5 @@
 package org.example.service.impl;
 
-import org.example.Controller.AutumnTestController;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyService;
 import org.example.service.Test2Service;
@@ -16,9 +15,6 @@ public class Test2ServiceImpl implements Test2Service {
 
     @MyAutoWired
     TestService testService;
-
-    @MyAutoWired
-    AutumnTestController autumnTestController;
 
 
     @Override

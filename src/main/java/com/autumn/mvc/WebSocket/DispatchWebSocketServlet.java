@@ -15,8 +15,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *
- *
  * @author ziyuan
  * @since 2025.08
  */
@@ -51,6 +49,7 @@ public class DispatchWebSocketServlet extends Endpoint implements InitializingBe
     }
 
 
+    @Override
     public void onClose(Session session, CloseReason closeReason) {
         String path = session.getRequestURI().getPath();
         WebSocketEndpoint controller = this.controller.get(path);
@@ -61,7 +60,7 @@ public class DispatchWebSocketServlet extends Endpoint implements InitializingBe
         }
     }
 
-
+    @Override
     public void onError(Session session, Throwable thr) {
         String path = session.getRequestURI().getPath();
         WebSocketEndpoint controller = this.controller.get(path);

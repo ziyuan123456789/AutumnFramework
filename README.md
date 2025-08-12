@@ -1047,5 +1047,6 @@ MineBatis-configXML=minebatis-config.xml
 - IDE/插件/AI
   - **Jetbrains** 提供的开源支持：IDEA / PyCharm / Rider / CLion License
   - **GitHub** 提供的学生免费 Copilot
-  - **Google** Gemini 2.5Pro GPT-5
+  - **Google** Gemini 2.5Pro
+  - **OpenAi** GPT-5
 
