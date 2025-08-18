@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2025.06
  */
+
 //标记在控制器方法的参数上,表示该参数是从URL路径中提取的变量
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)

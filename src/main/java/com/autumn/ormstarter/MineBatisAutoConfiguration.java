@@ -8,10 +8,10 @@ import org.example.FrameworkUtils.AutumnCore.Aop.JokePostProcessor;
 
 /**
  *
- *
  * @author ziyuan
  * @since 2025.08
  */
+
 @MyConfig
 @Slf4j
 @Import({SqlSessionFactoryBean.class, JokePostProcessor.class})

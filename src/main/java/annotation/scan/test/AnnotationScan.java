@@ -13,7 +13,7 @@ import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 @MyComponent
 public class AnnotationScan {
     static {
-//        log.info("AnnotationScan类被加载");
+        log.info("ComponentScan 成功拓展扫描范围 AnnotationScan类被加载");
     }
 
 }

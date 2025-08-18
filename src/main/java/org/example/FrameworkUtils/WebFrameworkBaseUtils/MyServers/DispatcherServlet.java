@@ -137,10 +137,6 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
         }
     }
 
-    @Override
-    public void destroy() {
-    }
-
 
     private String extractPath(String url) {
         int questionMarkIndex = url.indexOf('?');
@@ -207,11 +203,6 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
         return new Tuple<>(method.invoke(instance, objectArgs), method.getReturnType());
     }
 
-    private Object useUrlGetParam(String paramName, AutumnRequest myRequest) {
-        Map<String, String> param = myRequest.getParameters();
-        return param.get(paramName);
-    }
-
 
     //依照方法的返回值来确定选择哪种返回器
     private void handleSocketOutputByType(Object result, AutumnResponse res, HttpServletResponse resp, List<String> crossOrigin) {
@@ -224,11 +215,7 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
                 tomCatHtmlResponse.outPutMessageWriter(resp, 200, objectMapper.writeValueAsString(result), null, crossOrigin);
             } else if (isPrimitiveOrWrapper(result.getClass())) {
                 tomCatHtmlResponse.outPutMessageWriter(resp, 200, result.toString(), null, crossOrigin);
-            }
-//            else if (result instanceof MyWebSocket) {
-//                tomCatHtmlResponse.outPutSocketWriter(resp, myRequest.getBody(), myRequest.getUrl());
-//            }
-            else {
+            } else {
                 tomCatHtmlResponse.outPutMessageWriter(resp, 200, objectMapper.writeValueAsString(result), null, crossOrigin);
             }
         } catch (Exception e) {

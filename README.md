@@ -1010,6 +1010,17 @@ MineBatis-configXML=minebatis-config.xml
 - Logback-classic 实现彩色日志
 ```
 
+### 几个重要的类:
+
+- AnnotationConfigApplicationContext :IOC容器的核心类,负责Bean的注册与管理,以及Bean的生命周期管理
+- AutowiredAnnotationBeanPostProcessor:基于注解(@AutoWired)的自动装配处理器,负责解析@Autowired注解并进行依赖注入
+- ConfigurationClassPostProcessor:转换Bean定义并注册到容器中
+- MyAnnotationAwareAspectJAutoProxyCreator:AOP自动代理创建器,按照用户编写的处理器进行代理
+- DispatcherServlet:接管HTTP请求,按照前缀树的方式进行请求分发,并调用对应的Controller方法
+- MineBatisStarter:负责扫描Mapper,修改对应的Bean定义,并且扫描TypeHandler,注册到容器中
+- DefaultSqlSession:负责管理数据库连接,创建Mapper实现
+- SimpleExecutor:执行器,负责执行SQL语句,并返回结果集
+
 ### 容器继承图
 
 <div style="text-align: center;">
@@ -1046,7 +1057,7 @@ MineBatis-configXML=minebatis-config.xml
 
 - IDE/插件/AI
   - **Jetbrains** 提供的开源支持：IDEA / PyCharm / Rider / CLion License
-  - **GitHub** 提供的学生免费 Copilot
+  - **GitHub** Copilot
   - **Google** Gemini 2.5Pro
   - **OpenAi** GPT-5
 

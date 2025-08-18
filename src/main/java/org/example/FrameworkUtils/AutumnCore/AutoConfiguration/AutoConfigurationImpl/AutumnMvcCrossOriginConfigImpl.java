@@ -18,7 +18,7 @@ public class AutumnMvcCrossOriginConfigImpl implements AutumnMvcCrossOriginConfi
 
 
     @Value("crossOrigin")
-    String crossOriginString;
+    private String crossOriginString;
 
     @Override
     @AutumnBean

@@ -16,6 +16,7 @@ import org.reflections.scanners.SubTypesScanner;
 @MyConfig
 @Slf4j
 public class AutoConfigurationBeans implements EnvironmentAware {
+
     private Environment environment;
 
     @AutumnBean

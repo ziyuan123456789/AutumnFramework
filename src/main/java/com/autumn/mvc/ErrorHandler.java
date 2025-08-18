@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
  * @author ziyuan
  * @since 2025.04
  */
+
 //目前不是一个通用设计,未来会优化
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

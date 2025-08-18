@@ -13,7 +13,6 @@ import java.lang.annotation.Target;
 
 /**
  * 标记一个类为服务类,可以被容器扫描到
- * 暂时来说和@Component没有区别
  */
 @Target({ElementType.PARAMETER,ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

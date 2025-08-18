@@ -19,6 +19,13 @@ import java.util.Map;
  * @since 2025.08
  */
 
+
+/**
+ * WebSocket的调度器
+ * 跟据请求的路径找到对应的WebSocket端点
+ * 并将消息处理委托给对应的端点
+ * 这个Bean依靠SPI创建,在autumn.factors中声明
+ */
 @Slf4j
 public class DispatchWebSocketServlet extends Endpoint implements InitializingBean, BeanFactoryAware {
 
@@ -38,7 +45,7 @@ public class DispatchWebSocketServlet extends Endpoint implements InitializingBe
                 controller.onOpen();
             } else {
                 try {
-                    session.close(new CloseReason(CloseReason.CloseCodes.CANNOT_ACCEPT, "No WebSocket endpoint found for path: " + path));
+                    session.close(new CloseReason(CloseReason.CloseCodes.CANNOT_ACCEPT, "没有找到对应的端点: " + path));
                 } catch (Exception e) {
                     log.error("关闭发生了错误: {}", path, e);
                 }
@@ -77,6 +84,9 @@ public class DispatchWebSocketServlet extends Endpoint implements InitializingBe
         for (MyBeanDefinition mb : context.getBeanDefinitionMap().values()) {
             Class<?> clazz = mb.getBeanClass();
             if (clazz.isAnnotationPresent(MyWebSocketEndpoint.class)) {
+                if (!WebSocketEndpoint.class.isAssignableFrom(clazz)) {
+                    throw new IllegalArgumentException("WebSocket端点必须实现WebSocketEndpoint接口:" + clazz.getName());
+                }
                 MyWebSocketEndpoint annotation = clazz.getAnnotation(MyWebSocketEndpoint.class);
                 String path = annotation.value();
                 if (path.isEmpty()) {

@@ -18,6 +18,7 @@ public class AutumnMvcConfigurationBaseImpl implements AutumnMvcConfiguration{
 
     @Value("404Html")
     String notFoundPage;
+
     @Override
     public View getMainPage() {
         return new View(baseHtml);

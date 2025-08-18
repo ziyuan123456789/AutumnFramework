@@ -20,7 +20,7 @@ import java.sql.SQLException;
  */
 
 /**
- * 事务管理器 负责处理事务的开始提交和回滚
+ * MineBatis事务管理器 负责处理事务的开始提交和回滚
  */
 
 @Slf4j

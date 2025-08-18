@@ -17,11 +17,6 @@ import org.example.FrameworkUtils.WebFrameworkBaseUtils.ResponseType.Views.View;
  * @since 2024.08
  */
 
-/**
- * 一个错误的设计,但是好用.以后会改
- * 有句话怎么说的? 黑猫白猫,能抓到耗子的就是好猫
- * TODO:日后通过getBean(TrieTree)方式修改
- */
 @MyController
 public class BaseController implements ApplicationListener<ContextRefreshedEvent> {
 

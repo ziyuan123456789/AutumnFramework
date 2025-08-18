@@ -21,6 +21,11 @@ import java.lang.reflect.Field;
  * @since 2025.02
  */
 
+/**
+ * 基于注解的依赖注入处理器
+ * 未来剥离对配置文件的处理,单独再写个InstantiationAwareBeanPostProcessor干这件事
+ */
+
 @Slf4j
 @MyComponent
 @MyOrder(2)
@@ -132,7 +137,7 @@ public class AutowiredAnnotationBeanPostProcessor implements InstantiationAwareB
     private void injectNormalDependency(Object bean, Field field) throws IllegalAccessException {
         Class<?> dependencyType = field.getType();
         String dependencyBeanName = dependencyType.getName();
-        // 如果依赖类型本身是 FactoryBeanv 则希望注入 FactoryBean 本身，而非其 getObject() 的返回结果
+        // 如果依赖类型本身是 FactoryBeanv 则希望注入 FactoryBean 本身 而非其 getObject() 的返回结果
         if (FactoryBean.class.isAssignableFrom(dependencyType)) {
             dependencyBeanName = "&" + dependencyBeanName;
         }

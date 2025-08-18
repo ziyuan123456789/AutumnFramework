@@ -6,6 +6,10 @@ import org.example.FrameworkUtils.Exception.BeanCreationException;
  * @author ziyuan
  * @since 2025.02
  */
+
+/**
+ * 将ApplicationContext等信息注入到Bean中
+ */
 public class ApplicationContextAwareProcessor implements BeanPostProcessor {
 
     private ApplicationContext applicationContext;

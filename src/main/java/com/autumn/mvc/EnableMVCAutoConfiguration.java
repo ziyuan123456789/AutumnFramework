@@ -16,7 +16,6 @@ import java.lang.annotation.Target;
 /**
  * 引入ObjectMapper相关配置
  */
-
 @Target({ElementType.TYPE})
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)

@@ -1,5 +1,7 @@
 package org.example.FrameworkUtils.Orm.MineBatis.Io;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
@@ -9,19 +11,20 @@ import java.util.Deque;
  * @author ziyuan
  * @since 2024.11
  */
+@Slf4j
 public class TransactionContext  {
 
-    private static final ThreadLocal<Deque<Connection>> connectionStackHolder = ThreadLocal.withInitial(ArrayDeque::new);
+    private static final ThreadLocal<Deque<Connection>> CONNECTION_HOLDER = ThreadLocal.withInitial(ArrayDeque::new);
 
     public static void pushConnection(Connection connection) {
-        connectionStackHolder.get().push(connection);
+        CONNECTION_HOLDER.get().push(connection);
     }
     public static Connection popConnection() {
-        return connectionStackHolder.get().pop();
+        return CONNECTION_HOLDER.get().pop();
     }
 
     public static Connection getCurrentConnection() {
-        Deque<Connection> stack = connectionStackHolder.get();
+        Deque<Connection> stack = CONNECTION_HOLDER.get();
         if (!stack.isEmpty()) {
             return stack.peek();
         } else {
@@ -30,7 +33,7 @@ public class TransactionContext  {
     }
 
     public static void clear() {
-        Deque<Connection> stack = connectionStackHolder.get();
+        Deque<Connection> stack = CONNECTION_HOLDER.get();
         while (!stack.isEmpty()) {
             Connection connection = stack.pop();
             try {
@@ -38,9 +41,9 @@ public class TransactionContext  {
                     connection.close();
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
+                log.error("关闭连接时发生错误: {}", e.getMessage(), e);
             }
         }
-        connectionStackHolder.remove();
+        CONNECTION_HOLDER.remove();
     }
 }

@@ -25,6 +25,12 @@ import java.util.Set;
  * @since 2024.04
  **/
 
+/**
+ * MineBatisStarter的一部分
+ * 负责扫描Mapper接口和TypeHandler注解
+ * 并将Mapper接口包装为MapperFactoryBean,同时把TypeHandler注册到容器中
+ * 最终MapperFactoryBean为Mapper创建CGLIB代理类,返还到容器中
+ */
 
 @Slf4j
 public class MineBatisStarter implements BeanDefinitionRegistryPostProcessor, EnvironmentAware, PriorityOrdered, BeanFactoryAware {
