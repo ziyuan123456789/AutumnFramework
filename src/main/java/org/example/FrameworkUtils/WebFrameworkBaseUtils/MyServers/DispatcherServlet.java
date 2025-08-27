@@ -147,11 +147,6 @@ public class DispatcherServlet extends HttpServlet implements BeanFactoryAware, 
         }
     }
 
-    //xxx:输出异常信息
-    private <T extends Exception> void exceptionPrinter(T e, String message) {
-        log.error(message, e);
-    }
-
     private void executeHandler(AutumnRequest req, AutumnResponse res, HttpServletResponse resp, MethodWrapper handlerMethod) {
         //TODO:错误做法,日后修改
         Filter filter = filters.get(0);

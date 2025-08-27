@@ -4,18 +4,17 @@
 ![Java17](https://img.shields.io/badge/JDK-17+-success.svg)
 ![License](https://img.shields.io/npm/l/mithril.svg)
 
+## 求助:
 
-## 写在前面的话:
-- `AutumnFramework模仿了SpringBoot的部分基本特性,但在底层实现上却大有不同,因此仅作为一个兴趣驱动的展示项目`
-- 框架主体是作者在大三实习的时候完成的,所以`不是一个成熟的项目,不会进行过多防御性编程`,源码中只会助力于功能的实现而不会对过于复杂的情况进行额外处理
-- 从0开始手写React的计划也开始了,已实现简单的`React Fiber + Hooks`(已在项目中使用)
-
+公司倒闭了,希望找个工作.杭州,成都,深圳,新加坡均可
+主力是Java,前端会用React,可以搭把手做全栈
+期望薪资:13k+
+联系方式 :zhiyi.wang2002@outlook.com
 
 ## 推荐:
 - [MiniReact:简单的React仿写](https://github.com/ziyuan123456789/mini-react)
-- [MiniReact在线体验(如果打开白屏请F5刷新页面)](https://ziyuan123456789.github.io/)
+- [MiniReact在线体验](https://ziyuan123456789.github.io/)
 - [MineBatis:简单的Mybatis仿写](https://github.com/ziyuan123456789/MineBatis)
-
 
 ## 注意事项:
 - 目前仅支持调用字段的无参默认构创建实例,原则上来说构造器注入也实现了,但问题太多难以维护,不在代码中启用.另外构造器注入会让三级缓存部分失效,因为解决循环依赖的核心是
