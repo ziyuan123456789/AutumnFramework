@@ -14,13 +14,20 @@ import java.util.List;
  * @author ziyuan
  * @since 2023.12
  */
+@Deprecated
 @Slf4j
 public class MyResponse implements AutumnResponse {
+
     private final Socket socket;
+
     private Cookie cookie;
+
     private SocketServerHtmlResponse socketServerHtmlResponse;
+
     private int httpCode = 200;
+
     private String responseText = "";
+
     private View view;
 
     public MyResponse(SocketServerHtmlResponse socketServerHtmlResponse, Socket socket) {

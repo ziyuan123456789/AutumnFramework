@@ -45,21 +45,29 @@ import java.util.concurrent.Executors;
 //@MyComponent
 //@MyConditional(SocketServerConditionCheck.class)
 public class SocketWebServer implements MyWebServer, BeanFactoryAware {
+
     private ExecutorService threadPool;
+
     private ServerSocket serverSocket;
+
     private ApplicationContext beanFactory;
+
     private  SessionManager sessionmanager ;
+
     @MyAutoWired
-    SocketServerHtmlResponse socketServerHtmlResponse;
+    private SocketServerHtmlResponse socketServerHtmlResponse;
+
     @MyAutoWired
-    AnnotationScanner annotationScanner;
+    private AnnotationScanner annotationScanner;
+
     @MyAutoWired
-    JsonFormatter jsonFormatter;
+    private JsonFormatter jsonFormatter;
+
     @Value("port")
     private Integer port;
+
     @Value("threadPoolNums")
     private Integer threadNums;
-
 
     @Override
     public void init() throws Exception {

@@ -11,10 +11,16 @@ import java.util.Map;
  */
 public interface AutumnRequest {
     String getUrl();
+
     String getMethod();
+
     String getBody();
+
     Map<String, String> getParameters();
+
     Cookie[] getCookies();
+
     Cookie getCookieByName(String name);
+
     MySession getSession();
 }

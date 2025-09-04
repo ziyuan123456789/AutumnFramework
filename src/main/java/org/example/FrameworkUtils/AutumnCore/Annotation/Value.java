@@ -6,9 +6,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * @author wsh
- */
 
 /**
  * 用于标记一个字段的值,可以在配置文件中使用

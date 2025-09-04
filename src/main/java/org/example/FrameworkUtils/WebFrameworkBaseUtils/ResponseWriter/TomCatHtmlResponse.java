@@ -26,7 +26,6 @@ public class TomCatHtmlResponse {
 
 
     //直接返回拼接的html文本
-
     public void outPutMessageWriter(HttpServletResponse response, int statusCode, String responseText, javax.servlet.http.Cookie cookie) throws IOException {
         outPutMessageWriter(response, statusCode, responseText, cookie, null);
     }

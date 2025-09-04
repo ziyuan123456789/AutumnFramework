@@ -24,6 +24,7 @@ import java.lang.reflect.Field;
 /**
  * 基于注解的依赖注入处理器
  * 未来剥离对配置文件的处理,单独再写个InstantiationAwareBeanPostProcessor干这件事
+ * 以后会引入@Resource注解
  */
 
 @Slf4j

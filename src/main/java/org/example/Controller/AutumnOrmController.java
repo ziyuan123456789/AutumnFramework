@@ -1,7 +1,6 @@
 package org.example.Controller;
 
 import org.example.Annotations.CheckParameter;
-import org.example.Annotations.EnableAop;
 import org.example.FrameworkUtils.AutumnCore.Annotation.Lazy;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyController;
@@ -66,7 +65,6 @@ public class AutumnOrmController {
     }
 
     //测试数据库功能
-    @EnableAop
     @MyRequestMapping("/Login")
     public String login(@CheckParameter String username,
                         String password) {

@@ -6,9 +6,7 @@ import com.autumn.mvc.ErrorHandler;
 import com.autumn.mvc.PathVariable;
 import com.autumn.mvc.SessionAttribute;
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.Annotation.MyAutoWired;
 import org.example.FrameworkUtils.DataStructure.MethodWrapper;
-import org.example.FrameworkUtils.WebFrameworkBaseUtils.Json.JsonFormatter;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnRequest;
 import org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers.AutumnResponse;
 
@@ -28,9 +26,6 @@ import java.util.Map;
 @Slf4j
 public class BaseInjector implements ControllerInjector {
     //TODO: 也许这个类应该使用注册的方法来拓展功能,硬编码进去有点多了,另外ErrorHandler应该要成为一个通用的设计,不仅仅用在@NotNull等注解上
-
-    @MyAutoWired
-    private JsonFormatter jsonFormatter;
 
     @Override
     public void inject(MethodWrapper wrapper, Object object, Object[] methodParams,

@@ -7,6 +7,7 @@ import java.util.Map;
  * @since 2025.01
  */
 public interface ConfigurableEnvironment extends Environment{
+
     String  DEFAULT_PROFILE = "autumnDefaultProperties";
 
     void setActiveProfiles(String... profiles);

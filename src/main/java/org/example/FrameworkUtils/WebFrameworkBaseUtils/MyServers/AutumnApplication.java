@@ -1,7 +1,6 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.FrameworkUtils.AutumnCore.BeanLoader.AnnotationScanner;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.AutumnFactoriesLoader;
 import org.example.FrameworkUtils.AutumnCore.BeanLoader.BeanDefinitionLoader;
 import org.example.FrameworkUtils.AutumnCore.Bootstrap.BootstrapRegistryInitializer;
@@ -44,8 +43,6 @@ public class AutumnApplication {
 
     private final Set<Class<?>> primarySources;
 
-    private final AnnotationScanner scanner = new AnnotationScanner();
-
     private final List<BootstrapRegistryInitializer> bootstrapRegistryInitializers;
 
     private final Class<?> mainApplicationClass;
@@ -62,7 +59,7 @@ public class AutumnApplication {
 
     private ConfigurableEnvironment environment;
 
-    private static final ApplicationShutdownHook shutdownHook = new ApplicationShutdownHook();
+    private static final ApplicationShutdownHook SHUTDOWN_HOOK = new ApplicationShutdownHook();
 
 
     //在构造方法中确定了扫描的起点以及推断真正的程序入口,并对SPI机制进行初始化,从Meta-INF目录下读取配置文件,进行实例化
@@ -115,7 +112,7 @@ public class AutumnApplication {
         //创建DefaultBootstrapContext,在context没有创建之前提供一个容器,创建引导上下文
         DefaultBootstrapContext bootstrapContext = this.createBootstrapContext();
 
-        //发布start事件
+        //发布start事件,AutumnApplicationRunListener是一个内部监听器,不面向普通开发者
         List<AutumnApplicationRunListener> listeners = getAutumnFactoriesInstances(AutumnApplicationRunListener.class);
         for (AutumnApplicationRunListener listener : listeners) {
             listener.starting(bootstrapContext, mainApplicationClass);
@@ -124,7 +121,7 @@ public class AutumnApplication {
         //包裹命令行/jvm/其他参数
         ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
 
-        //初始化环境配置,例如把主包,主类,主源进行写入保存,准备环境
+        //初始化环境配置,environment于此被创建,并把主包,主类,主源进行写入保存,准备环境
         environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
 
         //依照配置创建beanFactory,默认为`AnnotationConfigServletWebServerApplicationContext`
@@ -143,6 +140,7 @@ public class AutumnApplication {
         context.setEnvironment(environment);
         bootstrapContext.setEnvironment(environment);
 
+        //ApplicationContextInitializer中的initialize方法才开始被调用
         for (ApplicationContextInitializer initializer : initializers) {
             initializer.initialize(context);
         }
@@ -167,6 +165,7 @@ public class AutumnApplication {
 
         /**
          *  load阶段,AnnotatedBeanDefinitionReader在此处被创建,委托创建BeanDefinitionHolder,进一步解析为BeanDefinition
+         *  同时把主配置类进行注册
          *  同时ConfigurationClassPostProcessor于构造器中被创建,记住这个关键的类
          */
         load(context, sources.toArray(new Object[0]));
@@ -177,13 +176,14 @@ public class AutumnApplication {
 
     }
 
+    //开始创建容器,项目中依赖配置容器判断生成类型
     private ConfigurableApplicationContext createApplicationContext() {
 
         if (ApplicationContext.BASE_CONTEXT.equals(environment.getProperty("autumn.beanFactory"))) {
             return new AnnotationConfigServletWebServerApplicationContext();
         } else {
             try {
-                //AutumnCore.Ioc.MyContext 已彻底启用
+                //AutumnCore.Ioc.MyContext 已彻底弃用
                 Method getInstanceMethod = Class.forName("org.example.FrameworkUtils.AutumnCore.Ioc.MyContext").getDeclaredMethod("getInstance");
                 getInstanceMethod.setAccessible(true);
                 return (ConfigurableApplicationContext) getInstanceMethod.invoke(null);
@@ -218,7 +218,7 @@ public class AutumnApplication {
 
     private void refreshContext(AnnotationConfigApplicationContext context) {
         //注册关机钩子
-        shutdownHook.registerApplicationContext(context);
+        SHUTDOWN_HOOK.registerApplicationContext(context);
         //前期工作彻底准备完成,开始refresh
         beanFactory.refresh();
     }
@@ -274,8 +274,8 @@ public class AutumnApplication {
             }
             return result;
         } catch (Exception e) {
-            log.warn("装载失败");
-            return new ArrayList<>();
+            log.warn("装载失败", e);
+            return List.of();
         }
 
     }

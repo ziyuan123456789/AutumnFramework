@@ -17,19 +17,30 @@ import java.util.UUID;
  */
 
 //@SuppressWarnings("all")
+@Deprecated
 @Slf4j
 public class MyRequest {
+
     private final String payload;
+
     private final String body;
+
     private String method;
+
     private String url;
 
     private final Integer contentLength;
+
     private MyMultipartFile myMultipartFile;
+
     private String contentType;
+
     private String boundary;
+
     private final Cookie[] cookie;
+
     private MyContext myContext;
+
     private final SessionManager sessionManager = (SessionManager) myContext.getBean(SessionManager.class.getName());
 
     public MyRequest(String payload, String body, Integer contentLength, ApplicationContext myContext) {
@@ -44,12 +55,6 @@ public class MyRequest {
             this.contentLength = contentLength;
         }
     }
-//    //xxx:文件上传专用
-//    public MyRequest(String payload, String body, Integer contentLength, String contentType, String boundary) {
-//        this(payload, body, contentLength);
-//        this.contentType = contentType;
-//        this.boundary = boundary;
-//    }
 
     //xxx:解析HTTP方法与Url
     private void parseRequest(String payload) {

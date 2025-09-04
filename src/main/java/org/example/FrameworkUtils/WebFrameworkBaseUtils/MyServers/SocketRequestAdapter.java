@@ -9,6 +9,7 @@ import java.util.Map;
  * @author ziyuan
  * @since 2024.05
  */
+@Deprecated
 public class SocketRequestAdapter implements AutumnRequest {
     private final MyRequest originalRequest;
 

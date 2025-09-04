@@ -23,10 +23,15 @@ import java.util.List;
 @Slf4j
 @Data
 public class ServletResponseAdapter implements AutumnResponse {
+
     private final TomCatHtmlResponse tomCatHtmlResponse;
+
     private final HttpServletResponse response;
+
     private int httpCode = HttpServletResponse.SC_OK;
+
     private String responseText = "";
+
     private View view;
 
     public ServletResponseAdapter(HttpServletResponse response, TomCatHtmlResponse tomCatHtmlResponse) {
@@ -67,7 +72,7 @@ public class ServletResponseAdapter implements AutumnResponse {
         try {
             tomCatHtmlResponse.outPutMessageWriter(response, httpCode, responseText, null);
         } catch (IOException e) {
-            log.error("Error in outputMessage", e);
+            log.error(e.getMessage());
         }
     }
 
@@ -77,7 +82,7 @@ public class ServletResponseAdapter implements AutumnResponse {
             String errorTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
             tomCatHtmlResponse.outPutErrorMessageWriter(response, title, code, text, errorTime, null, origins);
         } catch (IOException e) {
-            log.error("Error in outputErrorMessage", e);
+            log.error(e.getMessage());
         }
     }
 
@@ -86,17 +91,16 @@ public class ServletResponseAdapter implements AutumnResponse {
         try {
             tomCatHtmlResponse.outPutHtmlWriter(response, view.getHtmlName(), null);
         } catch (IOException e) {
-            log.error("Error in outputHtml", e);
+            log.error(e.getMessage());
         }
     }
 
     public void outputJavaScriptFile(String filePath) {
         try {
-            // 设置返回内容的类型为 JavaScript
+
             response.setContentType("application/javascript");
             response.setStatus(httpCode);
 
-            // 读取资源文件夹中的文件
             InputStream inputStream = getClass().getClassLoader().getResourceAsStream(filePath);
 
             if (inputStream == null) {
@@ -105,7 +109,6 @@ public class ServletResponseAdapter implements AutumnResponse {
                 return;
             }
 
-            // 将文件内容写入响应
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
                  PrintWriter writer = response.getWriter()) {
 
@@ -117,7 +120,7 @@ public class ServletResponseAdapter implements AutumnResponse {
             }
 
         } catch (IOException e) {
-            log.error("Error in outputJavaScriptFile", e);
+            log.error(e.getMessage());
         }
     }
 

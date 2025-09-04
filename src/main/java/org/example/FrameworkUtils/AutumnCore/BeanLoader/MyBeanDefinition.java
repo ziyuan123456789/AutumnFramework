@@ -39,9 +39,11 @@ public class MyBeanDefinition {
     private Class<?> beanClass;
 
     //错误用法,已经弃用
+    @Deprecated
     private boolean isStarter = false;
 
     //错误用法,已经弃用
+    @Deprecated
     private ObjectFactory<?> starterMethod;
 
     //xxx:是谁成产了这个@bean
@@ -80,7 +82,6 @@ public class MyBeanDefinition {
         this.beanClass = beanClass;
         //在包装为beanDefinition的时候就扫描一下依赖,并保存一下构造器,但大概率构造器注入不会进行起用
         this.scanBeanDependsOn(beanClass);
-//        this.scanInitAndAfterMethod(beanClass);
     }
 
     public MyBeanDefinition(Class<?> beanClass) {
@@ -88,32 +89,12 @@ public class MyBeanDefinition {
         this.name = beanClass.getName();
         this.beanClass = beanClass;
         this.scanBeanDependsOn(beanClass);
-//        this.scanInitAndAfterMethod(beanClass);
     }
 
     //无参构造方法,一切由你来决定
     public MyBeanDefinition( ){
 
     }
-
-//    private void scanInitAndAfterMethod(Class<?> beanClass) {
-//        if (beanClass.getName().contains("$$EnhancerByCGLIB")) {
-//            beanClass = beanClass.getSuperclass();
-//        }
-//        Method[] declaredMethods = beanClass.getDeclaredMethods();
-//        for (Method method : declaredMethods) {
-//            method.setAccessible(true);
-//            if (method.getAnnotation(MyPostConstruct.class) != null) {
-//                this.initMethod.add(method);
-//                this.initMethodName.add(method.getName());
-//            }
-//            if (method.getAnnotation(MyPreDestroy.class) != null) {
-//                this.afterMethod.add(method);
-//                this.afterMethodName.add(method.getName());
-//            }
-//        }
-//    }
-
 
     private void scanBeanDependsOn(Class<?> beanClass) {
 

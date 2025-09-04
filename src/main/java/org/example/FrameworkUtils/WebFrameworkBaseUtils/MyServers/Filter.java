@@ -6,6 +6,6 @@ package org.example.FrameworkUtils.WebFrameworkBaseUtils.MyServers;
  */
 public interface Filter {
 
-    //xxx:拦截逻辑
+    //拦截逻辑
     boolean doChain(AutumnRequest autumnRequest, AutumnResponse autumnResponse);
 }

@@ -20,4 +20,5 @@ import java.lang.annotation.Target;
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MyConfig {
+    boolean proxyBeanMethods() default true;
 }

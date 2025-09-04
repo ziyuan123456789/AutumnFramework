@@ -30,18 +30,19 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 @MyComponent
+@Deprecated
 public class SocketServerHtmlResponse implements BeanFactoryAware {
+
     @MyAutoWired
-    ResourceFinder resourceFinder;
+    private ResourceFinder resourceFinder;
+
     @MyAutoWired
-    CrossOriginBean crossOriginBean;
+    private CrossOriginBean crossOriginBean;
+
     @MyAutoWired
-    AnnotationScanner annotationScanner;
+    private AnnotationScanner annotationScanner;
 
     private ApplicationContext beanFactory;
-
-
-
 
     //xxx:http返回报文(直接返回拼接的html文本,Content-Type: text/html)
     public void outPutMessageWriter(Socket socket, int statusCode, String responseText,Cookie cookie) throws IOException {

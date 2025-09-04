@@ -7,6 +7,7 @@ import javax.servlet.http.HttpSession;
  * @since 2024.05
  */
 public class HttpSessionAdapter extends MySession {
+
     private HttpSession httpSession;
 
     public HttpSessionAdapter(HttpSession session) {

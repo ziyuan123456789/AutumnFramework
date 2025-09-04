@@ -1,5 +1,6 @@
 package org.example.FrameworkUtils.WebFrameworkBaseUtils.Json;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.FrameworkUtils.AutumnCore.Annotation.MyComponent;
 
 import java.lang.reflect.Field;
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
  * @author ziyuan
  * @since 2023.11
  */
+@Slf4j
 @MyComponent
 public class JsonFormatter {
 
@@ -33,7 +35,7 @@ public class JsonFormatter {
                             String value = toJson(entry.getValue());
                             return "\"" + key + "\":" + value;
                         } catch (IllegalAccessException e) {
-                            e.printStackTrace();
+                            log.error(e.getMessage());
                             return "";
                         }
                     })
@@ -48,7 +50,7 @@ public class JsonFormatter {
                         try {
                             return toJson(item);
                         } catch (IllegalAccessException e) {
-                            e.printStackTrace();
+                            log.error(e.getMessage());
                             return "";
                         }
                     })
@@ -66,7 +68,7 @@ public class JsonFormatter {
                         String jsonValue = toJson(value);
                         return "\"" + name + "\":" + jsonValue;
                     } catch (IllegalAccessException e) {
-                        e.printStackTrace();
+                        log.error(e.getMessage());
                         return "";
                     }
                 })

@@ -11,9 +11,13 @@ import java.util.List;
  */
 public interface AutumnResponse {
     AutumnResponse setView(View view);
+
     AutumnResponse setCookie(Cookie cookie);
+
     AutumnResponse setCode(int code);
+
     AutumnResponse setResponseText(String responseText);
+
     void outputMessage();
 
     void outputErrorMessage(String title, String text, int code, List<String> origins);

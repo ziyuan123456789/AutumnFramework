@@ -13,9 +13,6 @@ import java.util.stream.Collectors;
  * @since 2025.01
  */
 
-/**
- * 环境确实会改变人,当你知道年终奖鸡毛没发的时候,你就想run了
- */
 @Slf4j
 public class DefaultEnvironment implements ConfigurableEnvironment {
 

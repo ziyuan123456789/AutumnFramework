@@ -16,9 +16,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @MyComponent
 public class SessionManager implements Serializable {
+
     private ConcurrentHashMap<String, MySession> sessions = new ConcurrentHashMap<>();
+
     @MyAutoWired
-    MyRedisTemplate myRedisTemplate;
+    private MyRedisTemplate myRedisTemplate;
 
     public MySession getSession(String sessionId) {
         if (sessionId != null && sessions.containsKey(sessionId)) {

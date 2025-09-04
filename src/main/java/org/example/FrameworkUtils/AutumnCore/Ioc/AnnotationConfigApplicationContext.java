@@ -18,6 +18,11 @@ import org.example.FrameworkUtils.AutumnCore.compare.AnnotationInterfaceAwareOrd
 import org.example.FrameworkUtils.AutumnCore.env.ApplicationArguments;
 import org.example.FrameworkUtils.AutumnCore.env.Environment;
 import org.example.FrameworkUtils.Exception.BeanCreationException;
+import static org.example.FrameworkUtils.Utils.ColorHelper.ANSI_BOLD;
+import static org.example.FrameworkUtils.Utils.ColorHelper.ANSI_GREEN;
+import static org.example.FrameworkUtils.Utils.ColorHelper.ANSI_RED;
+import static org.example.FrameworkUtils.Utils.ColorHelper.ANSI_RESET;
+import static org.example.FrameworkUtils.Utils.ColorHelper.ANSI_YELLOW;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -120,7 +125,6 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
 
     private long startupDate;
 
-    public static final String ANSI_YELLOW = "\u001B[33m";
 
     /**
      * 某些情况下使用beanFactory来进行getBean是一件危险的事情
@@ -174,8 +178,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         this.earlySingletonObjects.remove(beanName);
         this.registeredSingletons.add(beanName);
     }
-    public static final String ANSI_PURPLE = "\u001B[35m";
-    public static final String ANSI_CYAN = "\u001B[36m";
+
 
     private Object initializeBean(String beanName, Object bean, MyBeanDefinition mbd) {
         invokeAwareMethods(beanName, bean);
@@ -232,7 +235,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
             }
         }
     }
-    public static final String ANSI_BOLD = "\u001B[1m";
+
 
     private void invokeAwareMethods(String beanName, Object bean) {
 
@@ -247,7 +250,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         }
 
     }
-    public static final String ANSI_GREEN = "\u001B[32m";
+
 
 
     <T> T adaptBeanInstance(String name, Object bean) {
@@ -335,8 +338,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         }
         return result;
     }
-    public static final String ANSI_RED = "\u001B[31m";
-    public static final String ANSI_RESET = "\u001B[0m";
+
 
     //自定义实现BeanPostProcessor执行before方法
     protected Object applyBeanPostProcessorsBeforeInstantiation(Class<?> beanClass, String beanName) {
@@ -406,7 +408,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         }
 
     }
-    public static final String ANSI_BLACK = "\u001B[30m";
+
 
     //容器开始刷新,核心起点
     @Override
@@ -510,6 +512,11 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         return adaptBeanInstance(beanName, beanInstance);
     }
 
+    /**
+     * 准备开始创建Bean
+     * 调用 InstantiationAwareBeanPostProcessor,逐个问问要不要直接返回一个Bean
+     * 如果返回不为空,那么直接返回不进行后续的反射创建步骤
+     */
     private Object createBean(String beanName, MyBeanDefinition mbd, Object[] args) {
         //执行BeanPostProcessor
         Object bean = resolveBeforeInstantiation(beanName, mbd);
@@ -529,7 +536,9 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
      * 真正的开始创建Bean
      */
     private Object doCreateBean(String beanName, MyBeanDefinition mbd, Object[] args) {
+        //反射创建Bean的实例,是一个崭新的空对象
         Object instance = createBeanInstance(beanName, mbd, args);
+        //利用一个set去追踪正在创建的Bean,如果循环依赖放置一个工厂,承诺未来能拿到这个Bean,Aop可以在后期介入
         if (isSingletonCurrentlyInCreation(beanName)) {
             addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, instance));
         }
@@ -542,7 +551,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     }
 
     /**
-     * Aop起点
+     * Aop起点之一
      */
     protected Object getEarlyBeanReference(String beanName, MyBeanDefinition mbd, Object bean) {
         Object exposedObject = bean;
@@ -558,7 +567,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     private void populateBean(String beanName, MyBeanDefinition mbd, Object instance) {
         for (BeanPostProcessor beanPostProcessor : beanPostProcessors) {
             if (beanPostProcessor instanceof InstantiationAwareBeanPostProcessor ibp) {
-                //AutowiredAnnotationBeanPostProcessor接入
+                //AutowiredAnnotationBeanPostProcessor介入
                 instance = ibp.postProcessProperties(instance, beanName);
             }
         }
@@ -638,10 +647,10 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     protected Object resolveBeforeInstantiation(String beanName, MyBeanDefinition mbd) {
 
         Object bean;
-        //自定义实现BeanPostProcessor执行before方法
+        //自定义实现InstantiationAwareBeanPostProcessor执行before方法
         bean = applyBeanPostProcessorsBeforeInstantiation(mbd.getBeanClass(), beanName);
         if (bean != null) {
-            //如果BeanPostProcessor返回了一个非null的对象,那么继续执行BeanPostProcessor的postProcessAfterInitialization
+            //如果返回了一个非null的对象,那么继续执行BeanPostProcessor的postProcessAfterInitialization
             bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
         }
         return bean;
@@ -701,7 +710,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
 
     }
 
-    //对容器中的对象进行全部getBean,因为Aop部分我参考Spring的实现,因此我需要单独初始化我的AutumnAopFactory
+    //对容器中的对象进行全部getBean,因为Aop部分我没有参考Spring的实现,因此我需要单独初始化我的AutumnAopFactory
     private void finishBeanFactoryInitialization(ConfigurableApplicationContext fatory) {
         for (Map.Entry<String, MyBeanDefinition> entry : fatory.getBeanDefinitionMap().entrySet()) {
             String beanName = entry.getKey();

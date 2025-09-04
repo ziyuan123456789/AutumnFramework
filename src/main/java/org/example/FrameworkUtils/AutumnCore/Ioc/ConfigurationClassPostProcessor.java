@@ -53,7 +53,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 
     @Override
-    public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, BeanDefinitionRegistry registry) throws Exception {
+    public void postProcessBeanDefinitionRegistry(AnnotationScanner scanner, BeanDefinitionRegistry registry) {
         this.scanner = scanner;
         this.conditionEvaluator = new ConditionEvaluator(registry);
         this.annotatedBeanDefinitionReader = new AnnotatedBeanDefinitionReader(registry);

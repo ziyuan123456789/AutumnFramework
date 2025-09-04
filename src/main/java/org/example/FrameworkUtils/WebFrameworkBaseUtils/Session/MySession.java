@@ -10,15 +10,19 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Data
 public class MySession {
+
     private String  sessionId;
+
     private ConcurrentHashMap<String,Object> indexMap=new ConcurrentHashMap<>();
 
     public MySession(String sessionId) {
         this.sessionId = sessionId;
     }
+
     public void setAttribute(String key,Object value){
         indexMap.put(key,value);
     }
+
     public Object getAttribute(String key){
         return indexMap.get(key);
     }

@@ -20,7 +20,7 @@ import java.util.concurrent.TimeoutException;
  * @author ziyuan
  * @since 2024.04
  */
-@MyConfig
+@MyConfig(proxyBeanMethods = false)
 @Slf4j
 public class BeanTestConfig {
 
