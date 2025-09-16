@@ -6,10 +6,13 @@
 
 ## 求助:
 
-公司倒闭了,希望找个工作.杭州,成都,深圳,新加坡均可
-主力是Java,前端会用React,可以搭把手做全栈
-期望薪资:13k+
-联系方式 :zhiyi.wang2002@outlook.com
+[//]: # (公司倒闭了,希望找个工作.杭州,成都,深圳,新加坡均可)
+
+[//]: # (主力是Java,前端会用React,可以搭把手做全栈)
+
+[//]: # (期望薪资:13k+)
+
+[//]: # (联系方式 :zhiyi.wang2002@outlook.com)
 
 ## 推荐:
 - [MiniReact:简单的React仿写](https://github.com/ziyuan123456789/mini-react)

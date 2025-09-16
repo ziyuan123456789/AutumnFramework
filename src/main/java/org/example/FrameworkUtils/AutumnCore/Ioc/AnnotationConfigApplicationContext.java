@@ -126,6 +126,250 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     private long startupDate;
 
 
+    //容器开始刷新,核心起点
+    @Override
+    public void refresh() {
+        log.info(ANSI_BOLD + ANSI_GREEN + "==== 容器开始refresh ====" + ANSI_RESET);
+
+        //刷新前的准备,记录当前时间戳
+        prepareRefresh();
+        log.info(ANSI_YELLOW + "==== prepareRefresh阶段结束, 容器刷新前做准备, 创建一些高人一等的EarlyApplicationListeners ====" + ANSI_RESET);
+
+        //BeanFactory前准备
+        prepareBeanFactory(this);
+        log.info(ANSI_YELLOW + "==== prepareBeanFactory阶段结束, 创建ApplicationContextAwareProcessor ====" + ANSI_RESET);
+
+        try {
+            //模板方法
+            postProcessBeanFactory(this);
+            log.info(ANSI_YELLOW + "==== postProcessBeanFactory阶段结束, 本项目没有制作扩展 ====" + ANSI_RESET);
+
+            //调用BeanFactory后置处理器,因为 ConfigurationClassPostProcessor 的存在,绝大部分Bean定义包装完成
+            invokeBeanFactoryPostProcessors();
+            log.info(ANSI_YELLOW + "==== invokeBeanFactoryPostProcessors阶段结束, 调用BeanFactory后置处理器, 允许引入更多BeanDefinition ====" + ANSI_RESET);
+
+            //注册实例化Bean后置处理器
+            registerBeanPostProcessors(this);
+            log.info(ANSI_YELLOW + "==== registerBeanPostProcessors阶段结束, AOP处理器等在此处被注册 ====" + ANSI_RESET);
+
+            //初始化事件广播器
+            initApplicationEventMulticaster();
+            log.info(ANSI_YELLOW + "==== initApplicationEventMulticaster阶段结束, 初始化事件广播器 ====" + ANSI_RESET);
+
+            //模板方法, Web容器初始化
+            onRefresh();
+            log.info(ANSI_YELLOW + "==== onRefresh阶段结束, Web容器初始化 ====" + ANSI_RESET);
+
+            //注册监听器
+            registerListeners();
+            log.info(ANSI_YELLOW + "==== registerListeners阶段结束, 注册监听器 ====" + ANSI_RESET);
+
+            //实例化所有的Bean
+            finishBeanFactoryInitialization(this);
+            log.info(ANSI_YELLOW + "==== finishBeanFactoryInitialization阶段结束, 所有非懒加载单例Bean均被初始化 ====" + ANSI_RESET);
+
+            //刷新完成
+            finishRefresh();
+            log.info(ANSI_BOLD + ANSI_GREEN + "==== 容器refresh结束, 刷新完成 ====" + ANSI_RESET);
+
+        } catch (Exception e) {
+            log.error(ANSI_RED + "容器刷新失败: {}" + ANSI_RESET, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void prepareRefresh() {
+        /**
+         * 在AutumnApplication的run方法中,env已经生成,所以无需二次生成,spring的这种设计是为了防止你直接创建一个context出来而并非AutumnApplication来生成
+         * 因此需要检测env是否存在,没有的话重新创建一个
+         */
+        this.startupDate = System.currentTimeMillis();
+        if (this.earlyApplicationListeners == null) {
+            this.earlyApplicationListeners = new LinkedHashSet<>(this.applicationListeners);
+        } else {
+            //refresh阶段可以二次调用,因此存在earlyApplicationListeners不为null的情况
+            this.applicationListeners.clear();
+            this.applicationListeners.addAll(this.earlyApplicationListeners);
+        }
+        this.earlyApplicationEvents = new HashSet<>();
+    }
+
+    private void prepareBeanFactory(ConfigurableApplicationContext beanFactory) {
+        /**
+         * 其实我有点理解不来ApplicationContextAwareProcessor的作用 既然在invokeAwareMethods就已经可以setAware了,而且invokeAwareMethods可以处理的类远远比ApplicationContextAwareProcessor更多,更早
+         * 任何经过spring创建的对象都应该可以被invokeAwareMethods处理,为何不直接增强invokeAwareMethods的功能呢?
+         * 我只能解释为ApplicationContextAwareProcessor的功能更多更全
+         */
+        beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
+    }
+
+
+    protected void postProcessBeanFactory(ConfigurableApplicationContext beanFactory) {
+    }
+
+    /**
+     * springboot中这个方法实现的太麻烦了,这一块我简化了一下,不和他写一样了
+     * 本质上来说就是允许BeanDefinitionRegistryPostProcessor继续引入BeanDefinitionRegistryPostProcessor 其他的BeanDefinitionRegistryPostProcessor也可以继续引入..以此类推
+     * 而且还得保证顺序的准确
+     */
+    private void invokeBeanFactoryPostProcessors() throws Exception {
+        AnnotationScanner scanner = new AnnotationScanner();
+
+        Queue<BeanDefinitionRegistryPostProcessor> processingQueue = new LinkedList<>();
+        Set<BeanDefinitionRegistryPostProcessor> processedRegistryPostProcessors = new HashSet<>();
+        Set<String> beanFactoryPostProcessorHashSet = new HashSet<>();
+        for (BeanFactoryPostProcessor bfp : beanFactoryPostProcessors) {
+            if (bfp instanceof BeanDefinitionRegistryPostProcessor bdp) {
+                processingQueue.add(bdp);
+            }
+        }
+
+
+        for (Map.Entry<String, MyBeanDefinition> entry : beanDefinitionMap.entrySet()) {
+            Class<?> beanClass = entry.getValue().getBeanClass();
+            if (BeanDefinitionRegistryPostProcessor.class.isAssignableFrom(beanClass)) {
+                processingQueue.add((BeanDefinitionRegistryPostProcessor) getBean(entry.getKey()));
+            }
+            if (BeanFactoryPostProcessor.class.isAssignableFrom(beanClass)) {
+                beanFactoryPostProcessors.add((BeanFactoryPostProcessor) getBean(entry.getKey()));
+                beanFactoryPostProcessorHashSet.add(entry.getKey());
+            }
+        }
+
+        annotationInterfaceAwareOrderComparator.compare(beanFactoryPostProcessors);
+        annotationInterfaceAwareOrderComparator.compare(processingQueue);
+
+        boolean newPostProcessorsAdded = true;
+
+        while (newPostProcessorsAdded) {
+            newPostProcessorsAdded = false;
+            int size = processingQueue.size();
+            for (int i = 0; i < size; i++) {
+                BeanDefinitionRegistryPostProcessor postProcessor = processingQueue.poll();
+                if (!processedRegistryPostProcessors.contains(postProcessor)) {
+                    processedRegistryPostProcessors.add(postProcessor);
+                    if (postProcessor != null) {
+                        postProcessor.postProcessBeanDefinitionRegistry(scanner, this);
+                    }
+                    for (Map.Entry<String, MyBeanDefinition> entry : beanDefinitionMap.entrySet()) {
+                        Class<?> beanClass = entry.getValue().getBeanClass();
+                        if (BeanDefinitionRegistryPostProcessor.class.isAssignableFrom(beanClass)) {
+                            BeanDefinitionRegistryPostProcessor newPostProcessor = (BeanDefinitionRegistryPostProcessor) getBean(entry.getKey());
+                            if (!processedRegistryPostProcessors.contains(newPostProcessor)) {
+                                annotationInterfaceAwareOrderComparator.compare(processingQueue);
+                                processingQueue.add(newPostProcessor);
+                                newPostProcessorsAdded = true;
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+
+        for (Map.Entry<String, MyBeanDefinition> entry : beanDefinitionMap.entrySet()) {
+            Class<?> beanClass = entry.getValue().getBeanClass();
+            if (BeanFactoryPostProcessor.class.isAssignableFrom(beanClass)) {
+                if (!beanFactoryPostProcessorHashSet.contains(entry.getKey())) {
+                    beanFactoryPostProcessors.add((BeanFactoryPostProcessor) getBean(entry.getKey()));
+                }
+            }
+        }
+
+
+        for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
+            postProcessor.postProcessBeanFactory(scanner, this);
+        }
+
+
+    }
+
+    //注册并实例化BeanPostProcessors
+    private void registerBeanPostProcessors(ConfigurableApplicationContext configurableApplicationContext) {
+        List<BeanPostProcessor> annoPriorityOrderedPostProcessors = new ArrayList<>();
+        List<BeanPostProcessor> priorityOrderedPostProcessors = new ArrayList<>();
+        List<String> orderedPostProcessorNames = new ArrayList<>();
+        List<String> nonOrderedPostProcessorNames = new ArrayList<>();
+
+        for (Map.Entry<String, MyBeanDefinition> entry : configurableApplicationContext.getBeanDefinitionMap().entrySet()) {
+            Class<?> beanClass = entry.getValue().getBeanClass();
+            if (BeanPostProcessor.class.isAssignableFrom(beanClass)) {
+                if (beanClass.isAnnotationPresent(MyOrder.class)) {
+                    BeanPostProcessor beanPostProcessor = (BeanPostProcessor) configurableApplicationContext.getBean(entry.getKey());
+                    annoPriorityOrderedPostProcessors.add(beanPostProcessor);
+                }
+                if (beanClass.isAssignableFrom(PriorityOrdered.class)) {
+                    BeanPostProcessor beanPostProcessor = (BeanPostProcessor) configurableApplicationContext.getBean(entry.getKey());
+                    priorityOrderedPostProcessors.add(beanPostProcessor);
+                } else if (beanClass.isAssignableFrom(Ordered.class)) {
+                    orderedPostProcessorNames.add(entry.getKey());
+                } else {
+                    nonOrderedPostProcessorNames.add(entry.getKey());
+                }
+            }
+        }
+
+        int beanProcessorTargetCount = beanPostProcessors.size() + 1 + annoPriorityOrderedPostProcessors.size() + priorityOrderedPostProcessors.size() + orderedPostProcessorNames.size() + nonOrderedPostProcessorNames.size();
+//        this.addBeanPostProcessor(new BeanPostProcessorChecker(beanFactory, postProcessorNames, beanProcessorTargetCount));
+
+        annotationInterfaceAwareOrderComparator.compare(annoPriorityOrderedPostProcessors);
+        registerBeanPostProcessors(annoPriorityOrderedPostProcessors);
+
+        annotationInterfaceAwareOrderComparator.compare(priorityOrderedPostProcessors);
+        registerBeanPostProcessors(priorityOrderedPostProcessors);
+
+
+        List<BeanPostProcessor> orderedPostProcessors = new ArrayList<>(orderedPostProcessorNames.size());
+        for (String ppName : orderedPostProcessorNames) {
+            BeanPostProcessor pp = (BeanPostProcessor) getBean(ppName);
+            orderedPostProcessors.add(pp);
+        }
+        annotationInterfaceAwareOrderComparator.compare(orderedPostProcessors);
+        registerBeanPostProcessors(orderedPostProcessors);
+
+
+        List<BeanPostProcessor> nonOrderedPostProcessors = new ArrayList<>(nonOrderedPostProcessorNames.size());
+        for (String ppName : nonOrderedPostProcessorNames) {
+            BeanPostProcessor pp = (BeanPostProcessor) getBean(ppName);
+            nonOrderedPostProcessors.add(pp);
+        }
+        annotationInterfaceAwareOrderComparator.compare(nonOrderedPostProcessors);
+        registerBeanPostProcessors(nonOrderedPostProcessors);
+//        this.addBeanPostProcessor(new ApplicationListenerDetector(applicationContext));
+    }
+
+    private void initApplicationEventMulticaster() {
+        this.applicationEventMulticaster = new SimpleApplicationEventMulticaster(this);
+        registerSingleton("applicationEventMulticaster", this.applicationEventMulticaster);
+
+    }
+
+
+    protected void onRefresh() {
+    }
+
+
+    //发布ContextRefreshedEvent事件
+    private void finishRefresh() {
+        this.publishEvent(new ContextRefreshedEvent(new Object()));
+    }
+
+
+    private void registerListeners() {
+        for (ApplicationListener<ApplicationEvent> listener : getApplicationListeners()) {
+            addApplicationListener(listener);
+        }
+
+        for (MyBeanDefinition df : beanDefinitionMap.values()) {
+            if (ApplicationListener.class.isAssignableFrom(df.getBeanClass())) {
+                addApplicationListener((ApplicationListener<ApplicationEvent>) getBean(df.getName()));
+            }
+        }
+
+    }
+
+
+
     /**
      * 某些情况下使用beanFactory来进行getBean是一件危险的事情
      * 特别在自动注入的时机未到来的地方,例如(BeanDefinitionRegistryPostProcessor ,BeanFactoryPostProcessor,BeanPostProcessor)
@@ -136,7 +380,57 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     public Object getBean(String name) {
         return doGetBean(name);
     }
-    public static final String ANSI_BLUE = "\u001B[34m";
+
+    private Object doGetBean(String name) {
+        //进行一次名字转换,处理&前缀
+        String beanName = transformedBeanName(name);
+        Object beanInstance;
+        Object sharedInstance = getSingleton(beanName, true);
+        if (sharedInstance != null) {
+            beanInstance = getObjectForBeanInstance(sharedInstance, name, beanName);
+        } else {
+            //如果没有内容,但是存在Bean定义
+            if (!containsBeanDefinition(beanName)) {
+                try {
+                    for (MyBeanDefinition myBeanDefinition : beanDefinitionMap.values()) {
+                        if (myBeanDefinition.isFactoryBean()) {
+                            Class<?> clazz = Class.forName(beanName);
+                            Object o = getBean(myBeanDefinition.getName());
+                            if (clazz.isAssignableFrom(o.getClass())) {
+                                return o;
+                            }
+
+                        }
+                    }
+                    throw new BeanCreationException(beanName);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            try {
+                //获取Bean定义
+                MyBeanDefinition mbd = getBeanDefinition(beanName);
+                //找一下依赖关系,DependsOn注解声明这个依赖关系
+                List<String> dependsOn = mbd.getDependsOn();
+                if (dependsOn != null) {
+                    for (String dep : dependsOn) {
+                        registerDependentBean(dep, beanName);
+                        getBean(dep);
+                    }
+                }
+
+//                if (Scope.SINGLETON.equals(mbd.getScope())) {
+                String finalBeanName = beanName;
+                sharedInstance = getSingleton(beanName, () -> createBean(finalBeanName, mbd, null));
+                beanInstance = getObjectForBeanInstance(sharedInstance, name, beanName);
+//                }
+            } catch (Exception ignored) {
+                throw new RuntimeException(ignored);
+            }
+        }
+        return adaptBeanInstance(beanName, beanInstance);
+    }
+
 
     private String transformedBeanName(String name) {
         String beanName = name;
@@ -168,6 +462,95 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         return singletonObject;
     }
 
+    /**
+     * 准备开始创建Bean
+     * 调用 InstantiationAwareBeanPostProcessor,逐个问问要不要直接返回一个Bean
+     * 如果返回不为空,那么直接返回不进行后续的反射创建步骤
+     */
+    private Object createBean(String beanName, MyBeanDefinition mbd, Object[] args) {
+        //执行BeanPostProcessor
+        Object bean = resolveBeforeInstantiation(beanName, mbd);
+        if (bean != null) {
+            return bean;
+        }
+
+        try {
+            return doCreateBean(beanName, mbd, args);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw new BeanCreationException(e);
+        }
+    }
+
+    protected Object resolveBeforeInstantiation(String beanName, MyBeanDefinition mbd) {
+
+        Object bean;
+        //自定义实现InstantiationAwareBeanPostProcessor执行before方法
+        bean = applyBeanPostProcessorsBeforeInstantiation(mbd.getBeanClass(), beanName);
+        if (bean != null) {
+            //如果返回了一个非null的对象,那么继续执行BeanPostProcessor的postProcessAfterInitialization
+            bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
+        }
+        return bean;
+    }
+
+    /**
+     * 真正的开始创建Bean
+     */
+    private Object doCreateBean(String beanName, MyBeanDefinition mbd, Object[] args) {
+        //反射创建Bean的实例,是一个崭新的空对象
+        Object instance = createBeanInstance(beanName, mbd, args);
+        //利用一个set去追踪正在创建的Bean,如果循环依赖放置一个工厂,承诺未来能拿到这个Bean,Aop可以在后期介入
+        if (isSingletonCurrentlyInCreation(beanName)) {
+            addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, instance));
+        }
+
+        //进行依赖注入
+        populateBean(beanName, mbd, instance);
+        Object exposedObject = instance;
+        exposedObject = initializeBean(beanName, exposedObject, mbd);
+        return exposedObject;
+    }
+
+    protected void addSingletonFactory(String beanName, ObjectFactory<?> singletonFactory) {
+        synchronized (this.singletonObjects) {
+            if (!this.singletonObjects.containsKey(beanName)) {
+                this.singletonFactories.put(beanName, singletonFactory);
+                this.earlySingletonObjects.remove(beanName);
+            }
+        }
+    }
+
+    //进行依赖注入
+    private void populateBean(String beanName, MyBeanDefinition mbd, Object instance) {
+        for (BeanPostProcessor beanPostProcessor : beanPostProcessors) {
+            if (beanPostProcessor instanceof InstantiationAwareBeanPostProcessor ibp) {
+                //AutowiredAnnotationBeanPostProcessor介入
+                instance = ibp.postProcessProperties(instance, beanName);
+            }
+        }
+
+    }
+
+    //开始初始化Bean
+    private Object initializeBean(String beanName, Object bean, MyBeanDefinition mbd) {
+        //调用BeanNameAware  BeanFactoryAware等Aware接口
+        invokeAwareMethods(beanName, bean);
+        Object wrappedBean = bean;
+        //调用所有BeanPostProcessor.postProcessBeforeInitialization
+        wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
+        try {
+            //调用Bean自身的初始化方法 ,先是InitializingBean的afterPropertiesSet() 然后是自定义的init-method
+            invokeInitMethods(beanName, wrappedBean, mbd);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        //调用所有BeanPostProcessor.postProcessAfterInitialization,Aop代理二次介入,第一次是循环依赖放置AOP工厂那一步
+        wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
+        return wrappedBean;
+
+    }
+
 
     protected void addSingleton(String beanName, Object singletonObject) {
         Object oldObject = this.singletonObjects.putIfAbsent(beanName, singletonObject);
@@ -180,19 +563,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     }
 
 
-    private Object initializeBean(String beanName, Object bean, MyBeanDefinition mbd) {
-        invokeAwareMethods(beanName, bean);
-        Object wrappedBean = bean;
-        wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
-        try {
-            invokeInitMethods(beanName, wrappedBean, mbd);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
-        return wrappedBean;
 
-    }
 
     public Object applyBeanPostProcessorsBeforeInitialization(Object existingBean, String beanName) {
 
@@ -208,14 +579,17 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     }
 
 
+    //调用Bean的初始化方法
     private void invokeInitMethods(String beanName, Object wrappedBean, MyBeanDefinition mbd) {
         if (wrappedBean instanceof InitializingBean ib) {
+            //先处理 InitializingBean
             ib.afterPropertiesSet();
         }
 
         if (mbd.getInitMethod() != null) {
             try {
                 for (Method method : mbd.getInitMethod()) {
+                    //然后是自定义的init-method
                     method.invoke(wrappedBean);
                 }
             } catch (Exception e) {
@@ -225,16 +599,8 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         }
 
     }
-    public static final String ANSI_WHITE = "\u001B[37m";
 
-    protected void addSingletonFactory(String beanName, ObjectFactory<?> singletonFactory) {
-        synchronized (this.singletonObjects) {
-            if (!this.singletonObjects.containsKey(beanName)) {
-                this.singletonFactories.put(beanName, singletonFactory);
-                this.earlySingletonObjects.remove(beanName);
-            }
-        }
-    }
+
 
 
     private void invokeAwareMethods(String beanName, Object bean) {
@@ -249,13 +615,6 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
             beanFactoryAware.setBeanFactory(this);
         }
 
-    }
-
-
-
-    <T> T adaptBeanInstance(String name, Object bean) {
-
-        return (T) bean;
     }
 
 
@@ -358,6 +717,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName) throws BeanCreationException {
         Object result = existingBean;
         for (BeanPostProcessor processor : beanPostProcessors) {
+            //AnnotationAwareAspectJAutoProxyCreator 介入,代理类生成后替换
             Object current = processor.postProcessAfterInitialization(result, beanName);
             if (current == null) {
                 return result;
@@ -410,145 +770,6 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     }
 
 
-    //容器开始刷新,核心起点
-    @Override
-    public void refresh() {
-        log.info(ANSI_BOLD + ANSI_GREEN + "==== 容器开始refresh ====" + ANSI_RESET);
-
-        //刷新前的准备,记录当前时间戳
-        prepareRefresh();
-        log.info(ANSI_YELLOW + "==== prepareRefresh阶段结束, 容器刷新前做准备, 创建一些高人一等的EarlyApplicationListeners ====" + ANSI_RESET);
-
-        //BeanFactory前准备
-        prepareBeanFactory(this);
-        log.info(ANSI_YELLOW + "==== prepareBeanFactory阶段结束, 创建ApplicationContextAwareProcessor ====" + ANSI_RESET);
-
-        try {
-            //模板方法
-            postProcessBeanFactory(this);
-            log.info(ANSI_YELLOW + "==== postProcessBeanFactory阶段结束, 本项目没有制作扩展 ====" + ANSI_RESET);
-
-            //调用BeanFactory后置处理器,因为 ConfigurationClassPostProcessor 的存在,绝大部分Bean定义包装完成
-            invokeBeanFactoryPostProcessors();
-            log.info(ANSI_YELLOW + "==== invokeBeanFactoryPostProcessors阶段结束, 调用BeanFactory后置处理器, 允许引入更多BeanDefinition ====" + ANSI_RESET);
-
-            //注册实例化Bean后置处理器
-            registerBeanPostProcessors(this);
-            log.info(ANSI_YELLOW + "==== registerBeanPostProcessors阶段结束, AOP处理器等在此处被注册 ====" + ANSI_RESET);
-
-            //初始化事件广播器
-            initApplicationEventMulticaster();
-            log.info(ANSI_YELLOW + "==== initApplicationEventMulticaster阶段结束, 初始化事件广播器 ====" + ANSI_RESET);
-
-            //模板方法, Web容器初始化
-            onRefresh();
-            log.info(ANSI_YELLOW + "==== onRefresh阶段结束, Web容器初始化 ====" + ANSI_RESET);
-
-            //注册监听器
-            registerListeners();
-            log.info(ANSI_YELLOW + "==== registerListeners阶段结束, 注册监听器 ====" + ANSI_RESET);
-
-            //实例化所有的Bean
-            finishBeanFactoryInitialization(this);
-            log.info(ANSI_YELLOW + "==== finishBeanFactoryInitialization阶段结束, 所有非懒加载单例Bean均被初始化 ====" + ANSI_RESET);
-
-            //刷新完成
-            finishRefresh();
-            log.info(ANSI_BOLD + ANSI_GREEN + "==== 容器refresh结束, 刷新完成 ====" + ANSI_RESET);
-
-        } catch (Exception e) {
-            log.error(ANSI_RED + "容器刷新失败: {}" + ANSI_RESET, e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Object doGetBean(String name) {
-        //进行一次名字转换,处理&前缀
-        String beanName = transformedBeanName(name);
-        Object beanInstance;
-        Object sharedInstance = getSingleton(beanName, true);
-        if (sharedInstance != null) {
-            beanInstance = getObjectForBeanInstance(sharedInstance, name, beanName);
-        } else {
-            //如果没有内容,但是存在Bean定义
-            if (!containsBeanDefinition(beanName)) {
-                try {
-                    for (MyBeanDefinition myBeanDefinition : beanDefinitionMap.values()) {
-                        if (myBeanDefinition.isFactoryBean()) {
-                            Class<?> clazz = Class.forName(beanName);
-                            Object o = getBean(myBeanDefinition.getName());
-                            if (clazz.isAssignableFrom(o.getClass())) {
-                                return o;
-                            }
-
-                        }
-                    }
-                    throw new BeanCreationException(beanName);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            try {
-                //获取Bean定义
-                MyBeanDefinition mbd = getBeanDefinition(beanName);
-                //找一下依赖关系,DependsOn注解声明这个依赖关系
-                List<String> dependsOn = mbd.getDependsOn();
-                if (dependsOn != null) {
-                    for (String dep : dependsOn) {
-                        registerDependentBean(dep, beanName);
-                        getBean(dep);
-                    }
-                }
-
-//                if (Scope.SINGLETON.equals(mbd.getScope())) {
-                String finalBeanName = beanName;
-                sharedInstance = getSingleton(beanName, () -> createBean(finalBeanName, mbd, null));
-                beanInstance = getObjectForBeanInstance(sharedInstance, name, beanName);
-//                }
-            } catch (Exception ignored) {
-                throw new RuntimeException(ignored);
-            }
-        }
-        return adaptBeanInstance(beanName, beanInstance);
-    }
-
-    /**
-     * 准备开始创建Bean
-     * 调用 InstantiationAwareBeanPostProcessor,逐个问问要不要直接返回一个Bean
-     * 如果返回不为空,那么直接返回不进行后续的反射创建步骤
-     */
-    private Object createBean(String beanName, MyBeanDefinition mbd, Object[] args) {
-        //执行BeanPostProcessor
-        Object bean = resolveBeforeInstantiation(beanName, mbd);
-        if (bean != null) {
-            return bean;
-        }
-
-        try {
-            return doCreateBean(beanName, mbd, args);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 真正的开始创建Bean
-     */
-    private Object doCreateBean(String beanName, MyBeanDefinition mbd, Object[] args) {
-        //反射创建Bean的实例,是一个崭新的空对象
-        Object instance = createBeanInstance(beanName, mbd, args);
-        //利用一个set去追踪正在创建的Bean,如果循环依赖放置一个工厂,承诺未来能拿到这个Bean,Aop可以在后期介入
-        if (isSingletonCurrentlyInCreation(beanName)) {
-            addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, instance));
-        }
-
-        //进行依赖注入
-        populateBean(beanName, mbd, instance);
-        Object exposedObject = instance;
-        exposedObject = initializeBean(beanName, exposedObject, mbd);
-        return exposedObject;
-    }
 
     /**
      * Aop起点之一
@@ -563,16 +784,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         return exposedObject;
     }
 
-    //进行依赖注入
-    private void populateBean(String beanName, MyBeanDefinition mbd, Object instance) {
-        for (BeanPostProcessor beanPostProcessor : beanPostProcessors) {
-            if (beanPostProcessor instanceof InstantiationAwareBeanPostProcessor ibp) {
-                //AutowiredAnnotationBeanPostProcessor介入
-                instance = ibp.postProcessProperties(instance, beanName);
-            }
-        }
 
-    }
 
     /**
      * 创建Bean,使用构造器或@Bean方法
@@ -644,50 +856,6 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         return singletonObject;
     }
 
-    protected Object resolveBeforeInstantiation(String beanName, MyBeanDefinition mbd) {
-
-        Object bean;
-        //自定义实现InstantiationAwareBeanPostProcessor执行before方法
-        bean = applyBeanPostProcessorsBeforeInstantiation(mbd.getBeanClass(), beanName);
-        if (bean != null) {
-            //如果返回了一个非null的对象,那么继续执行BeanPostProcessor的postProcessAfterInitialization
-            bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
-        }
-        return bean;
-    }
-
-    protected void onRefresh() {
-    }
-
-    protected void postProcessBeanFactory(ConfigurableApplicationContext beanFactory) {
-    }
-
-    //发布ContextRefreshedEvent事件
-    private void finishRefresh() {
-        this.publishEvent(new ContextRefreshedEvent(new Object()));
-    }
-
-    private void prepareBeanFactory(ConfigurableApplicationContext beanFactory) {
-        /**
-         * 其实我有点理解不来ApplicationContextAwareProcessor的作用 既然在invokeAwareMethods就已经可以setAware了,而且invokeAwareMethods可以处理的类远远比ApplicationContextAwareProcessor更多,更早
-         * 任何经过spring创建的对象都应该可以被invokeAwareMethods处理,为何不直接增强invokeAwareMethods的功能呢?
-         * 我只能解释为ApplicationContextAwareProcessor的功能更多更全
-         */
-        beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
-    }
-
-    private void registerListeners() {
-        for (ApplicationListener<ApplicationEvent> listener : getApplicationListeners()) {
-            addApplicationListener(listener);
-        }
-
-        for (MyBeanDefinition df : beanDefinitionMap.values()) {
-            if (ApplicationListener.class.isAssignableFrom(df.getBeanClass())) {
-                addApplicationListener((ApplicationListener<ApplicationEvent>) getBean(df.getName()));
-            }
-        }
-
-    }
 
     public void addApplicationListener(ApplicationListener<ApplicationEvent> listener) {
         if (this.applicationEventMulticaster != null) {
@@ -704,11 +872,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         this.applicationListeners.remove(listener);
     }
 
-    private void initApplicationEventMulticaster() {
-        this.applicationEventMulticaster = new SimpleApplicationEventMulticaster(this);
-        registerSingleton("applicationEventMulticaster", this.applicationEventMulticaster);
 
-    }
 
     //对容器中的对象进行全部getBean,因为Aop部分我没有参考Spring的实现,因此我需要单独初始化我的AutumnAopFactory
     private void finishBeanFactoryInitialization(ConfigurableApplicationContext fatory) {
@@ -719,30 +883,7 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     }
 
 
-    @Override
-    public ApplicationArguments getApplicationArguments() {
-        return environment.getApplicationArguments();
-    }
 
-    @Override
-    public String getProperty(String key) {
-        return environment.getProperty(key);
-    }
-
-    @Override
-    public Properties getAllProperties() {
-        return environment.getAllProperties();
-    }
-
-    @Override
-    public String[] getActiveProfiles() {
-        return environment.getActiveProfiles();
-    }
-
-    @Override
-    public String[] getDefaultProfiles() {
-        return environment.getDefaultProfiles();
-    }
 
     @Override
     public void registerSingleton(String beanName, Object singletonObject) {
@@ -794,89 +935,113 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         return beanDefinition;
     }
 
-    @Override
-    public boolean containsBeanDefinition(String beanName) {
-        return beanDefinitionMap.containsKey(beanName);
-    }
-
-    @Override
-    public String[] getBeanDefinitionNames() {
-        return beanDefinitionMap.keySet().toArray(new String[0]);
-    }
-
-    @Override
-    public int getBeanDefinitionCount() {
-        return beanDefinitionMap.size();
-    }
-
-    @Override
-    public boolean isBeanNameInUse(String beanName) {
-        return beanDefinitionMap.containsKey(beanName);
-    }
-
-    @Override
-    public Map<String, MyBeanDefinition> getBeanDefinitionMap() {
-        return beanDefinitionMap;
-    }
-
-    //注册并实例化BeanPostProcessors
-    private void registerBeanPostProcessors(ConfigurableApplicationContext configurableApplicationContext) {
-        List<BeanPostProcessor> annoPriorityOrderedPostProcessors = new ArrayList<>();
-        List<BeanPostProcessor> priorityOrderedPostProcessors = new ArrayList<>();
-        List<String> orderedPostProcessorNames = new ArrayList<>();
-        List<String> nonOrderedPostProcessorNames = new ArrayList<>();
-
-        for (Map.Entry<String, MyBeanDefinition> entry : configurableApplicationContext.getBeanDefinitionMap().entrySet()) {
-            Class<?> beanClass = entry.getValue().getBeanClass();
-            if (BeanPostProcessor.class.isAssignableFrom(beanClass)) {
-                if (beanClass.isAnnotationPresent(MyOrder.class)) {
-                    BeanPostProcessor beanPostProcessor = (BeanPostProcessor) configurableApplicationContext.getBean(entry.getKey());
-                    annoPriorityOrderedPostProcessors.add(beanPostProcessor);
-                }
-                if (beanClass.isAssignableFrom(PriorityOrdered.class)) {
-                    BeanPostProcessor beanPostProcessor = (BeanPostProcessor) configurableApplicationContext.getBean(entry.getKey());
-                    priorityOrderedPostProcessors.add(beanPostProcessor);
-                } else if (beanClass.isAssignableFrom(Ordered.class)) {
-                    orderedPostProcessorNames.add(entry.getKey());
-                } else {
-                    nonOrderedPostProcessorNames.add(entry.getKey());
-                }
-            }
-        }
-
-        int beanProcessorTargetCount = beanPostProcessors.size() + 1 + annoPriorityOrderedPostProcessors.size() + priorityOrderedPostProcessors.size() + orderedPostProcessorNames.size() + nonOrderedPostProcessorNames.size();
-//        this.addBeanPostProcessor(new BeanPostProcessorChecker(beanFactory, postProcessorNames, beanProcessorTargetCount));
-
-        annotationInterfaceAwareOrderComparator.compare(annoPriorityOrderedPostProcessors);
-        registerBeanPostProcessors(annoPriorityOrderedPostProcessors);
-
-        annotationInterfaceAwareOrderComparator.compare(priorityOrderedPostProcessors);
-        registerBeanPostProcessors(priorityOrderedPostProcessors);
-
-
-        List<BeanPostProcessor> orderedPostProcessors = new ArrayList<>(orderedPostProcessorNames.size());
-        for (String ppName : orderedPostProcessorNames) {
-            BeanPostProcessor pp = (BeanPostProcessor) getBean(ppName);
-            orderedPostProcessors.add(pp);
-        }
-        annotationInterfaceAwareOrderComparator.compare(orderedPostProcessors);
-        registerBeanPostProcessors(orderedPostProcessors);
-
-
-        List<BeanPostProcessor> nonOrderedPostProcessors = new ArrayList<>(nonOrderedPostProcessorNames.size());
-        for (String ppName : nonOrderedPostProcessorNames) {
-            BeanPostProcessor pp = (BeanPostProcessor) getBean(ppName);
-            nonOrderedPostProcessors.add(pp);
-        }
-        annotationInterfaceAwareOrderComparator.compare(nonOrderedPostProcessors);
-        registerBeanPostProcessors(nonOrderedPostProcessors);
-//        this.addBeanPostProcessor(new ApplicationListenerDetector(applicationContext));
-    }
 
     private void afterSingletonCreation(String beanName) {
         this.singletonsCurrentlyInCreation.remove(beanName);
     }
 
+
+
+
+    @Override
+    public void addBean(String name, Object bean) {
+        if (bean == null) {
+            throw new IllegalArgumentException("你怎么传递个空????????");
+        }
+        String beanName = transformedBeanName(name);
+        addSingleton(beanName, bean);
+    }
+
+    private void registerBeanPostProcessors(List<BeanPostProcessor> postProcessors) {
+        for (BeanPostProcessor postProcessor : postProcessors) {
+            addBeanPostProcessor(postProcessor);
+        }
+    }
+
+
+    private void beforeSingletonCreation(String beanName) {
+        //如果这个beanName已经在创建中,那么说明发生了循环依赖,记录一下
+        if (!singletonsCurrentlyInCreation.add(beanName)) {
+            logCircularDependency(beanName);
+        }
+        this.singletonsCurrentlyInCreation.add(beanName);
+    }
+
+
+    <T> T adaptBeanInstance(String name, Object bean) {
+        return (T) bean;
+    }
+
+
+    @Override
+    public void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor) {
+        this.beanFactoryPostProcessors.add(postProcessor);
+    }
+
+
+    @Override
+    public void registerShutdownHook() {
+    }
+
+    @Override
+    public ApplicationArguments getApplicationArguments() {
+        return environment.getApplicationArguments();
+    }
+
+    @Override
+    public String getProperty(String key) {
+        return environment.getProperty(key);
+    }
+
+    @Override
+    public Properties getAllProperties() {
+        return environment.getAllProperties();
+    }
+
+    @Override
+    public String[] getActiveProfiles() {
+        return environment.getActiveProfiles();
+    }
+
+    @Override
+    public String[] getDefaultProfiles() {
+        return environment.getDefaultProfiles();
+    }
+
+    @Override
+    public void put(String key, Object value) {
+
+    }
+
+    @Override
+    public Object get(String key) {
+        return null;
+    }
+
+    @Override
+    public Properties getProperties() {
+        return environment.getAllProperties();
+    }
+
+    @Override
+    public List<Object> getBeansByAnnotation(Class<? extends Annotation> annotationClass) {
+        return List.of();
+    }
+
+    @Override
+    public <T> Map<String, T> getBeansOfType(Class<T> type) throws BeanCreationException {
+        return Map.of();
+    }
+
+    @Override
+    public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
+        this.beanPostProcessors.add(beanPostProcessor);
+    }
+
+    @Override
+    public Set<BeanPostProcessor> getAllBeanPostProcessors() {
+        return beanPostProcessors;
+    }
 
     @Override
     public Environment getEnvironment() {
@@ -917,165 +1082,28 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
     }
 
     @Override
-    public void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor) {
-        this.beanFactoryPostProcessors.add(postProcessor);
-    }
-
-
-    @Override
-    public void registerShutdownHook() {
-    }
-
-
-    private void prepareRefresh() {
-        /**
-         * 在AutumnApplication的run方法中,env已经生成,所以无需二次生成,spring的这种设计是为了防止你直接创建一个context出来而并非AutumnApplication来生成
-         * 因此需要检测env是否存在,没有的话重新创建一个
-         */
-        this.startupDate = System.currentTimeMillis();
-        if (this.earlyApplicationListeners == null) {
-            this.earlyApplicationListeners = new LinkedHashSet<>(this.applicationListeners);
-        } else {
-            //refresh阶段可以二次调用,因此存在earlyApplicationListeners不为null的情况
-            this.applicationListeners.clear();
-            this.applicationListeners.addAll(this.earlyApplicationListeners);
-        }
-        this.earlyApplicationEvents = new HashSet<>();
+    public boolean containsBeanDefinition(String beanName) {
+        return beanDefinitionMap.containsKey(beanName);
     }
 
     @Override
-    public void addBean(String name, Object bean) {
-        if (bean == null) {
-            throw new IllegalArgumentException("你怎么传递个空????????");
-        }
-        String beanName = transformedBeanName(name);
-        addSingleton(beanName, bean);
-    }
-
-    private void registerBeanPostProcessors(List<BeanPostProcessor> postProcessors) {
-        for (BeanPostProcessor postProcessor : postProcessors) {
-            addBeanPostProcessor(postProcessor);
-        }
-    }
-
-    /**
-     * springboot中这个方法实现的太麻烦了,这一块我简化了一下,不和他写一样了
-     * 本质上来说就是允许BeanDefinitionRegistryPostProcessor继续引入BeanDefinitionRegistryPostProcessor 其他的BeanDefinitionRegistryPostProcessor也可以继续引入..以此类推
-     * 而且还得保证顺序的准确
-     */
-    private void invokeBeanFactoryPostProcessors() throws Exception {
-        AnnotationScanner scanner = new AnnotationScanner();
-
-        Queue<BeanDefinitionRegistryPostProcessor> processingQueue = new LinkedList<>();
-        Set<BeanDefinitionRegistryPostProcessor> processedRegistryPostProcessors = new HashSet<>();
-        Set<String> beanFactoryPostProcessorHashSet = new HashSet<>();
-        for (BeanFactoryPostProcessor bfp : beanFactoryPostProcessors) {
-            if (bfp instanceof BeanDefinitionRegistryPostProcessor bdp) {
-                processingQueue.add(bdp);
-            }
-        }
-
-
-        for (Map.Entry<String, MyBeanDefinition> entry : beanDefinitionMap.entrySet()) {
-            Class<?> beanClass = entry.getValue().getBeanClass();
-            if (BeanDefinitionRegistryPostProcessor.class.isAssignableFrom(beanClass)) {
-                processingQueue.add((BeanDefinitionRegistryPostProcessor) getBean(entry.getKey()));
-            }
-            if (BeanFactoryPostProcessor.class.isAssignableFrom(beanClass)) {
-                beanFactoryPostProcessors.add((BeanFactoryPostProcessor) getBean(entry.getKey()));
-                beanFactoryPostProcessorHashSet.add(entry.getKey());
-            }
-        }
-
-        annotationInterfaceAwareOrderComparator.compare(beanFactoryPostProcessors);
-        annotationInterfaceAwareOrderComparator.compare(processingQueue);
-
-        boolean newPostProcessorsAdded = true;
-
-        while (newPostProcessorsAdded) {
-            newPostProcessorsAdded = false;
-            int size = processingQueue.size();
-            for (int i = 0; i < size; i++) {
-                BeanDefinitionRegistryPostProcessor postProcessor = processingQueue.poll();
-                if (!processedRegistryPostProcessors.contains(postProcessor)) {
-                    processedRegistryPostProcessors.add(postProcessor);
-                    if (postProcessor != null) {
-                        postProcessor.postProcessBeanDefinitionRegistry(scanner, this);
-                    }
-                    for (Map.Entry<String, MyBeanDefinition> entry : beanDefinitionMap.entrySet()) {
-                        Class<?> beanClass = entry.getValue().getBeanClass();
-                        if (BeanDefinitionRegistryPostProcessor.class.isAssignableFrom(beanClass)) {
-                            BeanDefinitionRegistryPostProcessor newPostProcessor = (BeanDefinitionRegistryPostProcessor) getBean(entry.getKey());
-                            if (!processedRegistryPostProcessors.contains(newPostProcessor)) {
-                                annotationInterfaceAwareOrderComparator.compare(processingQueue);
-                                processingQueue.add(newPostProcessor);
-                                newPostProcessorsAdded = true;
-                            }
-                        }
-                    }
-                }
-
-            }
-        }
-
-        for (Map.Entry<String, MyBeanDefinition> entry : beanDefinitionMap.entrySet()) {
-            Class<?> beanClass = entry.getValue().getBeanClass();
-            if (BeanFactoryPostProcessor.class.isAssignableFrom(beanClass)) {
-                if (!beanFactoryPostProcessorHashSet.contains(entry.getKey())) {
-                    beanFactoryPostProcessors.add((BeanFactoryPostProcessor) getBean(entry.getKey()));
-                }
-            }
-        }
-
-
-        for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
-            postProcessor.postProcessBeanFactory(scanner, this);
-        }
-
-
+    public String[] getBeanDefinitionNames() {
+        return beanDefinitionMap.keySet().toArray(new String[0]);
     }
 
     @Override
-    public void put(String key, Object value) {
-
+    public int getBeanDefinitionCount() {
+        return beanDefinitionMap.size();
     }
 
     @Override
-    public Object get(String key) {
-        return null;
+    public boolean isBeanNameInUse(String beanName) {
+        return beanDefinitionMap.containsKey(beanName);
     }
 
     @Override
-    public Properties getProperties() {
-        return environment.getAllProperties();
-    }
-
-    @Override
-    public List<Object> getBeansByAnnotation(Class<? extends Annotation> annotationClass) {
-        return List.of();
-    }
-
-    @Override
-    public <T> Map<String, T> getBeansOfType(Class<T> type) throws BeanCreationException {
-        return Map.of();
-    }
-
-    @Override
-    public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
-        this.beanPostProcessors.add(beanPostProcessor);
-    }
-
-    @Override
-    public Set<BeanPostProcessor> getAllBeanPostProcessors() {
-        return beanPostProcessors;
-    }
-
-    private void beforeSingletonCreation(String beanName) {
-        //如果这个beanName已经在创建中,那么说明发生了循环依赖,记录一下
-        if (!singletonsCurrentlyInCreation.add(beanName)) {
-            logCircularDependency(beanName);
-        }
-        this.singletonsCurrentlyInCreation.add(beanName);
+    public Map<String, MyBeanDefinition> getBeanDefinitionMap() {
+        return beanDefinitionMap;
     }
 
     private void logCircularDependency(String beanName) {
@@ -1095,5 +1123,6 @@ public class AnnotationConfigApplicationContext implements ConfigurableApplicati
         sb2.append("└──<-──┘");
         log.warn(sb2.toString());
     }
+
 
 }
