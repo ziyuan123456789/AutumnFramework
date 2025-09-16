@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<body>
+<form id="uploadForm">
+  <input type="file" id="fileInput" name="file">
+  <button type="button" onclick="uploadFile()">上传文件</button>
+</form>
+<div id="uploadStatus"></div>
+
+
+</body>
+<script>
+  function uploadFile() {
+    var formData = new FormData();
+    var fileInput = document.getElementById('fileInput');
+    var file = fileInput.files[0];
+    formData.append("file", file);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/upload", true);
+
+    // 上传进度事件
+    xhr.upload.onprogress = function(event) {
+      if (event.lengthComputable) {
+        var percentComplete = event.loaded / event.total * 100;
+        // 更新页面上的上传进度
+        document.getElementById('uploadStatus').innerText = '上传进度: ' + percentComplete.toFixed(2) + '%';
+      }
+    };
+
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        // 文件上传成功的处理
+        document.getElementById('uploadStatus').innerText = '上传成功';
+      } else {
+        // 文件上传失败的处理
+        document.getElementById('uploadStatus').innerText = '上传失败';
+      }
+    };
+
+    xhr.send(formData);
+  }
+
+</script>
+</html>

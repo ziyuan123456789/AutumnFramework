@@ -1,0 +1,32 @@
+
+<mapper namespace="org.example.mapper.UserMapper">
+    <select id="getOneUser" resultMap="whyYouDoThis" parameterType="java.lang.Integer">
+        SELECT UserID as testUserID,
+               Username as testUserName,
+               Role,
+               `Password`,
+               Salt,
+               Telephone,
+               regTime,
+               enabled
+        FROM `user`
+        where UserId > #{userId}
+    </select>
+
+    <select id="getAllUser" resultType="org.example.Bean.User"
+            parameterType="java.lang.Integer">
+        select * from user  where UserId > #{userId}
+    </select>
+
+    <!--    如果isDisable为true则orm会忽略其余的映射,只处理resultMap指定的内容,否则依然会自动尝试映射,不过我觉得这真是一个无聊的需求-->
+    <resultMap id="whyYouDoThis" type="org.example.Bean.User" isDisable="false">
+        <result property="userID" column="testUserID"/>
+        <result property="username" column="testUserName"/>
+    </resultMap>
+
+    <select id="checkUser" resultType="org.example.Bean.User">
+        select * from user u where Username=#{userId} and Password=#{password}
+    </select>
+</mapper>
+
+
