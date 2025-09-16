@@ -1,6 +1,0 @@
-BootstrapRegistryInitializer=org.example.FrameworkUtils.AutumnCore.Bootstrap.BaseBootstrapRegistryInitializer
-ApplicationContextInitializer=org.example.FrameworkUtils.AutumnCore.context.BaseApplicationContextInitializer
-ApplicationListener=org.example.FrameworkUtils.AutumnCore.Event.Listener.BaseApplicationListener
-AutumnApplicationRunListener=org.example.FrameworkUtils.AutumnCore.Event.Listener.BaseAutumnApplicationRunListener
-Beans=com.autumn.swaggerstarter.BaseController
-Beans=com.autumn.mvc.WebSocket.DispatchWebSocketServlet
