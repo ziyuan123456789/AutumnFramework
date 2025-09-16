@@ -4,7 +4,7 @@
 ![Java17](https://img.shields.io/badge/JDK-17+-success.svg)
 ![License](https://img.shields.io/npm/l/mithril.svg)
 
-## 求助:
+[//]: # (## 求助:)
 
 [//]: # (公司倒闭了,希望找个工作.杭州,成都,深圳,新加坡均可)
 
