@@ -34,7 +34,6 @@ public class DispatchWebSocketServlet extends Endpoint implements InitializingBe
 
     private ApplicationContext context;
 
-
     @Override
     public void onOpen(Session session, EndpointConfig config) {
         String path = session.getRequestURI().getPath();

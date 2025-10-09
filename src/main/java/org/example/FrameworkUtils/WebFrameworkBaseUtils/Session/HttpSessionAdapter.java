@@ -8,7 +8,7 @@ import javax.servlet.http.HttpSession;
  */
 public class HttpSessionAdapter extends MySession {
 
-    private HttpSession httpSession;
+    private final HttpSession httpSession;
 
     public HttpSessionAdapter(HttpSession session) {
         super(session.getId());

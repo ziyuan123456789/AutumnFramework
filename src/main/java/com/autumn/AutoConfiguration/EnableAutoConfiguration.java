@@ -18,7 +18,6 @@ import java.lang.annotation.Target;
  * AutoConfigurationImportSelector会扫描Meta-INF.autumn下的AutoConfiguration.imports文件
  * 并按照条件注解判断是否应该进行自动装配
  */
-
 @Target({ElementType.TYPE})
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)

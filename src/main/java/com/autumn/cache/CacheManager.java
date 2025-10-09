@@ -11,6 +11,7 @@ import java.util.WeakHashMap;
  */
 @Slf4j
 public class CacheManager {
+
     private Map<String, Object> cacheStore = new WeakHashMap<>();
 
     public Boolean updateCache(String key, Object newValue) {

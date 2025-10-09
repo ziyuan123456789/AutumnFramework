@@ -16,9 +16,9 @@ import java.util.concurrent.TimeUnit;
  */
 
 
+//Import注解引入这个类进行配置线程池
 @MyConfig
 @Slf4j
-//Import注解引入这个类进行配置线程池
 public class AutumnAsyncConfiguration {
 
     private ExecutorService executor;
